@@ -815,6 +815,69 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue May 23 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-6.el7
+- kvm-aarch64-Enable-usb-xhci.patch [bz#1446570]
+- kvm-scsi-Disable-deprecated-implicit-SCSI-HBA-creation-m.patch [bz#971799]
+- kvm-block-vhdx-Make-vhdx_create-always-set-errp.patch [bz#1447551]
+- kvm-block-Add-errp-to-b-lk-drv-_truncate.patch [bz#1447551]
+- kvm-blockdev-use-drained_begin-end-for-qmp_block_resize.patch [bz#1447551]
+- kvm-spapr-Don-t-accidentally-advertise-HTM-support-on-PO.patch [bz#1449007]
+- kvm-target-ppc-Allow-workarounds-for-POWER9-DD1.patch [bz#1443289]
+- kvm-xhci-relax-link-check.patch [bz#1444003]
+- kvm-curl-strengthen-assertion-in-curl_clean_state.patch [bz#1437393]
+- kvm-curl-never-invoke-callbacks-with-s-mutex-held.patch [bz#1437393]
+- kvm-curl-avoid-recursive-locking-of-BDRVCURLState-mutex.patch [bz#1437393]
+- kvm-curl-split-curl_find_state-curl_init_state.patch [bz#1437393]
+- kvm-curl-convert-CURLAIOCB-to-byte-values.patch [bz#1437393]
+- kvm-curl-convert-readv-to-coroutines.patch [bz#1437393]
+- kvm-curl-do-not-do-aio_poll-when-waiting-for-a-free-CURL.patch [bz#1437393]
+- kvm-usb-hub-clear-PORT_STAT_SUSPEND-on-wakeup.patch [bz#1447581]
+- kvm-migration-setup-bi-directional-I-O-channel-for-exec-.patch [bz#1430620]
+- kvm-block-Reuse-bs-as-backing-hd-for-drive-backup-sync-n.patch [bz#1452066]
+- kvm-migration-Fix-non-multiple-of-page-size-migration.patch [bz#1449037]
+- kvm-postcopy-Require-RAMBlocks-that-are-whole-pages.patch [bz#1449037]
+- kvm-hw-virtio-fix-vhost-user-fails-to-startup-when-MQ.patch [bz#1447592]
+- kvm-iommu-Don-t-crash-if-machine-is-not-PC_MACHINE.patch [bz#1451483]
+- kvm-migration-Call-blk_resume_after_migration-for-postco.patch [bz#1452148]
+- kvm-migration-Unify-block-node-activation-error-handling.patch [bz#1452148]
+- kvm-disable-pulseaudio-and-alsa.patch [bz#1452605]
+- kvm-block-An-empty-filename-counts-as-no-filename.patch [bz#1452702]
+- kvm-block-Do-not-unref-bs-file-on-error-in-BD-s-open.patch [bz#1452752]
+- Resolves: bz#1430620
+  (TLS encryption migration via exec failed with "TLS handshake failed: The TLS connection was non-properly terminated")
+- Resolves: bz#1437393
+  (snapshot created base on the image in https server will hang during booting)
+- Resolves: bz#1443289
+  ([Pegas1.0 04/03 nightly build + 4.10.0-7 kernel] qemu+guest fail to apply POWER9 DD1 workarounds)
+- Resolves: bz#1444003
+  (USB 3.0 flash drive not accessible on Windows guest)
+- Resolves: bz#1446570
+  (enable qemu-xhci USB3 controller device model for the aarch64 target)
+- Resolves: bz#1447551
+  (qemu hang when do block_resize guest disk during crystal running)
+- Resolves: bz#1447581
+  ([RHEV7.4] [usb-hub] input devices under usb hub don't work on win2016 with xhci)
+- Resolves: bz#1447592
+  (vhost-user/reply-ack: Wait for ack even if no request sent (one-time requests))
+- Resolves: bz#1449007
+  (Pegas 1.0: Booting pegas guest on pegas host (POWER9 DD1) panics with signal 4 at userspace entry)
+- Resolves: bz#1449037
+  (Dst qemu quit when migrate guest with hugepage and total memory is not a multiple of pagesize)
+- Resolves: bz#1451483
+  (QEMU crashes with "-machine none -device intel-iommu")
+- Resolves: bz#1452066
+  (Fix backing image referencing in drive-backup sync=none)
+- Resolves: bz#1452148
+  (Op blockers don't work after postcopy migration)
+- Resolves: bz#1452605
+  (disable pulseaudio and alsa support)
+- Resolves: bz#1452702
+  (qemu-img aborts on empty filenames)
+- Resolves: bz#1452752
+  (Some block drivers incorrectly close their associated file)
+- Resolves: bz#971799
+  (qemu should not crash when if=scsi although it's unsupportable device)
+
 * Tue May 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-5.el7
 - kvm-blockdev-ignore-aio-native-for-empty-drives.patch [bz#1402645]
 - kvm-dump-Acquire-BQL-around-vm_start-in-dump-thread.patch [bz#1445174]
