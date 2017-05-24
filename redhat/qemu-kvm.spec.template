@@ -860,6 +860,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Wed May 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.13
+- kvm-char-change-qemu_chr_fe_add_watch-to-return-unsigned.patch [bz#1452331]
+- Resolves: bz#1452331
+  (RHEL 7.2 based VM (Virtual Machine) hung for several hours apparently waiting for lock held by main_loop)
+
 * Mon May 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.12
 - kvm-char-serial-cosmetic-fixes.patch [bz#1452331]
 - kvm-char-serial-Use-generic-Fifo8.patch [bz#1452331]
