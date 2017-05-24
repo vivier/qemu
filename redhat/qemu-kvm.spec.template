@@ -817,6 +817,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed May 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.8
+- kvm-char-change-qemu_chr_fe_add_watch-to-return-unsigned.patch [bz#1452332]
+- Resolves: bz#1452332
+  (RHEL 7.2 based VM (Virtual Machine) hung for several hours apparently waiting for lock held by main_loop)
+
 * Mon May 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.7
 - kvm-char-serial-cosmetic-fixes.patch [bz#1452332]
 - kvm-char-serial-Use-generic-Fifo8.patch [bz#1452332]
