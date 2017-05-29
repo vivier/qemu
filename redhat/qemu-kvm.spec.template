@@ -156,6 +156,10 @@ Source26: vhost.conf
 Source27: kvm.conf
 Source28: 95-kvm-memlock.conf
 Source29: pxe-e1000e.rom
+Source30: pc-slit.cphp
+Source31: pc-slit.memhp
+Source32: q35-slit.cphp
+Source33: q35-slit.memhp
 
 
 %%PATCHLIST%%
@@ -310,6 +314,14 @@ This package contains some diagnostics and debugging tools for KVM, such as kvm_
 
 %prep
 %setup -q -n qemu-%{version}
+
+# copy test reference files to allow bios-tables-test pass
+# TODO: remove this section on rebase to QEMU-2.10 as
+# these files will be included in QEMU source tarball
+cp %{SOURCE30} tests/acpi-test-data/pc/SLIT.cphp
+cp %{SOURCE31} tests/acpi-test-data/pc/SLIT.memhp
+cp %{SOURCE32} tests/acpi-test-data/q35/SLIT.cphp
+cp %{SOURCE33} tests/acpi-test-data/q35/SLIT.memhp
 
 # Copy bios files to allow 'make check' pass
 cp %{SOURCE14} pc-bios
