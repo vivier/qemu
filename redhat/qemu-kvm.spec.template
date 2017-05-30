@@ -815,6 +815,25 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue May 30 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-7.el7
+- kvm-e1000e-Fix-ICR-Other-causes-clear-logic.patch [bz#1449490]
+- kvm-pc-fwcfg-unbreak-migration-from-qemu-2.5-and-qemu-2..patch [bz#1441394]
+- kvm-disable-linuxboot_dma.bin-option-rom-for-7.3-machine.patch [bz#1441394]
+- kvm-Revert-hw-pci-disable-pci-bridge-s-shpc-by-default.patch [bz#1434706]
+- kvm-qemu-img-wait-for-convert-coroutines-to-complete.patch [bz#1451849]
+- kvm-target-ppc-Show-POWER9-in-cpu-help.patch
+- Resolves: bz#1434706
+  ([pci-bridge] Hotplug devices to pci-bridge failed)
+- Resolves: bz#1441394
+  (fw_cfg.dma_enabled value incorrect in pc-i440fx-7.3.0 compat_props)
+- Resolves: bz#1449490
+  ([q35] guest hang after do migration with virtio-scsi-pci.)
+- Resolves: bz#1451849
+  (qemu-img convert crashes on error)
+- Resolves: bz#1449969
+  ([Pegas1.0] POWER9* cpu model is not listed in  /usr/libexec/qemu-kvm -cpu ?)
+
+
 * Tue May 23 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-6.el7
 - kvm-aarch64-Enable-usb-xhci.patch [bz#1446570]
 - kvm-scsi-Disable-deprecated-implicit-SCSI-HBA-creation-m.patch [bz#971799]
