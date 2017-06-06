@@ -827,6 +827,41 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 06 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-8.el7
+- kvm-input-don-t-queue-delay-if-paused.patch [bz#1444326]
+- kvm-block-gluster-glfs_lseek-workaround.patch [bz#1451191]
+- kvm-mirror-Drop-permissions-on-s-target-on-completion.patch [bz#1456456]
+- kvm-stream-fix-crash-in-stream_start-when-block_job_crea.patch [bz#1456424]
+- kvm-qemu-iotests-Test-streaming-with-missing-job-ID.patch [bz#1456424]
+- kvm-monitor-Use-numa_get_node_for_cpu-on-info-numa.patch [bz#1274567]
+- kvm-virtio_net-Bypass-backends-for-MTU-feature-negotiati.patch [bz#1452756]
+- kvm-vhost-user-pass-message-as-a-pointer-to-process_mess.patch [bz#1447592]
+- kvm-virtio-serial-bus-Unset-hotplug-handler-when-unreali.patch [bz#1458782]
+- kvm-gluster-add-support-for-PREALLOC_MODE_FALLOC.patch [bz#1450759]
+- kvm-numa-Allow-setting-NUMA-distance-for-different-NUMA-.patch [bz#1395339]
+- kvm-tests-acpi-extend-cphp-and-memhp-testcase-with-numa-.patch [bz#1395339]
+- kvm-copy-SLIT-test-reference-blobs-into-tests-directory.patch [bz#1395339]
+- Resolves: bz#1274567
+  (HMP doesn't reflect the correct numa topology after hot plugging vCPU)
+- Resolves: bz#1395339
+  ([Intel 7.4 FEAT] Enable configuration of NUMA distance in QEMU)
+- Resolves: bz#1444326
+  (Keyboard inputs are buffered when qemu in stop status)
+- Resolves: bz#1447592
+  (vhost-user/reply-ack: Wait for ack even if no request sent (one-time requests))
+- Resolves: bz#1450759
+  (Creating fallocated image using qemu-img using gfapi fails)
+- Resolves: bz#1451191
+  (qemu-img: block/gluster.c:1307: find_allocation: Assertion `offs >= start' failed.)
+- Resolves: bz#1452756
+  (Enable VIRTIO_NET_F_MTU feature in QEMU)
+- Resolves: bz#1456424
+  (qemu crash when starting image streaming job fails)
+- Resolves: bz#1456456
+  (qemu crashes on job completion during drain)
+- Resolves: bz#1458782
+  (QEMU crashes after hot-unplugging virtio-serial device)
+
 * Tue May 30 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-7.el7
 - kvm-e1000e-Fix-ICR-Other-causes-clear-logic.patch [bz#1449490]
 - kvm-pc-fwcfg-unbreak-migration-from-qemu-2.5-and-qemu-2..patch [bz#1441394]
