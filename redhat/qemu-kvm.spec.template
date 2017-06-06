@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Jun 06 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-140.el7
+- kvm-spice-fix-spice_chr_add_watch-pre-condition.patch [bz#1456983]
+- Resolves: bz#1456983
+  (Character device regression due to missing patch)
+
 * Wed May 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-139.el7
 - kvm-char-change-qemu_chr_fe_add_watch-to-return-unsigned.patch [bz#1451470]
 - Resolves: bz#1451470
