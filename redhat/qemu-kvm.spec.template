@@ -817,6 +817,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Jun 06 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.9
+- kvm-spice-fix-spice_chr_add_watch-pre-condition.patch [bz#1452332]
+- Resolves: bz#1452332
+  (RHEL 7.2 based VM (Virtual Machine) hung for several hours apparently waiting for lock held by main_loop)
+
 * Wed May 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.8
 - kvm-char-change-qemu_chr_fe_add_watch-to-return-unsigned.patch [bz#1452332]
 - Resolves: bz#1452332
