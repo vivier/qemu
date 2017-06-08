@@ -827,6 +827,37 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Jun 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-9.el7
+- kvm-shutdown-Simplify-shutdown_signal.patch [bz#1418927]
+- kvm-shutdown-Prepare-for-use-of-an-enum-in-reset-shutdow.patch [bz#1418927]
+- kvm-shutdown-Preserve-shutdown-cause-through-replay.patch [bz#1418927]
+- kvm-shutdown-Add-source-information-to-SHUTDOWN-and-RESE.patch [bz#1418927]
+- kvm-shutdown-Expose-bool-cause-in-SHUTDOWN-and-RESET-eve.patch [bz#1418927]
+- kvm-irqchip-trace-changes-on-msi-add-remove.patch [bz#1448813]
+- kvm-msix-trace-control-bit-write-op.patch [bz#1448813]
+- kvm-irqchip-skip-update-msi-when-disabled.patch [bz#1448813]
+- kvm-vhost-propagate-errors-in-vhost_device_iotlb_miss.patch [bz#1451862]
+- kvm-vhost-rework-IOTLB-messaging.patch [bz#1451862]
+- kvm-vhost-user-add-vhost_user-to-hold-the-chr.patch [bz#1451862]
+- kvm-vhost-user-add-slave-req-fd-support.patch [bz#1451862]
+- kvm-spec-vhost-user-spec-Add-IOMMU-support.patch [bz#1451862]
+- kvm-pc-Use-min-x-level-on-compat_props-on-RHEL-machine-t.patch [bz#1454641]
+- kvm-usb-don-t-wakeup-during-coldplug.patch [bz#1452512]
+- kvm-ehci-fix-overflow-in-frame-timer-code.patch [bz#1449609]
+- kvm-ehci-fix-frame-timer-invocation.patch [bz#1449609]
+- Resolves: bz#1418927
+  (The lifecycle event for Guest OS Shutdown is not distinguishable from a qemu process that was quit with SIG_TERM)
+- Resolves: bz#1448813
+  (qemu crash when shutdown guest with '-device intel-iommu' and '-device vfio-pci')
+- Resolves: bz#1449609
+  (qemu coredump when dd on multiple usb-storage devices concurrently in guest)
+- Resolves: bz#1451862
+  (IOMMU support in QEMU for Vhost-user backend)
+- Resolves: bz#1452512
+  (qemu coredump when add more than 12 usb-storage devices to ehci)
+- Resolves: bz#1454641
+  (Windows 10 BSOD when using rhel6.4.0/rhel6.5.0/rhel6.6.0)
+
 * Tue Jun 06 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-8.el7
 - kvm-input-don-t-queue-delay-if-paused.patch [bz#1444326]
 - kvm-block-gluster-glfs_lseek-workaround.patch [bz#1451191]
