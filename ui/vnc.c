@@ -2993,8 +2993,6 @@ void vnc_display_open(DisplayState *ds, const char *display, Error **errp)
         return;
     }
     vnc_display_close(ds);
-    if (strcmp(display, "none") == 0)
-        return;
 
     vs->display = g_strdup(display);
     vs->share_policy = VNC_SHARE_POLICY_ALLOW_EXCLUSIVE;
@@ -3219,7 +3217,7 @@ void vnc_display_open(DisplayState *ds, const char *display, Error **errp)
             goto fail;
         }
         vnc_connect(vs, csock, 0, 0);
-    } else {
+    } else if (strcmp(display, "none")) {
         /* listen for connects */
         char *dpy;
         dpy = g_malloc(256);
