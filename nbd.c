@@ -1280,18 +1280,16 @@ static coroutine_fn void nbd_co_client_start(void *opaque)
 
     if (exp) {
         nbd_export_get(exp);
+        QTAILQ_INSERT_TAIL(&exp->clients, client, next);
     }
     qemu_set_nonblock(client->sock);
+    qemu_co_mutex_init(&client->send_lock);
     if (nbd_negotiate(data)) {
         nbd_client_close(client);
         goto out;
     }
-    qemu_co_mutex_init(&client->send_lock);
     qemu_set_fd_handler2(client->sock, nbd_can_read, nbd_read, NULL, client);
 
-    if (exp) {
-        QTAILQ_INSERT_TAIL(&exp->clients, client, next);
-    }
 out:
     g_free(data);
 }
