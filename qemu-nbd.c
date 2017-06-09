@@ -276,10 +276,10 @@ static void nbd_export_closed(NBDExport *exp)
     state = TERMINATED;
 }
 
-static void nbd_client_closed(NBDClient *client)
+static void nbd_client_closed(NBDClient *client, bool negotiated)
 {
     nb_fds--;
-    if (nb_fds == 0 && !persistent && state == RUNNING) {
+    if (negotiated && nb_fds == 0 && !persistent && state == RUNNING) {
         state = TERMINATE;
     }
     qemu_notify_event();
