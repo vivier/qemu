@@ -1182,6 +1182,7 @@ static CharDriverState *qemu_chr_open_pty(const char *id,
     }
 
     close(slave_fd);
+    qemu_set_nonblock(master_fd);
 
     chr = g_malloc0(sizeof(CharDriverState));
 
