@@ -21,6 +21,11 @@
 
 static int server_fd = -1;
 
+static void nbd_blockdev_client_closed(NBDClient *client, bool ignored)
+{
+    nbd_client_put(client);
+}
+
 static void nbd_accept(void *opaque)
 {
     struct sockaddr_in addr;
@@ -28,7 +33,7 @@ static void nbd_accept(void *opaque)
 
     int fd = accept(server_fd, (struct sockaddr *)&addr, &addr_len);
     if (fd >= 0) {
-        nbd_client_new(NULL, fd, nbd_client_put);
+        nbd_client_new(NULL, fd, nbd_blockdev_client_closed);
     }
 }
 

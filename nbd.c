@@ -105,7 +105,7 @@ static QTAILQ_HEAD(, NBDExport) exports = QTAILQ_HEAD_INITIALIZER(exports);
 
 struct NBDClient {
     int refcount;
-    void (*close)(NBDClient *client);
+    void (*close_fn)(NBDClient *client, bool negotiated);
 
     NBDExport *exp;
     int sock;
@@ -862,7 +862,7 @@ void nbd_client_put(NBDClient *client)
     }
 }
 
-void nbd_client_close(NBDClient *client)
+void nbd_client_close(NBDClient *client, bool negotiated)
 {
     if (client->closing) {
         return;
@@ -876,8 +876,8 @@ void nbd_client_close(NBDClient *client)
     shutdown(client->sock, 2);
 
     /* Also tell the client, so that they release their reference.  */
-    if (client->close) {
-        client->close(client);
+    if (client->close_fn) {
+        client->close_fn(client, negotiated);
     }
 }
 
@@ -964,7 +964,7 @@ void nbd_export_close(NBDExport *exp)
 
     nbd_export_get(exp);
     QTAILQ_FOREACH_SAFE(client, &exp->clients, next, next) {
-        nbd_client_close(client);
+        nbd_client_close(client, true);
     }
     nbd_export_set_name(exp, NULL);
     nbd_export_put(exp);
@@ -1244,7 +1244,7 @@ done:
 
 out:
     nbd_request_put(req);
-    nbd_client_close(client);
+    nbd_client_close(client, true);
 }
 
 static int nbd_can_read(void *opaque)
@@ -1285,7 +1285,7 @@ static coroutine_fn void nbd_co_client_start(void *opaque)
     qemu_set_nonblock(client->sock);
     qemu_co_mutex_init(&client->send_lock);
     if (nbd_negotiate(data)) {
-        nbd_client_close(client);
+        nbd_client_close(client, false);
         goto out;
     }
     qemu_set_fd_handler2(client->sock, nbd_can_read, nbd_read, NULL, client);
@@ -1294,7 +1294,14 @@ out:
     g_free(data);
 }
 
-void nbd_client_new(NBDExport *exp, int csock, void (*close_fn)(NBDClient *))
+/*
+ * Create a new client listener on the given export @exp, using the
+ * given socket @csock.  Begin servicing it in a coroutine.  When the
+ * connection closes, call @close_fn with an indication of whether the
+ * client completed negotiation.
+ */
+void nbd_client_new(NBDExport *exp, int csock,
+                    void (*close_fn)(NBDClient *, bool))
 {
     NBDClient *client;
     NBDClientNewData *data = g_new(NBDClientNewData, 1);
@@ -1303,7 +1310,7 @@ void nbd_client_new(NBDExport *exp, int csock, void (*close_fn)(NBDClient *))
     client->refcount = 1;
     client->exp = exp;
     client->sock = csock;
-    client->close = close_fn;
+    client->close_fn = close_fn;
 
     data->client = client;
     data->co = qemu_coroutine_create(nbd_co_client_start);
