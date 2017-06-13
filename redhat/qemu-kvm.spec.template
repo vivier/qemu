@@ -813,6 +813,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Jun 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7
+- kvm-Fix-memory-slot-page-alignment-logic-bug-1455745.patch [bz#1455745]
+- kvm-Do-not-hang-on-full-PTY.patch [bz#1452067]
+- kvm-serial-fixing-vmstate-for-save-restore.patch [bz#1452067]
+- kvm-serial-reinstate-watch-after-migration.patch [bz#1452067]
+- kvm-nbd-Fully-initialize-client-in-case-of-failed-negoti.patch [bz#1451614]
+- kvm-nbd-Fix-regression-on-resiliency-to-port-scan.patch [bz#1451614]
+- Resolves: bz#1451614
+  (CVE-2017-9524 qemu-kvm: segment fault when private user nmap qemu-nbd server [rhel-7.4])
+- Resolves: bz#1452067
+  (migration can confuse serial port user)
+- Resolves: bz#1455745
+  (Backport fix for broken logic that's supposed to ensure memory slots are page aligned)
+
 * Tue Jun 06 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-140.el7
 - kvm-spice-fix-spice_chr_add_watch-pre-condition.patch [bz#1456983]
 - Resolves: bz#1456983
