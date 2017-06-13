@@ -827,6 +827,39 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-10.el7
+- kvm-Revert-Change-net-socket.c-to-use-socket_-functions-.patch [bz#1451629]
+- kvm-nbd-Fully-initialize-client-in-case-of-failed-negoti.patch [bz#1447948]
+- kvm-nbd-Fix-regression-on-resiliency-to-port-scan.patch [bz#1447948]
+- kvm-nbd-make-it-thread-safe-fix-qcow2-over-nbd.patch [bz#1454582]
+- kvm-commit-Fix-use-after-free-in-completion.patch [bz#1452048]
+- kvm-qemu-iotests-Test-automatic-commit-job-cancel-on-hot.patch [bz#1452048]
+- kvm-commit-Fix-completion-with-extra-reference.patch [bz#1453169]
+- kvm-qemu-iotests-Allow-starting-new-qemu-after-cleanup.patch [bz#1453169]
+- kvm-qemu-iotests-Test-exiting-qemu-with-running-job.patch [bz#1453169]
+- kvm-virtio-serial-fix-segfault-on-disconnect.patch [bz#1447257]
+- kvm-block-fix-external-snapshot-abort-permission-error.patch [bz#1447184]
+- kvm-xhci-only-update-dequeue-ptr-on-completed-transfers.patch [bz#1451631]
+- kvm-virtio-scsi-Unset-hotplug-handler-when-unrealize.patch [bz#1449031]
+- Resolves: bz#1447184
+  (qemu abort when live snapshot for multiple block device simultaneously with transaction and one is to a non-exist path)
+- Resolves: bz#1447257
+  (QEMU coredump while doing hexdump test onto virtio serial ports)
+- Resolves: bz#1447948
+  (qemu-nbd segment fault when nmap sweeps its port [rhel-7.4])
+- Resolves: bz#1449031
+  (qemu core dump when hot-unplug/hot-plug scsi controller in turns)
+- Resolves: bz#1451629
+  (TCP tunnel network: the guest with interface type=client can not start)
+- Resolves: bz#1451631
+  (Keyboard does not work after migration)
+- Resolves: bz#1452048
+  (qemu abort when hot unplug block device during live commit)
+- Resolves: bz#1453169
+  (qemu aborts if quit during live commit process)
+- Resolves: bz#1454582
+  (Qemu crashes when start guest with qcow2 nbd image)
+
 * Thu Jun 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-9.el7
 - kvm-shutdown-Simplify-shutdown_signal.patch [bz#1418927]
 - kvm-shutdown-Prepare-for-use-of-an-enum-in-reset-shutdow.patch [bz#1418927]
