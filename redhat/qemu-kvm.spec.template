@@ -827,6 +827,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Jun 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-11.el7
+- kvm-Enable-USB_CONFIG-for-aarch64.patch [bz#1460010]
+- Resolves: bz#1460010
+  (USB HID (keyboard and tablet) missing [aarch64])
+
 * Tue Jun 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-10.el7
 - kvm-Revert-Change-net-socket.c-to-use-socket_-functions-.patch [bz#1451629]
 - kvm-nbd-Fully-initialize-client-in-case-of-failed-negoti.patch [bz#1447948]
