@@ -824,6 +824,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Jun 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.11
+- kvm-nbd-Fully-initialize-client-in-case-of-failed-negoti.patch [bz#1460180]
+- kvm-nbd-Fix-regression-on-resiliency-to-port-scan.patch [bz#1460180]
+- Resolves: bz#1460180
+  (CVE-2017-9524 qemu-kvm-rhev: Qemu: nbd: segmentation fault due to client non-negotiation [rhel-7.3.z])
+
 * Mon May 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.10
 - kvm-virtio-rng-stop-virtqueue-while-the-CPU-is-stopped.patch [bz#1450375]
 - Resolves: bz#1450375
