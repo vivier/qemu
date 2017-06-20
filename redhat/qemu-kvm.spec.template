@@ -827,6 +827,28 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 20 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-12.el7
+- kvm-pseries-Correct-panic-behaviour-for-pseries-machine-.patch [bz#1458705]
+- kvm-virtio-scsi-Reject-scsi-cd-if-data-plane-enabled-RHE.patch [bz#1378816]
+- kvm-block-rbd-enable-filename-option-and-parsing.patch [bz#1457088]
+- kvm-block-iscsi-enable-filename-option-and-parsing.patch [bz#1457088]
+- kvm-nbd-fix-NBD-over-TLS-bz1461827.patch [bz#1461827]
+- kvm-monitor-add-handle_hmp_command-trace-event.patch [bz#1457740]
+- kvm-monitor-resurrect-handle_qmp_command-trace-event.patch [bz#1457740]
+- kvm-hw-pcie-fix-the-generic-pcie-root-port-to-support-mi.patch [bz#1455150]
+- Resolves: bz#1378816
+  (Core dump when use "data-plane" and execute change cd)
+- Resolves: bz#1455150
+  (Unable to detach virtio disk from pcie-root-port after migration)
+- Resolves: bz#1457088
+  (rbd/iscsi: json: pseudo-protocol format is incompatible with 7.3)
+- Resolves: bz#1457740
+  ([Tracing] compling qemu-kvm failed through systemtap)
+- Resolves: bz#1458705
+  (pvdump: QMP reports "GUEST_PANICKED" event but HMP still shows VM running after guest crashed)
+- Resolves: bz#1461827
+  (QEMU hangs in aio wait when trying to access NBD volume over TLS)
+
 * Fri Jun 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-11.el7
 - kvm-Enable-USB_CONFIG-for-aarch64.patch [bz#1460010]
 - Resolves: bz#1460010
