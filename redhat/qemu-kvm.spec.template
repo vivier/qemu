@@ -824,6 +824,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Jun 23 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.12
+- kvm-virtio-scsi-Reject-scsi-cd-if-data-plane-enabled-RHE.patch [bz#1461837]
+- Resolves: bz#1461837
+  (Core dump when use "data-plane" and execute change cd)
+
 * Fri Jun 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.11
 - kvm-nbd-Fully-initialize-client-in-case-of-failed-negoti.patch [bz#1460180]
 - kvm-nbd-Fix-regression-on-resiliency-to-port-scan.patch [bz#1460180]
