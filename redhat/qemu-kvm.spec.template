@@ -827,6 +827,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 27 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-15.el7a
+- kvm-hw-ppc-spapr-Adjust-firmware-name-for-PCI-bridges.patch [bz#1459170]
+- Resolves: bz#1459170
+  (SLOF: Can't boot from virtio-scsi disk behind pci-bridge: E3405: No such device)
+
 * Fri Jun 23 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-14.el7
 - kvm-sockets-ensure-we-can-bind-to-both-ipv4-ipv6-separat.patch [bz#1446003]
 - Resolves: bz#1446003
