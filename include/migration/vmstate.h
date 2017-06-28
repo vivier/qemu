@@ -928,7 +928,7 @@ extern const VMStateInfo vmstate_info_bitmap;
 #define VMSTATE_END_OF_LIST()                                         \
     {}
 
-#define SELF_ANNOUNCE_ROUNDS 5
+#define SELF_ANNOUNCE_ROUNDS 50
 
 void loadvm_free_handlers(MigrationIncomingState *mis);
 
@@ -963,9 +963,16 @@ void vmstate_register_ram_global(struct MemoryRegion *memory);
 static inline
 int64_t self_announce_delay(int round)
 {
+    int64_t res;
     assert(round < SELF_ANNOUNCE_ROUNDS && round > 0);
     /* delay 50ms, 150ms, 250ms, ... */
-    return 50 + (SELF_ANNOUNCE_ROUNDS - round - 1) * 100;
+    res = 50 + (SELF_ANNOUNCE_ROUNDS - round - 1) * 100;
+
+    /* But with a high number of rounds we don't want the delay to get huge */
+    if (res > 250) {
+        res = 250;
+    }
+    return res;
 }
 
 void dump_vmstate_json_to_file(FILE *out_fp);
