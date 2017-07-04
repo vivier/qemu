@@ -827,6 +827,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jul 04 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-16.el7a
+- kvm-AArch64-Add-pci-testdev.patch [bz#1465048]
+- Resolves: bz#1465048
+  (AArch64: Add pci-testdev)
+
 * Tue Jun 27 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-15.el7a
 - kvm-hw-ppc-spapr-Adjust-firmware-name-for-PCI-bridges.patch [bz#1459170]
 - Resolves: bz#1459170
