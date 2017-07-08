@@ -15,7 +15,7 @@ MARKER:=359c41abe32638adad503e386969fa428cecff52
 
 SPECFILE:=$(NAME).spec
 DIST:=.el7
-BUILD_TARGET:=rhevh-rhel-7.4-candidate
+BUILD_TARGET:=rhel-alt-7.4-candidate
 
 ifeq ($(RHEV),1)
   NAME_SUFFIX:=-rhev
