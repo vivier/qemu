@@ -827,6 +827,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jul 11 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-17.el7a
+- kvm-spapr-Consolidate-HPT-freeing-code-into-a-routine.patch [bz#1456287]
+- kvm-spapr-Add-a-no-HPT-encoding-to-HTAB-migration-stream.patch [bz#1456287]
+- kvm-spapr-Fix-migration-of-Radix-guests.patch [bz#1456287]
+- kvm-qemu-nbd-Ignore-SIGPIPE.patch [bz#1469463]
+- Resolves: bz#1456287
+  ([Pegas1.0 EA2] [qemu-kvm-rhev-2.9] After 'virsh managedsave', domain not starting)
+- Resolves: bz#1469463
+  (CVE-2017-10664 qemu-kvm: Qemu: qemu-nbd: server breaks with SIGPIPE upon client abort [rhel-7.4-Alt])
+
 * Tue Jul 04 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-16.el7a
 - kvm-AArch64-Add-pci-testdev.patch [bz#1465048]
 - Resolves: bz#1465048
