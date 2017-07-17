@@ -827,6 +827,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Jul 17 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.1
+- kvm-virtio-scsi-finalize-IOMMU-support.patch [bz#1471076]
+- kvm-qemu-nbd-Ignore-SIGPIPE.patch [bz#1468108]
+- Resolves: bz#1468108
+  (CVE-2017-10664 qemu-kvm-rhev: Qemu: qemu-nbd: server breaks with SIGPIPE upon client abort [rhel-7.4.z])
+- Resolves: bz#1471076
+  (unbreak virtio-scsi for vIOMMU)
+
 * Tue Jul 04 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-16.el7a
 - kvm-AArch64-Add-pci-testdev.patch [bz#1465048]
 - Resolves: bz#1465048
