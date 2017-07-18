@@ -827,6 +827,20 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jul 18 2017 Miroslav Rezanina <mrezanin@redhat.com> - 
+- kvm-ppc-kvm-have-the-family-CPU-alias-to-point-to-TYPE_H.patch [bz#1460908]
+- kvm-Disable-virtio-pci-for-s390x-builds.patch [bz#1469000]
+- kvm-target-ppc-Implement-ISA-V3.00-radix-page-fault-hand.patch [bz#1470558]
+- kvm-target-ppc-Fix-return-value-in-tcg-radix-mmu-fault-h.patch [bz#1470558]
+- kvm-target-ppc-Refactor-tcg-radix-mmu-code.patch [bz#1470558]
+- kvm-target-ppc-Add-debug-function-for-radix-mmu-translat.patch [bz#1470558]
+- Resolves: bz#1460908
+  (qemu-kvm: POWER9 CPU model not usable on POWER9 machine)
+- Resolves: bz#1469000
+  (Disable virtio-pci devices in qemu-kvm on s390x)
+- Resolves: bz#1470558
+  ([qmp] qemu-kvm process aborted after issuing QMP 'memsave' command on Power9)
+
 * Tue Jul 11 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-17.el7a
 - kvm-spapr-Consolidate-HPT-freeing-code-into-a-routine.patch [bz#1456287]
 - kvm-spapr-Add-a-no-HPT-encoding-to-HTAB-migration-stream.patch [bz#1456287]
