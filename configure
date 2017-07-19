@@ -323,6 +323,7 @@ tcmalloc="no"
 jemalloc="no"
 replication="yes"
 vxhs=""
+vtd="yes"
 
 supported_cpu="no"
 supported_os="no"
@@ -1194,6 +1195,10 @@ for opt do
   ;;
   --enable-vxhs) vxhs="yes"
   ;;
+  --disable-vtd) vtd="no"
+  ;;
+  --enable-vtd) vtd="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1440,6 +1445,7 @@ disabled with --disable-FEATURE, default is enabled if available:
   qom-cast-debug  cast debugging support
   tools           build qemu-io, qemu-nbd and qemu-image tools
   vxhs            Veritas HyperScale vDisk backend support
+  vtd             Emulated VT-d support (only affects x86 targets)
 
 NOTE: The object files are built at the place where configure is launched
 EOF
@@ -5162,6 +5168,7 @@ echo "jemalloc support  $jemalloc"
 echo "avx2 optimization $avx2_opt"
 echo "replication support $replication"
 echo "VxHS block device $vxhs"
+echo "VT-d emulation    $vtd"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -5812,6 +5819,10 @@ fi
 if test "$vxhs" = "yes" ; then
   echo "CONFIG_VXHS=m" >> $config_host_mak
   echo "VXHS_LIBS= -lssl" >> $config_host_mak
+fi
+
+if test "$vtd" = "yes" ; then
+  echo "CONFIG_VTD=y" >> $config_host_mak
 fi
 
 if test "$tcg_interpreter" = "yes"; then
