@@ -11,6 +11,7 @@
 %global have_seccomp 1
 %global have_memlock_limits 0
 %global have_vxhs     0
+%global have_vtd      0
 
 %ifarch s390 s390x
     %global have_seccomp 0
@@ -73,6 +74,7 @@
     %global extra_provides_suffix %{nil}
     %global conflicts_suffix %{rhel_suffix}
     %global obsoletes_version 15:0-0
+    %global have_vtd 1
 %else
     %global pkgsuffix %{nil}
     %global extra_provides_suffix %{rhel_suffix}
@@ -464,6 +466,11 @@ cp %{SOURCE24} build_configure.sh
   disable \
 %endif
 %if 0%{have_vxhs}
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_vtd}
   enable \
 %else
   disable \

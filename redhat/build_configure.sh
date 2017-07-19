@@ -42,6 +42,8 @@ have_tcmalloc=$1
 shift
 have_vxhs=$1
 shift
+have_vtd=$1
+shift
 
 if [ "$have_rbd" == "enable" ]; then
   rbd_driver=rbd,
@@ -141,6 +143,7 @@ fi
     --${have_usbredir}-usb-redir \
     --${have_tcmalloc}-tcmalloc \
     --${have_vxhs}-vxhs \
+    --${have_vtd}-vtd \
     --audio-drv-list= \
     --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,${gluster_driver}${rbd_driver}${vxhs_driver}blkdebug,luks \
     --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
