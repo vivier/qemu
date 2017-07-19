@@ -1,5 +1,12 @@
 include Makefile.common
 
+rh-brew: RHEV=0
+rh-brew: SRPM_NAME=$(NAME)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+rh-brew: BUILD_TARGET=rhel-alt-7.4-candidate
+rh-brew-rhev: RHEV=1
+rh-brew-rhev: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+rh-brew-rhev: BUILD_TARGET=rhevh-rhel-alt-7.4-candidate
+
 REDHAT:=$(shell pwd)
 SCRIPTS:=$(REDHAT)/scripts
 RPMBUILD:=$(REDHAT)/rpmbuild
@@ -60,12 +67,13 @@ rh-prep: rh-clean-sources
 rh-srpm: rh-prep
 	$(DS)rpmbuild --define "_sourcedir $(RPMBUILD)/SOURCES" --define "_builddir $(RPMBUILD)/BUILD" --define "_srcrpmdir $(RPMBUILD)/SRPMS" --define "_rpmdir $(RPMBUILD)/RPMS" --define "_specdir $(RPMBUILD)/SPECS" --define "dist $(DIST)" --nodeps -bs $(RPMBUILD)/SPECS/$(SPECFILE)
 
-rh-brew: rh-srpm
+rh-brew rh-brew-rhev: rh-srpm
 	@echo "Build $(SRPM_NAME)$(LOCALVERSION).src.rpm as $(BUILD_TARGET)"
 	$(DS)brew build $(BREW_OPTIONS) $(BUILD_TARGET) $(RPMBUILD)/SRPMS/$(SRPM_NAME)$(LOCALVERSION).src.rpm
 
 rh-help:
-	@echo "rh-brew: Build package on brew"
+	@echo "rh-brew: Build RHEL package on brew"
+	@echo "rh-brew-rhev: Build RHEV package on brew"
 	@echo "rh-srpm: Prepare srpm package"
 	@echo "rh-prep: Prepare sources and spec file in rpmbuild/"
 	@echo "rh-help: Print this help"
