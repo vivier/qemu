@@ -1793,27 +1793,3 @@ static void rhel740_virt_options(MachineClass *mc)
     SET_MACHINE_COMPAT(mc, ARM_RHEL_COMPAT);
 }
 DEFINE_RHEL_MACHINE_AS_LATEST(7, 4, 0)
-
-#define ARM_COMPAT_RHEL7_3                      \
-    HW_COMPAT_RHEL7_3
-
-static void rhel730_virt_instance_init(Object *obj)
-{
-    rhel740_virt_instance_init(obj);
-}
-
-static void rhel730_virt_options(MachineClass *mc)
-{
-    VirtMachineClass *vmc = VIRT_MACHINE_CLASS(OBJECT_CLASS(mc));
-
-    rhel740_virt_options(mc);
-    SET_MACHINE_COMPAT(mc, ARM_COMPAT_RHEL7_3);
-    /* the following options need to be re-configured because they weren't
-     * present in RHEL 7.3.
-     */
-    vmc->disallow_affinity_adjustment = true;
-    vmc->no_its = true;
-    vmc->no_pmu = true;
-    mc->minimum_page_bits = 0;
-}
-DEFINE_RHEL_MACHINE(7, 3, 0)
