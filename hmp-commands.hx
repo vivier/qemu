@@ -73,6 +73,8 @@ but should be used with extreme caution.  Note that this command only
 resizes image files, it can not resize block devices like LVM volumes.
 ETEXI
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
+
     {
         .name       = "block_stream",
         .args_type  = "device:B,speed:o?,base:s?",
@@ -158,6 +160,8 @@ STEXI
 @findex block_job_resume
 Resume a paused block streaming operation.
 ETEXI
+
+#endif /* CONFIG_LIVE_BLOCK_OPS */
 
     {
         .name       = "eject",
@@ -1167,6 +1171,8 @@ STEXI
 Save guest storage keys to a file.
 ETEXI
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
+
     {
         .name       = "snapshot_blkdev",
         .args_type  = "reuse:-n,device:B,snapshot-file:s?,format:s?",
@@ -1187,6 +1193,8 @@ STEXI
 @findex snapshot_blkdev
 Snapshot device, using snapshot file as target if provided
 ETEXI
+
+#endif /* CONFIG_LIVE_BLOCK_OPS */
 
     {
         .name       = "snapshot_blkdev_internal",
@@ -1221,6 +1229,8 @@ STEXI
 @findex snapshot_delete_blkdev_internal
 Delete an internal snapshot on device if it support
 ETEXI
+
+#ifdef CONFIG_LIVE_BLOCK_OPS
 
     {
         .name       = "drive_mirror",
@@ -1264,6 +1274,8 @@ STEXI
 @findex drive_backup
 Start a point-in-time copy of a block device to a specificed target.
 ETEXI
+
+#endif /* CONFIG_LIVE_BLOCK_OPS */
 
     {
         .name       = "drive_add",
