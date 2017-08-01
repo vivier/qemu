@@ -851,6 +851,37 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 01 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-19.el7a
+- kvm-AArch64-remove-mach-virt-7.3-machine-type.patch [bz#1473548]
+- kvm-nbd-strict-nbd_wr_syncv.patch [bz#1473638]
+- kvm-nbd-read_sync-and-friends-return-0-on-success.patch [bz#1473638]
+- kvm-nbd-make-nbd_drop-public.patch [bz#1473638]
+- kvm-nbd-server-get-rid-of-nbd_negotiate_read-and-friends.patch [bz#1473638]
+- kvm-spapr-htab-fix-savevm.patch [bz#1470035]
+- kvm-migration-rdma-Fix-race-on-source.patch [bz#1475751]
+- kvm-migration-rdma-fix-qemu_rdma_block_for_wrid-error-pa.patch [bz#1475751]
+- kvm-migration-rdma-Allow-cancelling-while-waiting-for-wr.patch [bz#1475751]
+- kvm-migration-rdma-Safely-convert-control-types.patch [bz#1475751]
+- kvm-migration-rdma-Send-error-during-cancelling.patch [bz#1475751]
+- kvm-configure-allow-to-disable-VT-d-emulation.patch [bz#1465450]
+- kvm-Disable-VT-d-for-rhel-builds.patch [bz#1465450]
+- kvm-RHEL-Diff.-Add-option-in-configure-to-disable-live-b.patch [bz#1418532]
+- kvm-RHEL-Diff.-Unregister-live-block-operations.patch [bz#1418532]
+- kvm-RHEL-Diff.-Disable-live-block-operations-in-HMP-moni.patch [bz#1418532]
+- kvm-RHEL-Diff.-Add-rpm-spec-options-for-live-block-ops.patch [bz#1418532]
+- Resolves: bz#1418532
+  ([Pegas 1.0] qemu-kvm differentiation patches for Power9 - block)
+- Resolves: bz#1465450
+  ([Pegas 1.0] qemu-kvm differentiation - vIOMMU)
+- Resolves: bz#1470035
+  ([qmp] Load internal snapshot failed on Power9)
+- Resolves: bz#1473548
+  (AArch64: remove 7.3 machine type)
+- Resolves: bz#1473638
+  (CVE-2017-7539 qemu-kvm-rhev: Qemu: qemu-nbd crashes due to undefined I/O coroutine [rhel-alt-7.4])
+- Resolves: bz#1475751
+  (migration/RDMA: backport fixes)
+
 * Tue Jul 18 2017 Miroslav Rezanina <mrezanin@redhat.com> - 
 - kvm-ppc-kvm-have-the-family-CPU-alias-to-point-to-TYPE_H.patch [bz#1460908]
 - kvm-Disable-virtio-pci-for-s390x-builds.patch [bz#1469000]
