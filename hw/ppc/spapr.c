@@ -3349,6 +3349,7 @@ DEFINE_SPAPR_MACHINE(2_8, "2.8", false);
     },
 #endif
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void phb_placement_2_7(sPAPRMachineState *spapr, uint32_t index,
                               uint64_t *buid, hwaddr *pio,
                               hwaddr *mmio32, hwaddr *mmio64,
@@ -3398,7 +3399,6 @@ static void phb_placement_2_7(sPAPRMachineState *spapr, uint32_t index,
      */
 }
 
-#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void spapr_machine_2_7_instance_options(MachineState *machine)
 {
     sPAPRMachineState *spapr = SPAPR_MACHINE(machine);
@@ -3565,18 +3565,37 @@ DEFINE_SPAPR_MACHINE(2_1, "2.1", false);
 #endif
 
 /*
- * pseries-rhel7.4.0
+ * pseries-rhel7.4.0alt
  */
-static void spapr_machine_rhel740_instance_options(MachineState *machine)
+static void spapr_machine_rhel740alt_instance_options(MachineState *machine)
 {
 }
 
-static void spapr_machine_rhel740_class_options(MachineClass *mc)
+static void spapr_machine_rhel740alt_class_options(MachineClass *mc)
 {
     /* Defaults for the latest behaviour inherited from the base class */
 }
 
-DEFINE_SPAPR_MACHINE(rhel740, "rhel7.4.0", true);
+DEFINE_SPAPR_MACHINE(rhel740alt, "rhel7.4.0alt", true);
+
+
+/*
+ * pseries-rhel7.4.0
+ */
+
+#if 0 /* Disabled in Red Hat Enterprise Linux */
+static void spapr_machine_rhel740_instance_options(MachineState *machine)
+{
+    spapr_machine_rhel740alt_instance_options(machine);
+}
+
+static void spapr_machine_rhel740_class_options(MachineClass *mc)
+{
+    spapr_machine_rhel740alt_class_options(mc);
+}
+
+DEFINE_SPAPR_MACHINE(rhel740, "rhel7.4.0", false);
+#endif
 
 /*
  * pseries-rhel7.3.0
@@ -3610,6 +3629,7 @@ DEFINE_SPAPR_MACHINE(rhel740, "rhel7.4.0", true);
         .value    = "off",                          \
     },
 
+#if 0 /* Disabled in Red Hat Enterprise Linux */
 static void spapr_machine_rhel730_instance_options(MachineState *machine)
 {
     sPAPRMachineState *spapr = SPAPR_MACHINE(machine);
@@ -3629,6 +3649,7 @@ static void spapr_machine_rhel730_class_options(MachineClass *mc)
 }
 
 DEFINE_SPAPR_MACHINE(rhel730, "rhel7.3.0", false);
+#endif
 
 /*
  * pseries-rhel7.2.0
@@ -3650,6 +3671,7 @@ DEFINE_SPAPR_MACHINE(rhel730, "rhel7.3.0", false);
     },
 
 
+#if 0 /* Disabled in Red Hat Enterprise Linux */
 static void spapr_machine_rhel720_instance_options(MachineState *machine)
 {
     spapr_machine_rhel730_instance_options(machine);
@@ -3668,6 +3690,7 @@ static void spapr_machine_rhel720_class_options(MachineClass *mc)
 }
 
 DEFINE_SPAPR_MACHINE(rhel720, "rhel7.2.0", false);
+#endif
 
 static void spapr_machine_register_types(void)
 {
