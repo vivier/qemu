@@ -13,6 +13,7 @@
 %global have_vxhs     0
 %global have_vtd      0
 %global have_live_block_ops 1
+%global have_vhost_user 1
 
 %ifarch s390 s390x
     %global have_seccomp 0
@@ -81,6 +82,7 @@
     %global extra_provides_suffix %{rhel_suffix}
     %global conflicts_suffix %{rhev_suffix}
     %global have_live_block_ops 0
+    %global have_vhost_user 0
 %endif
 
 # Macro to properly setup RHEL/RHEV conflict handling
@@ -478,6 +480,11 @@ cp %{SOURCE24} build_configure.sh
   disable \
 %endif
 %if 0%{have_live_block_ops}
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_vhost_user}
   enable \
 %else
   disable \

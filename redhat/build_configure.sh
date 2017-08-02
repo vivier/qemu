@@ -46,6 +46,8 @@ have_vtd=$1
 shift
 have_live_block_ops=$1
 shift
+have_vhost_user=$1
+shift
 
 if [ "$have_rbd" == "enable" ]; then
   rbd_driver=rbd,
@@ -147,6 +149,7 @@ fi
     --${have_vxhs}-vxhs \
     --${have_vtd}-vtd \
     --${have_live_block_ops}-live-block-ops \
+    --${have_vhost_user}-vhost-user \
     --audio-drv-list= \
     --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,${gluster_driver}${rbd_driver}${vxhs_driver}blkdebug,luks \
     --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
