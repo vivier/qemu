@@ -502,9 +502,11 @@ static int peer_attach(VirtIONet *n, int index)
         return 0;
     }
 
+#ifdef CONFIG_VHOST_USER
     if (nc->peer->info->type == NET_CLIENT_DRIVER_VHOST_USER) {
         vhost_set_vring_enable(nc->peer, 1);
     }
+#endif
 
     if (nc->peer->info->type != NET_CLIENT_DRIVER_TAP) {
         return 0;
@@ -525,9 +527,11 @@ static int peer_detach(VirtIONet *n, int index)
         return 0;
     }
 
+#ifdef CONFIG_VHOST_USER
     if (nc->peer->info->type == NET_CLIENT_DRIVER_VHOST_USER) {
         vhost_set_vring_enable(nc->peer, 0);
     }
+#endif
 
     if (nc->peer->info->type !=  NET_CLIENT_DRIVER_TAP) {
         return 0;

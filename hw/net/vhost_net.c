@@ -95,9 +95,11 @@ static const int *vhost_net_get_feature_bits(struct vhost_net *net)
     case NET_CLIENT_DRIVER_TAP:
         feature_bits = kernel_feature_bits;
         break;
+#ifdef CONFIG_VHOST_USER
     case NET_CLIENT_DRIVER_VHOST_USER:
         feature_bits = user_feature_bits;
         break;
+#endif
     default:
         error_report("Feature bits not defined for this type: %d",
                 net->nc->info->type);
@@ -193,6 +195,7 @@ struct vhost_net *vhost_net_init(VhostNetOptions *options)
         }
     }
 
+#ifdef CONFIG_VHOST_USER
     /* Set sane init value. Override when guest acks. */
     if (net->nc->info->type == NET_CLIENT_DRIVER_VHOST_USER) {
         features = vhost_user_get_acked_features(net->nc);
@@ -203,7 +206,7 @@ struct vhost_net *vhost_net_init(VhostNetOptions *options)
             goto fail;
         }
     }
-
+#endif
     vhost_net_ack_features(net, features);
 
     return net;
@@ -309,6 +312,7 @@ int vhost_net_start(VirtIODevice *dev, NetClientState *ncs,
         net = get_vhost_net(ncs[i].peer);
         vhost_net_set_vq_index(net, i * 2);
 
+#ifdef CONFIG_VHOST_USER
         /* Suppress the masking guest notifiers on vhost user
          * because vhost user doesn't interrupt masking/unmasking
          * properly.
@@ -316,8 +320,8 @@ int vhost_net_start(VirtIODevice *dev, NetClientState *ncs,
         if (net->nc->info->type == NET_CLIENT_DRIVER_VHOST_USER) {
             dev->use_guest_notifier_mask = false;
         }
+#endif
      }
-
     r = k->set_guest_notifiers(qbus->parent, total_queues * 2, true);
     if (r < 0) {
         error_report("Error binding guest notifier: %d", -r);
@@ -414,10 +418,12 @@ VHostNetState *get_vhost_net(NetClientState *nc)
     case NET_CLIENT_DRIVER_TAP:
         vhost_net = tap_get_vhost_net(nc);
         break;
+#ifdef CONFIG_VHOST_USER
     case NET_CLIENT_DRIVER_VHOST_USER:
         vhost_net = vhost_user_get_vhost_net(nc);
         assert(vhost_net);
         break;
+#endif
     default:
         break;
     }
