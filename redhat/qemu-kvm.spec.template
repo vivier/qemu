@@ -858,6 +858,18 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - 
+- kvm-Downstream-Update-pseries-machine-types-for-RHEL-ALT.patch [bz#1473518]
+- kvm-cpu-don-t-allow-negative-core-id.patch [bz#1476181]
+- kvm-pegas-add-disable-vhost-user.patch [bz#1455269]
+- kvm-pegas-add-rpm-spec-options-for-vhost-user.patch [bz#1455269]
+- Resolves: bz#1455269
+  ([Pegas 1.0] qemu-kvm differentiation patches for Power9 - vhost-user)
+- Resolves: bz#1473518
+  (Need to remove (or not?) pseries-rhel7.2.0, pseries-rhel7.3.0 machine types for RHEL-ALT qemu-kvm)
+- Resolves: bz#1476181
+  (qemu core dumped  after hotplug one cpu core with a negative core id)
+
 * Tue Aug 01 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-19.el7a
 - kvm-AArch64-remove-mach-virt-7.3-machine-type.patch [bz#1473548]
 - kvm-nbd-strict-nbd_wr_syncv.patch [bz#1473638]
