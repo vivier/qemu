@@ -858,7 +858,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
-* Tue Aug 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - 
+* Tue Aug 15 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-21.el7a
+- kvm-target-ppc-Implement-TIDR.patch [bz#1478822]
+- kvm-target-ppc-Add-stub-implementation-of-the-PSSCR.patch [bz#1478822]
+- kvm-target-ppc-Fix-size-of-struct-PPCElfPrstatus.patch [bz#1480418]
+- Resolves: bz#1478822
+  (The KVM guest SPRs TIDR (144) and PSSCR (823) are  currently not migrated right on POWER9)
+- Resolves: bz#1480418
+  ([guest memory dump] Dump guest's memory to file and GDB fails to process the core file)
+
+* Tue Aug 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-20.el7a
 - kvm-Downstream-Update-pseries-machine-types-for-RHEL-ALT.patch [bz#1473518]
 - kvm-cpu-don-t-allow-negative-core-id.patch [bz#1476181]
 - kvm-pegas-add-disable-vhost-user.patch [bz#1455269]
@@ -901,7 +910,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 - Resolves: bz#1475751
   (migration/RDMA: backport fixes)
 
-* Tue Jul 18 2017 Miroslav Rezanina <mrezanin@redhat.com> - 
+* Tue Jul 18 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-18.el7a
 - kvm-ppc-kvm-have-the-family-CPU-alias-to-point-to-TYPE_H.patch [bz#1460908]
 - kvm-Disable-virtio-pci-for-s390x-builds.patch [bz#1469000]
 - kvm-target-ppc-Implement-ISA-V3.00-radix-page-fault-hand.patch [bz#1470558]
