@@ -827,6 +827,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 15 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.4
+- kvm-nbd-strict-nbd_wr_syncv.patch [bz#1467509]
+- kvm-nbd-read_sync-and-friends-return-0-on-success.patch [bz#1467509]
+- kvm-nbd-make-nbd_drop-public.patch [bz#1467509]
+- kvm-nbd-server-get-rid-of-nbd_negotiate_read-and-friends.patch [bz#1467509]
+- Resolves: bz#1467509
+  (CVE-2017-7539 Qemu quit abnormally when connecting to built-in NBD server [rhel-7.4.z])
+
 * Thu Jul 20 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7.3
 - kvm-block-Skip-implicit-nodes-in-query-block-blockstats.patch [bz#1473145]
 - Resolves: bz#1473145
