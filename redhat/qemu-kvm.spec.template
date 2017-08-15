@@ -824,6 +824,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 15 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.14
+- kvm-virtio-net-enable-configurable-tx-queue-size.patch [bz#1471665]
+- kvm-virtio-net-fix-tx-queue-size-for-vhost-user.patch [bz#1471665]
+- Resolves: bz#1471665
+  (virtio-net: enable configurable tx queue size)
+
 * Sun Jul 02 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.13
 - kvm-Experimental-increase-to-self-announce-process.patch [bz#1465893]
 - Resolves: bz#1465893
