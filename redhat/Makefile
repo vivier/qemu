@@ -1,7 +1,8 @@
 include Makefile.common
+include Makefile.local
 
-rh-brew: RHEV=0
-rh-brew: SRPM_NAME=$(NAME)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+rh-brew rh-local: RHEV=0
+rh-brew rh-local: SRPM_NAME=$(NAME)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
 rh-brew: BUILD_TARGET=rhel-alt-7.4-candidate
 rh-brew-rhev: RHEV=1
 rh-brew-rhev: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
@@ -71,10 +72,18 @@ rh-brew rh-brew-rhev: rh-srpm
 	@echo "Build $(SRPM_NAME)$(LOCALVERSION).src.rpm as $(BUILD_TARGET)"
 	$(DS)brew build $(BREW_OPTIONS) $(BUILD_TARGET) $(RPMBUILD)/SRPMS/$(SRPM_NAME)$(LOCALVERSION).src.rpm
 
+rh-env-prep: rh-prep
+	$(DS)yum-builddep $(RPMBUILD)/SPECS/$(SPECFILE)
+	$(DS)cd ..; redhat/build_configure.sh /usr /usr/lib64 /etc /var /usr/libexec $(NAME) $(TARGET_NAME) $(SRPM_NAME) "$(COMPILE_OPTIONS)" $(FDT_OPTION) $(GLUSTER_OPTION) $(GUEST_AGENT_OPTION) $(NUMA_OPTION) $(RBD_OPTION) $(RDMA_OPTION) $(SECCOMP_OPTION) $(SPICE_OPTION) $(USBREDIR_OPTION) $(TMALLOC_OPTION) --target-list=$(TARGET_NAME)-softmmu
+
+rh-local: rh-env-prep
+	make V=1 -j8 -C $(REDHAT)/..  VL_LDFLAGS=-Wl,--build-id
+
 rh-help:
 	@echo "rh-brew: Build RHEL package on brew"
 	@echo "rh-brew-rhev: Build RHEV package on brew"
 	@echo "rh-srpm: Prepare srpm package"
 	@echo "rh-prep: Prepare sources and spec file in rpmbuild/"
 	@echo "rh-help: Print this help"
-
+	@echo "rh-env-prep: Install rpms required for redhat build and run configure"
+	@echo "rh-local: Run local (non-rpm) build. Runs rh-env-prep on each call"
