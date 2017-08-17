@@ -121,6 +121,7 @@ struct VirtIODevice
     bool vm_running;
     VMChangeStateEntry *vmstate;
     char *bus_name;
+    bool rhel6_ctrl_guest_workaround;
 };
 
 typedef struct VirtioDeviceClass {

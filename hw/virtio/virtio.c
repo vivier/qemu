@@ -18,6 +18,7 @@
 #include "hw/virtio/virtio.h"
 #include "qemu/atomic.h"
 #include "hw/virtio/virtio-bus.h"
+#include "include/hw/virtio/virtio-net.h"
 
 /* The alignment to use between consumer and producer parts of vring.
  * x86 pagesize again. */
@@ -888,8 +889,24 @@ int virtio_set_features(VirtIODevice *vdev, uint32_t val)
     VirtioBusClass *vbusk = VIRTIO_BUS_GET_CLASS(qbus);
     VirtioDeviceClass *k = VIRTIO_DEVICE_GET_CLASS(vdev);
     uint32_t supported_features = vbusk->get_features(qbus->parent);
-    bool bad = (val & ~supported_features) != 0;
+    bool bad;
+    uint64_t ctrl_guest_mask = 1ull << VIRTIO_NET_F_CTRL_GUEST_OFFLOADS;
 
+    if (vdev->rhel6_ctrl_guest_workaround && (val & ctrl_guest_mask) &&
+          !(supported_features & ctrl_guest_mask)) {
+        /*
+         * This works around a mistake in the definition of the rhel6.[56].0
+         * machinetypes, ctrl-guest-offload was not set in qemu-kvm for
+         * those machine types, but is set on the rhel6 qemu-kvm-rhev build.
+         * If an incoming rhel6 guest uses it then we need to allow it.
+         * Note: There's a small race where a guest read the flag but didn't
+         * declare it's useage yet.
+         */
+        fprintf(stderr, "RHEL6 ctrl_guest_offload workaround\n");
+        supported_features |= ctrl_guest_mask;
+    }
+
+    bad = (val & ~supported_features) != 0;
     val &= supported_features;
     if (k->set_features) {
         k->set_features(vdev, val);
@@ -1223,6 +1240,12 @@ static int virtio_device_exit(DeviceState *qdev)
     return 0;
 }
 
+static Property virtio_properties[] = {
+    DEFINE_PROP_BOOL("__com.redhat_rhel6_ctrl_guest_workaround", VirtIODevice,
+                     rhel6_ctrl_guest_workaround, false),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
 static void virtio_device_class_init(ObjectClass *klass, void *data)
 {
     /* Set the default value here. */
@@ -1230,6 +1253,7 @@ static void virtio_device_class_init(ObjectClass *klass, void *data)
     dc->init = virtio_device_init;
     dc->exit = virtio_device_exit;
     dc->bus_type = TYPE_VIRTIO_BUS;
+    dc->props = virtio_properties;
 }
 
 static const TypeInfo virtio_device_info = {
