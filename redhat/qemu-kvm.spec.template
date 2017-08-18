@@ -88,12 +88,12 @@ Group: Development/Tools
 URL: http://www.qemu.org/
 ExclusiveArch: x86_64 %{power64} aarch64 s390x
 %ifarch %{ix86} x86_64
-Requires: seabios-bin >= 1.10.2-1
+Requires: seabios-bin >= 1.10.2-3.el7_4.1
 Requires: sgabios-bin
 %endif
 %ifnarch aarch64 s390x
-Requires: seavgabios-bin >= 1.10.2-1
-Requires: ipxe-roms-qemu >= 20170123-1
+Requires: seavgabios-bin >= 1.10.2-3.el7_4.1
+Requires: ipxe-roms-qemu >= 20170123-1.git4e85b27.el7_4.1
 %endif
 %ifarch %{power64}
 Requires: SLOF >= %{SLOF_gittagdate}-1.git%{SLOF_gittagcommit}
