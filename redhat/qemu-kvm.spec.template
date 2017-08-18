@@ -860,6 +860,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Aug 18 2017 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 1.5.3-105.el7_2.15
+- kvm-virtio-net-dynamic-network-offloads-configuration.patch [bz#1482466]
+- kvm-Workaround-rhel6-ctrl_guest_offloads-machine-type-mi.patch [bz#1482466]
+- Resolves: bz#1482466
+  (KVM: windows guest migration from EL6 to EL7 fails.)
+
 * Wed Jun 07 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.14
 - kvm-spice-fix-spice_chr_add_watch-pre-condition.patch [bz#1452331]
 - Resolves: bz#1452331
