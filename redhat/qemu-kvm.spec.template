@@ -14,6 +14,7 @@
 %global have_vtd      0
 %global have_live_block_ops 1
 %global have_vhost_user 1
+%global have_pgste    0
 
 %ifarch s390 s390x
     %global have_seccomp 0
@@ -49,6 +50,7 @@
 %endif
 %ifarch s390x s390
     %global kvm_target    s390x
+    %global have_pgste   1
 %endif
 %ifarch ppc
     %global kvm_target    ppc
@@ -176,6 +178,7 @@ Source30: pc-slit.cphp
 Source31: pc-slit.memhp
 Source32: q35-slit.cphp
 Source33: q35-slit.memhp
+Source34: 50-kvm-pgste.conf
 
 
 %%PATCHLIST%%
@@ -680,6 +683,10 @@ rom_link() {
     install -D -p -m 644 %{SOURCE28} $RPM_BUILD_ROOT%{_sysconfdir}/security/limits.d/95-kvm-memlock.conf
 %endif
 
+%if 0%{have_pgste}
+    install -D -p -m 644 %{SOURCE34} $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/50-kvm-pgste.conf
+%endif
+
 # Install rules to use the bridge helper with libvirt's virbr0
 install -D -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{pkgname}/bridge.conf
 
@@ -706,6 +713,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     if systemctl is-enabled kvm-setup.service > /dev/null; then
         systemctl start kvm-setup.service
     fi
+%endif
+
+# enable pgste now, so no reboot is needed.
+%if 0%{have_pgste}
+    %sysctl_apply 50-kvm-pgste.conf
 %endif
 
 %post -n qemu-kvm-common%{?pkgsuffix}
@@ -823,6 +835,9 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 %if 0%{have_memlock_limits}
     %{_sysconfdir}/security/limits.d/95-kvm-memlock.conf
+%endif
+%if 0%{have_pgste}
+    %{_sysconfdir}/sysctl.d/50-kvm-pgste.conf
 %endif
 
 %files -n qemu-kvm-tools%{?pkgsuffix}
