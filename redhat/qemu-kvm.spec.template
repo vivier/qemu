@@ -817,6 +817,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Aug 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.11
+- kvm-virtio-net-dynamic-network-offloads-configuration.patch [bz#1482467]
+- kvm-Workaround-rhel6-ctrl_guest_offloads-machine-type-mi.patch [bz#1482467]
+- Resolves: bz#1482467
+  (KVM: windows guest migration from EL6 to EL7 fails. [rhel-7.3.z])
+
 * Fri Jun 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.10
 - kvm-nbd-Fully-initialize-client-in-case-of-failed-negoti.patch [bz#1460179]
 - kvm-nbd-Fix-regression-on-resiliency-to-port-scan.patch [bz#1460179]
