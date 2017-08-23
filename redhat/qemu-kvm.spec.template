@@ -827,6 +827,18 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Aug 23 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.5
+- kvm-trace-use-static-event-ID-mapping-in-simpletrace.stp.patch [bz#1482515]
+- kvm-simpletrace-fix-flight-recorder-no-header-option.patch [bz#1482515]
+- kvm-exec-abstract-address_space_do_translate.patch [bz#1482856]
+- kvm-redhat-requires-for-the-ipxe-seabios-that-supports-I.patch [bz#1482851]
+- Resolves: bz#1482515
+  ([Tracing] capturing trace data failed [rhel-7.4.z])
+- Resolves: bz#1482851
+  (Requires for the seabios version that support vIOMMU of virtio [rhel-7.4.z])
+- Resolves: bz#1482856
+  (Unable to start vhost if iommu_platform=on but intel_iommu=on not specified in guest [rhel-7.4.z])
+
 * Tue Aug 15 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.4
 - kvm-nbd-strict-nbd_wr_syncv.patch [bz#1467509]
 - kvm-nbd-read_sync-and-friends-return-0-on-success.patch [bz#1467509]
