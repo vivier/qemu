@@ -873,6 +873,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 29 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-22.el7a
+- kvm-qemu-kvm.spec-Configure-vm.allocate_pgste-for-s390x.patch [bz#1454281]
+- Resolves: bz#1454281
+  (Enable vm.allocate_pgste sysctl before running qemu-kvm on s390x)
+
 * Tue Aug 15 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-21.el7a
 - kvm-target-ppc-Implement-TIDR.patch [bz#1478822]
 - kvm-target-ppc-Add-stub-implementation-of-the-PSSCR.patch [bz#1478822]
