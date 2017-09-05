@@ -827,6 +827,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 05 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.6
+- kvm-ps2-fix-sending-of-PAUSE-BREAK-scancodes.patch [bz#1482389]
+- kvm-ui-correctly-detect-spice-PAUSE-scancode-sequence.patch [bz#1482389]
+- kvm-vhost-ensure-vhost_ops-are-set-before-calling-iotlb-.patch [bz#1480446]
+- kvm-vhost-user-unregister-slave-req-handler-at-cleanup-t.patch [bz#1480446]
+- Resolves: bz#1480446
+  (vhost-user/iommu: crash when backend disconnects [rhel-7.4.z])
+- Resolves: bz#1482389
+  (Unable to send PAUSE/BREAK to guests in VNC or SPICE [rhel-7.4.z])
+
 * Wed Aug 23 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.5
 - kvm-trace-use-static-event-ID-mapping-in-simpletrace.stp.patch [bz#1482515]
 - kvm-simpletrace-fix-flight-recorder-no-header-option.patch [bz#1482515]
