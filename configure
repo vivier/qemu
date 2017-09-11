@@ -400,11 +400,13 @@ virglrenderer=""
 tpm="yes"
 libssh2=""
 live_block_migration="yes"
+live_block_ops="yes"
 numa=""
 tcmalloc="no"
 jemalloc="no"
 replication="yes"
 vxhs=""
+vtd="yes"
 
 supported_cpu="no"
 supported_os="no"
@@ -1279,6 +1281,10 @@ for opt do
   ;;
   --enable-replication) replication="yes"
   ;;
+  --disable-live-block-ops) live_block_ops="no"
+  ;;
+  --enable-live-block-ops) live_block_ops="yes"
+  ;;
   --disable-vxhs) vxhs="no"
   ;;
   --enable-vxhs) vxhs="yes"
@@ -1290,6 +1296,10 @@ for opt do
       if test "$mingw32" = "yes"; then
           error_exit "vhost-user isn't available on win32"
       fi
+  ;;
+  --disable-vtd) vtd="no"
+  ;;
+  --enable-vtd) vtd="yes"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -1523,6 +1533,8 @@ disabled with --disable-FEATURE, default is enabled if available:
   glusterfs       GlusterFS backend
   tpm             TPM support
   libssh2         ssh block device support
+  live-block-migration live block migration support
+  live-block-ops  live block operations support
   numa            libnuma support
   tcmalloc        tcmalloc support
   jemalloc        jemalloc support
@@ -1534,6 +1546,7 @@ disabled with --disable-FEATURE, default is enabled if available:
   qom-cast-debug  cast debugging support
   tools           build qemu-io, qemu-nbd and qemu-image tools
   vxhs            Veritas HyperScale vDisk backend support
+  vtd             Emulated VT-d support (only affects x86 targets)
   crypto-afalg    Linux AF_ALG crypto backend driver
   vhost-user      vhost-user support
 
@@ -3217,7 +3230,7 @@ else
     glib_req_ver=2.22
 fi
 glib_modules=gthread-2.0
-if test "$modules" = yes; then
+if test "$modules" = yes -o "$vxhs" = yes; then
     glib_modules="$glib_modules gmodule-2.0"
 fi
 
@@ -4940,33 +4953,6 @@ if compile_prog "" "" ; then
 fi
 
 ##########################################
-# Veritas HyperScale block driver VxHS
-# Check if libvxhs is installed
-
-if test "$vxhs" != "no" ; then
-  cat > $TMPC <<EOF
-#include <stdint.h>
-#include <qnio/qnio_api.h>
-
-void *vxhs_callback;
-
-int main(void) {
-    iio_init(QNIO_VERSION, vxhs_callback);
-    return 0;
-}
-EOF
-  vxhs_libs="-lvxhs -lssl"
-  if compile_prog "" "$vxhs_libs" ; then
-    vxhs=yes
-  else
-    if test "$vxhs" = "yes" ; then
-      feature_not_found "vxhs block device" "Install libvxhs See github"
-    fi
-    vxhs=no
-  fi
-fi
-
-##########################################
 # check for _Static_assert()
 
 have_static_assert=no
@@ -5398,6 +5384,7 @@ echo "libssh2 support   $libssh2"
 echo "TPM passthrough   $tpm_passthrough"
 echo "QOM debugging     $qom_cast_debug"
 echo "Live block migration $live_block_migration"
+echo "Live block ops    $live_block_ops"
 echo "lzo support       $lzo"
 echo "snappy support    $snappy"
 echo "bzip2 support     $bzip2"
@@ -5407,6 +5394,7 @@ echo "jemalloc support  $jemalloc"
 echo "avx2 optimization $avx2_opt"
 echo "replication support $replication"
 echo "VxHS block device $vxhs"
+echo "VT-d emulation    $vtd"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -5976,6 +5964,10 @@ if test "$live_block_migration" = "yes" ; then
   echo "CONFIG_LIVE_BLOCK_MIGRATION=y" >> $config_host_mak
 fi
 
+if test "$live_block_ops" = "yes" ; then
+  echo "CONFIG_LIVE_BLOCK_OPS=y" >> $config_host_mak
+fi
+
 # USB host support
 if test "$libusb" = "yes"; then
   echo "HOST_USB=libusb legacy" >> $config_host_mak
@@ -6071,8 +6063,12 @@ if test "$pthread_setname_np" = "yes" ; then
 fi
 
 if test "$vxhs" = "yes" ; then
-  echo "CONFIG_VXHS=y" >> $config_host_mak
-  echo "VXHS_LIBS=$vxhs_libs" >> $config_host_mak
+  echo "CONFIG_VXHS=m" >> $config_host_mak
+  echo "VXHS_LIBS= -lssl" >> $config_host_mak
+fi
+
+if test "$vtd" = "yes" ; then
+  echo "CONFIG_VTD=y" >> $config_host_mak
 fi
 
 if test "$tcg_interpreter" = "yes"; then
