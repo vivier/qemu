@@ -942,6 +942,8 @@ void hmp_info_pci(Monitor *mon, const QDict *qdict)
     qapi_free_PciInfoList(info_list);
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
+
 void hmp_info_block_jobs(Monitor *mon, const QDict *qdict)
 {
     BlockJobInfoList *list;
@@ -979,6 +981,8 @@ void hmp_info_block_jobs(Monitor *mon, const QDict *qdict)
 
     qapi_free_BlockJobInfoList(list);
 }
+
+#endif /* CONFIG_LIVE_BLOCK_OPS */
 
 void hmp_info_tpm(Monitor *mon, const QDict *qdict)
 {
@@ -1191,6 +1195,8 @@ void hmp_block_resize(Monitor *mon, const QDict *qdict)
     hmp_handle_error(mon, &err);
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
+
 void hmp_drive_mirror(Monitor *mon, const QDict *qdict)
 {
     const char *filename = qdict_get_str(qdict, "target");
@@ -1273,6 +1279,8 @@ void hmp_snapshot_blkdev(Monitor *mon, const QDict *qdict)
                                true, mode, &err);
     hmp_handle_error(mon, &err);
 }
+
+#endif /* CONFIG_LIVE_BLOCK_OPS */
 
 void hmp_snapshot_blkdev_internal(Monitor *mon, const QDict *qdict)
 {
@@ -1789,6 +1797,8 @@ void hmp_block_set_io_throttle(Monitor *mon, const QDict *qdict)
     hmp_handle_error(mon, &err);
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
+
 void hmp_block_stream(Monitor *mon, const QDict *qdict)
 {
     Error *error = NULL;
@@ -1854,6 +1864,8 @@ void hmp_block_job_complete(Monitor *mon, const QDict *qdict)
 
     hmp_handle_error(mon, &error);
 }
+
+#endif /* CONFIG_LIVE_BLOCK_OPS */
 
 typedef struct HMPMigrationStatus
 {

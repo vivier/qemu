@@ -1,0 +1,57 @@
+UNAME:=qemu
+NAME:=qemu-kvm
+VERSION:=2.12.0
+DATE:=
+COMMIT:=
+RELEASE:=0
+ZRELEASE:=
+RELEASE_SEPARATOR:=-
+
+TARFILE:=qemu-$(VERSION).tar.xz
+TARURL:=http://download.qemu-project.org/$(TARFILE)
+#TARURL:=http://batcave.lab.eng.brq.redhat.com/www/qemu-2.12.0/rc4/$(TARFILE)
+TARSHA256:=e69301f361ff65bf5dabd8a19196aeaa5613c1b5ae1678f0823bdf50e7d5c6fc
+MARKER:=4743c23509a51bd4ee85cc272287a41917d1be35
+
+SPECFILE:=$(NAME).spec
+DIST:=.el7
+
+ifneq ($(VERSION),)
+  BUILD_DIR=$(UNAME)-$(VERSION)
+else
+  BUILD_DIR=$(UNAME)-$(GITCOMMIT)
+endif
+
+SOURCES_FILELIST:=                     \
+       ksmtuned.conf                   \
+       ksmtuned                        \
+       ksm.sysconfig                   \
+       80-kvm.rules                    \
+       kvm.modules                     \
+       99-qemu-guest-agent.rules       \
+       qemu-guest-agent.service        \
+       ksmtuned.service                \
+       ksmctl.c                        \
+       ksm.service                     \
+       qemu-ga.sysconfig               \
+       rhel6-virtio.rom                \
+       rhel6-pcnet.rom                 \
+       rhel6-rtl8139.rom               \
+       rhel6-ne2k_pci.rom              \
+       bios-256k.bin                   \
+       README.rhel6-gpxe-source        \
+       kvm-setup                       \
+       kvm-setup.service               \
+       85-kvm.preset                   \
+       build_configure.sh              \
+       kvm-unit-tests.git-4ea7633.tar.bz2 \
+       vhost.conf                      \
+       bridge.conf                     \
+       kvm.conf                        \
+       kvm-x86.conf                    \
+       kvm-s390x.conf                  \
+       95-kvm-memlock.conf             \
+       rhel6-e1000.rom                 \
+       pxe-e1000e.rom                  \
+       qemu-pr-helper.service          \
+       qemu-pr-helper.socket

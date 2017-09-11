@@ -238,6 +238,9 @@ static int query_error_class(const char *cmd)
         { "query-balloon", ERROR_CLASS_DEVICE_NOT_ACTIVE },
         { "query-hotpluggable-cpus", ERROR_CLASS_GENERIC_ERROR },
         { "query-vm-generation-id", ERROR_CLASS_GENERIC_ERROR },
+#ifndef CONFIG_RHV
+        { "query-block-jobs", ERROR_CLASS_COMMAND_NOT_FOUND },
+#endif
         { NULL, -1 }
     };
     int i;
