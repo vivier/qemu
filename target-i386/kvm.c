@@ -1008,6 +1008,7 @@ static int kvm_put_fpu(X86CPU *cpu)
 #define XSAVE_OPMASK      272
 #define XSAVE_ZMM_Hi256   288
 #define XSAVE_Hi16_ZMM    416
+#define XSAVE_PKRU        672
 
 static int kvm_put_xsave(X86CPU *cpu)
 {
@@ -1051,6 +1052,7 @@ static int kvm_put_xsave(X86CPU *cpu)
 #ifdef TARGET_X86_64
     memcpy(&xsave->region[XSAVE_Hi16_ZMM], env->hi16_zmm_regs,
             sizeof env->hi16_zmm_regs);
+    memcpy(&xsave->region[XSAVE_PKRU], &env->pkru, sizeof env->pkru);
 #endif
     r = kvm_vcpu_ioctl(CPU(cpu), KVM_SET_XSAVE, xsave);
     return r;
@@ -1388,6 +1390,7 @@ static int kvm_get_xsave(X86CPU *cpu)
 #ifdef TARGET_X86_64
     memcpy(env->hi16_zmm_regs, &xsave->region[XSAVE_Hi16_ZMM],
             sizeof env->hi16_zmm_regs);
+    memcpy(&env->pkru, &xsave->region[XSAVE_PKRU], sizeof env->pkru);
 #endif
     return 0;
 }

@@ -722,6 +722,26 @@ static const VMStateDescription vmstate_xss = {
     }
 };
 
+#ifdef TARGET_X86_64
+static bool pkru_needed(void *opaque)
+{
+    X86CPU *cpu = opaque;
+    CPUX86State *env = &cpu->env;
+
+    return env->pkru != 0;
+}
+
+static const VMStateDescription vmstate_pkru = {
+    .name = "cpu/pkru",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .fields = (VMStateField[]){
+        VMSTATE_UINT32(env.pkru, X86CPU),
+        VMSTATE_END_OF_LIST()
+    }
+};
+#endif
+
 const VMStateDescription vmstate_x86_cpu = {
     .name = "cpu",
     .version_id = 12,
@@ -871,6 +891,11 @@ const VMStateDescription vmstate_x86_cpu = {
          }, {
             .vmsd = &vmstate_xss,
             .needed = xss_needed,
+#ifdef TARGET_X86_64
+         }, {
+            .vmsd = &vmstate_pkru,
+            .needed = pkru_needed,
+#endif
         } , {
             /* empty */
         }

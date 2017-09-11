@@ -394,6 +394,7 @@
 #define XSTATE_OPMASK                   (1ULL << 5)
 #define XSTATE_ZMM_Hi256                (1ULL << 6)
 #define XSTATE_Hi16_ZMM                 (1ULL << 7)
+#define XSTATE_PKRU                     (1ULL << 9)
 
 
 /* CPUID feature words */
@@ -585,6 +586,9 @@ typedef uint32_t FeatureWordArray[FEATURE_WORDS];
 
 #define CPUID_7_0_EDX_AVX512_4VNNIW (1U << 2) /* AVX512 Neural Network Instructions */
 #define CPUID_7_0_EDX_AVX512_4FMAPS (1U << 3) /* AVX512 Multiply Accumulation Single Precision */
+
+#define CPUID_7_0_ECX_PKU      (1U << 3)
+#define CPUID_7_0_ECX_OSPKE    (1U << 4)
 
 #define CPUID_XSAVE_XSAVEOPT   (1U << 0)
 #define CPUID_XSAVE_XSAVEC     (1U << 1)
@@ -1028,6 +1032,8 @@ typedef struct CPUX86State {
 
     uint64_t xcr0;
     uint64_t xss;
+
+    uint32_t pkru;
 
     TPRAccess tpr_access_type;
 } CPUX86State;

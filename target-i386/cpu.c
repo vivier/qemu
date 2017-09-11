@@ -155,8 +155,8 @@ static const char *cpuid_7_0_ebx_feature_name[] = {
 };
 
 static const char *cpuid_7_0_ecx_feature_name[] = {
-    NULL, "avx512vbmi", NULL, NULL,
-    NULL, NULL, NULL, NULL,
+    NULL, "avx512vbmi", NULL, "pku",
+    "ospke", NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, "avx512-vpopcntdq", NULL,
     NULL, NULL, NULL, NULL,
@@ -361,6 +361,8 @@ static const ExtSaveArea ext_save_areas[] = {
             .offset = 0x480, .size = 0x200 },
     [7] = { .feature = FEAT_7_0_EBX, .bits = CPUID_7_0_EBX_AVX512F,
             .offset = 0x680, .size = 0x400 },
+    [9] = { .feature = FEAT_7_0_ECX, .bits = CPUID_7_0_ECX_PKU,
+            .offset = 0xA80, .size = 0x8 },
 };
 
 const char *get_register_name_32(unsigned int reg)
