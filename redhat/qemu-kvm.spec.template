@@ -827,6 +827,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Sep 15 2017 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - rhev-2.9.0-16.el7_4.8
+- kvm-ui-move-qemu_input_linux_to_qcode.patch [bz#1482388]
+- kvm-ui-update-keymaps.patch [bz#1482388]
+- kvm-ui-add-multimedia-keys.patch [bz#1482388]
+- kvm-ps2-enable-multimedia-keys.patch [bz#1482388]
+- kvm-ui-drop-altgr-and-altgr_r-QKeyCodes.patch [bz#1482388]
+- kvm-ui-drop-ac_search-and-ac_stop.patch [bz#1482388]
+- Resolves: bz#1482388
+  (Keys to control audio are not forwarded to the guest [rhel-7.4.z])
+
 * Thu Sep 14 2017 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - rhev-2.9.0-16.el7_4.7
 - kvm-vhost-Release-memory-references-on-cleanup.patch [bz#1490742]
 - Resolves: bz#1490742
