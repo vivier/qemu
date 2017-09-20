@@ -813,11 +813,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
-* Tue Jul 11 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7_4.1
-- kvm-qemu-nbd-Ignore-SIGPIPE.patch [bz#1468107]
-- Resolves: bz#1468107
-  (CVE-2017-10664 qemu-kvm: Qemu: qemu-nbd: server breaks with SIGPIPE upon client abort [rhel-7.4.z])
-
 * Tue Jun 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7
 - kvm-Fix-memory-slot-page-alignment-logic-bug-1455745.patch [bz#1455745]
 - kvm-Do-not-hang-on-full-PTY.patch [bz#1452067]
