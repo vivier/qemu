@@ -813,6 +813,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Sep 20 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-142.el7
+- kvm-vnc-allow-to-connect-with-add_client-when-vnc-none.patch [bz#1435352]
+- kvm-virtio-net-dynamic-network-offloads-configuration.patch [bz#1480428]
+- kvm-Workaround-rhel6-ctrl_guest_offloads-machine-type-mi.patch [bz#1480428]
+- kvm-target-i386-Add-PKU-and-and-OSPKE-support.patch [bz#1387648]
+- Resolves: bz#1387648
+  ([Intel 7.5 FEAT] Memory Protection Keys for qemu-kvm)
+- Resolves: bz#1435352
+  (qemu started with "-vnc none,..." doesn't support any VNC authentication)
+- Resolves: bz#1480428
+  (KVM: windows guest migration from EL6 to EL7 fails.)
+
 * Tue Jun 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7
 - kvm-Fix-memory-slot-page-alignment-logic-bug-1455745.patch [bz#1455745]
 - kvm-Do-not-hang-on-full-PTY.patch [bz#1452067]
