@@ -4303,6 +4303,11 @@ static int multiwrite_merge(BlockDriverState *bs, BlockRequest *reqs,
             merge = 0;
         }
 
+        if (reqs[outidx].qiov->size + reqs[i].qiov->size >=
+            bs->bl.max_transfer_length * BDRV_SECTOR_SIZE) {
+            merge = 0;
+        }
+
         if (merge) {
             size_t size;
             QEMUIOVector *qiov = g_malloc0(sizeof(*qiov));
