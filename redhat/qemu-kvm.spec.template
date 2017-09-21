@@ -873,6 +873,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Sep 21 2017 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 2.9.0-23.el7a
+- kvm-vfio-spapr-Fix-levels-calculation.patch [bz#1491749]
+- Resolves: bz#1491749
+  (Pegas1.0 - Guest crashes during boot with VF Pass-through and 129GB memory (qemu-kvm))
+
 * Tue Aug 29 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-22.el7a
 - kvm-qemu-kvm.spec-Configure-vm.allocate_pgste-for-s390x.patch [bz#1454281]
 - Resolves: bz#1454281
