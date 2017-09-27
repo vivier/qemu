@@ -6,7 +6,7 @@ rh-brew rh-local: RHEV=1
 rh-brew rh-local: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
 rh-brew: BUILD_TARGET=rhevh-rhel-7.5-candidate
 rh-brew-rhel: RHEV=0
-rh-brew-rhel: SRPM_NAME=$(NAME)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+rh-brew-rhel: SRPM_NAME=$(NAME)-ma-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
 rh-brew-rhel: BUILD_TARGET=rhel-7.5-candidate
 
 REDHAT:=$(shell pwd)

@@ -64,6 +64,7 @@
 #Versions of various parts:
 
 %define pkgname qemu-kvm
+%define rhel_ma_suffix -ma
 %define rhel_suffix -rhel
 %define rhev_suffix -rhev
 
@@ -78,21 +79,34 @@
     %global extra_provides_suffix %{nil}
     %global conflicts_suffix %{rhel_suffix}
     %global obsoletes_version 15:0-0
+    %global obsoletes_version2 15:0-0
     %global have_vtd 1
 %else
-    %global pkgsuffix %{nil}
-    %global extra_provides_suffix %{rhel_suffix}
+    %global pkgsuffix %{rhel_ma_suffix}
+    %global extra_provides_suffix %{nil}
+    %global extra_provides_suffix2 %{rhel_suffix}
     %global conflicts_suffix %{rhev_suffix}
+    %global conflicts_suffix2 %{rhel_suffix}
     %global have_live_block_ops 0
     %global have_vhost_user 0
+    %global obsoletes_version 15:0-0
 %endif
 
 # Macro to properly setup RHEL/RHEV conflict handling
-%define rhel_rhev_conflicts()                                         \
-Conflicts: %1%{conflicts_suffix}                                      \
-Provides: %1%{extra_provides_suffix} = %{epoch}:%{version}-%{release} \
-%if 0%{?obsoletes_version:1}                                          \
-Obsoletes: %1 < %{obsoletes_version}                                  \
+%define rhel_rhev_conflicts()                                          \
+Conflicts: %1%{conflicts_suffix}                                       \
+Provides: %1%{extra_provides_suffix} = %{epoch}:%{version}-%{release}  \
+%if 0%{?extra_provides_suffix2:1}                                      \
+Provides: %1%{extra_provides_suffix2} = %{epoch}:%{version}-%{release} \
+%endif                                                                 \
+%if 0%{?conflicts_suffix2:1}                                           \
+Conflicts: %1%{conflicts_suffix2}                                      \
+%endif                                                                 \
+%if 0%{?obsoletes_version:1}                                           \
+Obsoletes: %1 < %{obsoletes_version}                                   \
+%endif                                                                 \
+%if 0%{?obsoletes_version2:1}                                          \
+Obsoletes: %1%{rhel_ma_suffix} < %{obsoletes_version2}                 \
 %endif
 
 Summary: QEMU is a machine emulator and virtualizer
