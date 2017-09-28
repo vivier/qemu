@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Thu Sep 28 2017 Wainer dos Santos Moschetta <wainersm@redhat.com> - 1.5.3-143.el7
+- kvm-block-Limit-multiwrite-merge-downstream-only.patch [bz#1492559]
+- Resolves: bz#1492559
+  (virtio-blk mutiwrite merge causes too big IO)
+
 * Wed Sep 20 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-142.el7
 - kvm-vnc-allow-to-connect-with-add_client-when-vnc-none.patch [bz#1435352]
 - kvm-virtio-net-dynamic-network-offloads-configuration.patch [bz#1480428]
