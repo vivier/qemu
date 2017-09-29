@@ -39,6 +39,7 @@
 #include "qemu/range.h"
 #include "sysemu/kvm.h"
 #include "sysemu/sysemu.h"
+#include "trace.h"
 
 /* #define DEBUG_VFIO */
 #ifdef DEBUG_VFIO
@@ -84,14 +85,21 @@ typedef struct VFIOQuirk {
     } data;
 } VFIOQuirk;
 
+typedef struct VFIOMmap {
+    MemoryRegion mem;
+    void *mmap;
+    off_t offset;
+    size_t size;
+} VFIOMmap;
+
 typedef struct VFIORegion {
     struct VFIODevice *vbasedev;
     off_t fd_offset; /* offset of region within device fd */
-    MemoryRegion mem; /* slow, read/write access */
-    MemoryRegion mmap_mem; /* direct mapped access */
-    void *mmap;
+    MemoryRegion *mem; /* slow, read/write access */
     size_t size;
     uint32_t flags; /* VFIO region flags (rd/wr/mmap) */
+    uint32_t nr_mmaps;
+    VFIOMmap *mmaps;
     uint8_t nr; /* cache the region number for debug */
 } VFIORegion;
 
@@ -294,6 +302,9 @@ static void vfio_pci_write_config(PCIDevice *pdev, uint32_t addr,
 static void vfio_mmap_set_enabled(VFIOPCIDevice *vdev, bool enabled);
 static int vfio_get_region_info(VFIODevice *vbasedev, int index,
                                 struct vfio_region_info **info);
+static void vfio_region_mmaps_set_enabled(VFIORegion *region, bool enabled);
+static void vfio_region_exit(VFIORegion *region);
+static void vfio_region_finalize(VFIORegion *region);
 
 /*
  * Common VFIO interrupt disable
@@ -1681,7 +1692,7 @@ static void vfio_probe_ati_bar4_window_quirk(VFIOPCIDevice *vdev, int nr)
     memory_region_init_io(&quirk->mem,
                           &vfio_generic_window_quirk, quirk,
                           "vfio-ati-bar4-window-quirk", 8);
-    memory_region_add_subregion_overlap(&vdev->bars[nr].region.mem,
+    memory_region_add_subregion_overlap(vdev->bars[nr].region.mem,
                           quirk->data.base_offset, &quirk->mem, 1);
 
     QLIST_INSERT_HEAD(&vdev->bars[nr].quirks, quirk, next);
@@ -1714,7 +1725,7 @@ static void vfio_probe_ati_bar2_4000_quirk(VFIOPCIDevice *vdev, int nr)
     memory_region_init_io(&quirk->mem, &vfio_generic_quirk, quirk,
                           "vfio-ati-bar2-4000-quirk",
                           TARGET_PAGE_ALIGN(quirk->data.address_mask + 1));
-    memory_region_add_subregion_overlap(&vdev->bars[nr].region.mem,
+    memory_region_add_subregion_overlap(vdev->bars[nr].region.mem,
                           quirk->data.address_match & TARGET_PAGE_MASK,
                           &quirk->mem, 1);
 
@@ -1939,7 +1950,7 @@ static void vfio_probe_nvidia_bar5_window_quirk(VFIOPCIDevice *vdev, int nr)
     memory_region_init_io(&quirk->mem,
                           &vfio_nvidia_bar5_window_quirk, quirk,
                           "vfio-nvidia-bar5-window-quirk", 16);
-    memory_region_add_subregion_overlap(&vdev->bars[nr].region.mem,
+    memory_region_add_subregion_overlap(vdev->bars[nr].region.mem,
                                         0, &quirk->mem, 1);
 
     QLIST_INSERT_HEAD(&vdev->bars[nr].quirks, quirk, next);
@@ -1977,7 +1988,7 @@ static void vfio_probe_nvidia_bar0_88000_quirk(VFIOPCIDevice *vdev, int nr)
     memory_region_init_io(&quirk->mem, &vfio_generic_quirk,
                           quirk, "vfio-nvidia-bar0-88000-quirk",
                           TARGET_PAGE_ALIGN(quirk->data.address_mask + 1));
-    memory_region_add_subregion_overlap(&vdev->bars[nr].region.mem,
+    memory_region_add_subregion_overlap(vdev->bars[nr].region.mem,
                           quirk->data.address_match & TARGET_PAGE_MASK,
                           &quirk->mem, 1);
 
@@ -2015,7 +2026,7 @@ static void vfio_probe_nvidia_bar0_1800_quirk(VFIOPCIDevice *vdev, int nr)
     memory_region_init_io(&quirk->mem, &vfio_generic_quirk, quirk,
                           "vfio-nvidia-bar0-1800-quirk",
                           TARGET_PAGE_ALIGN(quirk->data.address_mask + 1));
-    memory_region_add_subregion_overlap(&vdev->bars[nr].region.mem,
+    memory_region_add_subregion_overlap(vdev->bars[nr].region.mem,
                           quirk->data.address_match & TARGET_PAGE_MASK,
                           &quirk->mem, 1);
 
@@ -2070,7 +2081,7 @@ static void vfio_bar_quirk_teardown(VFIOPCIDevice *vdev, int nr)
 
     while (!QLIST_EMPTY(&bar->quirks)) {
         VFIOQuirk *quirk = QLIST_FIRST(&bar->quirks);
-        memory_region_del_subregion(&bar->region.mem, &quirk->mem);
+        memory_region_del_subregion(bar->region.mem, &quirk->mem);
         memory_region_destroy(&quirk->mem);
         QLIST_REMOVE(quirk, next);
         g_free(quirk);
@@ -2384,6 +2395,74 @@ static int vfio_setup_msi(VFIOPCIDevice *vdev, int pos)
     return 0;
 }
 
+static void vfio_pci_fixup_msix_region(VFIOPCIDevice *vdev)
+{
+    off_t start, end;
+    VFIORegion *region = &vdev->bars[vdev->msix->table_bar].region;
+
+    /*
+     * We expect to find a single mmap covering the whole BAR, anything else
+     * means it's either unsupported or already setup.
+     */
+    if (region->nr_mmaps != 1 || region->mmaps[0].offset ||
+        region->size != region->mmaps[0].size) {
+        return;
+    }
+
+    /* MSI-X table start and end aligned to host page size */
+    start = vdev->msix->table_offset & TARGET_PAGE_MASK;
+    end = TARGET_PAGE_ALIGN((uint64_t)vdev->msix->table_offset +
+                            (vdev->msix->entries * PCI_MSIX_ENTRY_SIZE));
+
+    /*
+     * Does the MSI-X table cover the beginning of the BAR?  The whole BAR?
+     * NB - Host page size is necessarily a power of two and so is the PCI
+     * BAR (not counting EA yet), therefore if we have host page aligned
+     * @start and @end, then any remainder of the BAR before or after those
+     * must be at least host page sized and therefore mmap'able.
+     */
+    if (!start) {
+        if (end >= region->size) {
+            region->nr_mmaps = 0;
+            g_free(region->mmaps);
+            region->mmaps = NULL;
+            trace_vfio_msix_fixup(vdev->vbasedev.name,
+                                  vdev->msix->table_bar, 0, 0);
+        } else {
+            region->mmaps[0].offset = end;
+            region->mmaps[0].size = region->size - end;
+            trace_vfio_msix_fixup(vdev->vbasedev.name,
+                              vdev->msix->table_bar, region->mmaps[0].offset,
+                              region->mmaps[0].offset + region->mmaps[0].size);
+        }
+
+    /* Maybe it's aligned at the end of the BAR */
+    } else if (end >= region->size) {
+        region->mmaps[0].size = start;
+        trace_vfio_msix_fixup(vdev->vbasedev.name,
+                              vdev->msix->table_bar, region->mmaps[0].offset,
+                              region->mmaps[0].offset + region->mmaps[0].size);
+
+    /* Otherwise it must split the BAR */
+    } else {
+        region->nr_mmaps = 2;
+        region->mmaps = g_renew(VFIOMmap, region->mmaps, 2);
+
+        memcpy(&region->mmaps[1], &region->mmaps[0], sizeof(VFIOMmap));
+
+        region->mmaps[0].size = start;
+        trace_vfio_msix_fixup(vdev->vbasedev.name,
+                              vdev->msix->table_bar, region->mmaps[0].offset,
+                              region->mmaps[0].offset + region->mmaps[0].size);
+
+        region->mmaps[1].offset = end;
+        region->mmaps[1].size = region->size - end;
+        trace_vfio_msix_fixup(vdev->vbasedev.name,
+                              vdev->msix->table_bar, region->mmaps[1].offset,
+                              region->mmaps[1].offset + region->mmaps[1].size);
+    }
+}
+
 /*
  * We don't have any control over how pci_add_capability() inserts
  * capabilities into the chain.  In order to setup MSI-X we need a
@@ -2461,6 +2540,8 @@ static int vfio_early_setup_msix(VFIOPCIDevice *vdev)
         }
     }
 
+    vfio_pci_fixup_msix_region(vdev);
+
     return 0;
 }
 
@@ -2469,9 +2550,9 @@ static int vfio_setup_msix(VFIOPCIDevice *vdev, int pos)
     int ret;
 
     ret = msix_init(&vdev->pdev, vdev->msix->entries,
-                    &vdev->bars[vdev->msix->table_bar].region.mem,
+                    vdev->bars[vdev->msix->table_bar].region.mem,
                     vdev->msix->table_bar, vdev->msix->table_offset,
-                    &vdev->bars[vdev->msix->pba_bar].region.mem,
+                    vdev->bars[vdev->msix->pba_bar].region.mem,
                     vdev->msix->pba_bar, vdev->msix->pba_offset, pos);
     if (ret < 0) {
         if (ret == -ENOTSUP) {
@@ -2490,8 +2571,8 @@ static void vfio_teardown_msi(VFIOPCIDevice *vdev)
 
     if (vdev->msix) {
         msix_uninit(&vdev->pdev,
-                    &vdev->bars[vdev->msix->table_bar].region.mem,
-                    &vdev->bars[vdev->msix->pba_bar].region.mem);
+                    vdev->bars[vdev->msix->table_bar].region.mem,
+                    vdev->bars[vdev->msix->pba_bar].region.mem);
     }
 }
 
@@ -2503,16 +2584,7 @@ static void vfio_mmap_set_enabled(VFIOPCIDevice *vdev, bool enabled)
     int i;
 
     for (i = 0; i < PCI_ROM_SLOT; i++) {
-        VFIOBAR *bar = &vdev->bars[i];
-
-        if (!bar->region.size) {
-            continue;
-        }
-
-        memory_region_set_enabled(&bar->region.mmap_mem, enabled);
-        if (vdev->msix && vdev->msix->table_bar == i) {
-            memory_region_set_enabled(&vdev->msix->mmap_mem, enabled);
-        }
+        vfio_region_mmaps_set_enabled(&vdev->bars[i].region, enabled);
     }
 }
 
@@ -2526,65 +2598,171 @@ static void vfio_unmap_bar(VFIOPCIDevice *vdev, int nr)
 
     vfio_bar_quirk_teardown(vdev, nr);
 
-    memory_region_del_subregion(&bar->region.mem, &bar->region.mmap_mem);
-    munmap(bar->region.mmap, memory_region_size(&bar->region.mmap_mem));
-    memory_region_destroy(&bar->region.mmap_mem);
-
-    if (vdev->msix && vdev->msix->table_bar == nr) {
-        memory_region_del_subregion(&bar->region.mem, &vdev->msix->mmap_mem);
-        munmap(vdev->msix->mmap, memory_region_size(&vdev->msix->mmap_mem));
-        memory_region_destroy(&vdev->msix->mmap_mem);
-    }
-
-    memory_region_destroy(&bar->region.mem);
+    vfio_region_exit(&bar->region);
+    vfio_region_finalize(&bar->region);
 }
 
-static int vfio_mmap_region(Object *obj, VFIORegion *region,
-                            MemoryRegion *mem, MemoryRegion *submem,
-                            void **map, size_t size, off_t offset,
-                            const char *name)
+static int vfio_region_setup(Object *obj, VFIODevice *vbasedev,
+                             VFIORegion *region, int index, const char *name)
 {
-    int ret = 0;
-    VFIODevice *vbasedev = region->vbasedev;
+    struct vfio_region_info *info;
+    int ret;
 
-    if (VFIO_ALLOW_MMAP && size && region->flags &
-        VFIO_REGION_INFO_FLAG_MMAP) {
-        int prot = 0;
-
-        if (region->flags & VFIO_REGION_INFO_FLAG_READ) {
-            prot |= PROT_READ;
-        }
-
-        if (region->flags & VFIO_REGION_INFO_FLAG_WRITE) {
-            prot |= PROT_WRITE;
-        }
-
-        *map = mmap(NULL, size, prot, MAP_SHARED,
-                    vbasedev->fd, region->fd_offset + offset);
-        if (*map == MAP_FAILED) {
-            *map = NULL;
-            ret = -errno;
-            goto empty_region;
-        }
-
-        memory_region_init_ram_ptr(submem, name, size, *map);
-        memory_region_set_skip_dump(submem);
-    } else {
-empty_region:
-        /* Create a zero sized sub-region to make cleanup easy. */
-        memory_region_init(submem, name, 0);
+    ret = vfio_get_region_info(vbasedev, index, &info);
+    if (ret) {
+        return ret;
     }
 
-    memory_region_add_subregion(mem, offset, submem);
+    region->vbasedev = vbasedev;
+    region->flags = info->flags;
+    region->size = info->size;
+    region->fd_offset = info->offset;
+    region->nr = index;
 
-    return ret;
+    if (region->size) {
+        region->mem = g_new0(MemoryRegion, 1);
+        memory_region_init_io(region->mem, &vfio_region_ops,
+                              region, name, region->size);
+
+        if (VFIO_ALLOW_MMAP &&
+            region->flags & VFIO_REGION_INFO_FLAG_MMAP &&
+            !(region->size & ~TARGET_PAGE_MASK)) {
+
+            region->nr_mmaps = 1;
+            region->mmaps = g_new0(VFIOMmap, region->nr_mmaps);
+
+            region->mmaps[0].offset = 0;
+            region->mmaps[0].size = region->size;
+        }
+    }
+
+    g_free(info);
+
+    trace_vfio_region_setup(vbasedev->name, index, name,
+                            region->flags, region->fd_offset, region->size);
+    return 0;
+}
+
+static int vfio_region_mmap(VFIORegion *region)
+{
+    int i, prot = 0;
+    char *name;
+
+    if (!region->mem) {
+        return 0;
+    }
+
+    prot |= region->flags & VFIO_REGION_INFO_FLAG_READ ? PROT_READ : 0;
+    prot |= region->flags & VFIO_REGION_INFO_FLAG_WRITE ? PROT_WRITE : 0;
+
+    for (i = 0; i < region->nr_mmaps; i++) {
+        region->mmaps[i].mmap = mmap(NULL, region->mmaps[i].size, prot,
+                                     MAP_SHARED, region->vbasedev->fd,
+                                     region->fd_offset +
+                                     region->mmaps[i].offset);
+        if (region->mmaps[i].mmap == MAP_FAILED) {
+            int ret = -errno;
+
+            trace_vfio_region_mmap_fault(memory_region_name(region->mem), i,
+                                         region->fd_offset +
+                                         region->mmaps[i].offset,
+                                         region->fd_offset +
+                                         region->mmaps[i].offset +
+                                         region->mmaps[i].size - 1, ret);
+
+            region->mmaps[i].mmap = NULL;
+
+            for (i--; i >= 0; i--) {
+                memory_region_del_subregion(region->mem, &region->mmaps[i].mem);
+                munmap(region->mmaps[i].mmap, region->mmaps[i].size);
+                memory_region_destroy(&region->mmaps[i].mem);
+                region->mmaps[i].mmap = NULL;
+            }
+
+            return ret;
+        }
+
+        name = g_strdup_printf("%s mmaps[%d]",
+                               memory_region_name(region->mem), i);
+        memory_region_init_ram_ptr(&region->mmaps[i].mem,
+                                   name, region->mmaps[i].size,
+                                   region->mmaps[i].mmap);
+        g_free(name);
+        memory_region_set_skip_dump(&region->mmaps[i].mem);
+        memory_region_add_subregion(region->mem, region->mmaps[i].offset,
+                                    &region->mmaps[i].mem);
+
+        trace_vfio_region_mmap(memory_region_name(&region->mmaps[i].mem),
+                               region->mmaps[i].offset,
+                               region->mmaps[i].offset +
+                               region->mmaps[i].size - 1);
+    }
+
+    return 0;
+}
+
+static void vfio_region_exit(VFIORegion *region)
+{
+    int i;
+
+    if (!region->mem) {
+        return;
+    }
+
+    for (i = 0; i < region->nr_mmaps; i++) {
+        if (region->mmaps[i].mmap) {
+            memory_region_del_subregion(region->mem, &region->mmaps[i].mem);
+        }
+    }
+
+    trace_vfio_region_exit(region->vbasedev->name, region->nr);
+}
+
+static void vfio_region_finalize(VFIORegion *region)
+{
+    int i;
+
+    if (!region->mem) {
+        return;
+    }
+
+    for (i = 0; i < region->nr_mmaps; i++) {
+        if (region->mmaps[i].mmap) {
+            munmap(region->mmaps[i].mmap, region->mmaps[i].size);
+            memory_region_destroy(&region->mmaps[i].mem);
+        }
+    }
+
+    memory_region_destroy(region->mem);
+
+    g_free(region->mem);
+    g_free(region->mmaps);
+
+    trace_vfio_region_finalize(region->vbasedev->name, region->nr);
+}
+
+static void vfio_region_mmaps_set_enabled(VFIORegion *region, bool enabled)
+{
+    int i;
+
+    if (!region->mem) {
+        return;
+    }
+
+    for (i = 0; i < region->nr_mmaps; i++) {
+        if (region->mmaps[i].mmap) {
+            memory_region_set_enabled(&region->mmaps[i].mem, enabled);
+        }
+    }
+
+    trace_vfio_region_mmaps_set_enabled(memory_region_name(region->mem),
+                                        enabled);
 }
 
 static void vfio_map_bar(VFIOPCIDevice *vdev, int nr)
 {
     VFIOBAR *bar = &vdev->bars[nr];
     uint64_t size = bar->region.size;
-    char name[64];
     uint32_t pci_bar;
     uint8_t type;
     int ret;
@@ -2593,8 +2771,6 @@ static void vfio_map_bar(VFIOPCIDevice *vdev, int nr)
     if (!size) {
         return;
     }
-
-    snprintf(name, sizeof(name), "VFIO %s BAR %d", vdev->vbasedev.name, nr);
 
     /* Determine what type of BAR this is for registration */
     ret = pread(vdev->vbasedev.fd, &pci_bar, sizeof(pci_bar),
@@ -2610,40 +2786,11 @@ static void vfio_map_bar(VFIOPCIDevice *vdev, int nr)
     type = pci_bar & (bar->ioport ? ~PCI_BASE_ADDRESS_IO_MASK :
                                     ~PCI_BASE_ADDRESS_MEM_MASK);
 
-    /* A "slow" read/write mapping underlies all BARs */
-    memory_region_init_io(&bar->region.mem, &vfio_region_ops,
-                          bar, name, size);
-    pci_register_bar(&vdev->pdev, nr, type, &bar->region.mem);
+    pci_register_bar(&vdev->pdev, nr, type, bar->region.mem);
 
-    /*
-     * We can't mmap areas overlapping the MSIX vector table, so we
-     * potentially insert a direct-mapped subregion before and after it.
-     */
-    if (vdev->msix && vdev->msix->table_bar == nr) {
-        size = vdev->msix->table_offset & TARGET_PAGE_MASK;
-    }
-
-    strncat(name, " mmap", sizeof(name) - strlen(name) - 1);
-    if (vfio_mmap_region(OBJECT(vdev), &bar->region, &bar->region.mem,
-                      &bar->region.mmap_mem, &bar->region.mmap,
-                      size, 0, name)) {
-        error_report("%s unsupported. Performance may be slow", name);
-    }
-
-    if (vdev->msix && vdev->msix->table_bar == nr) {
-        uint64_t start;
-
-        start = TARGET_PAGE_ALIGN((uint64_t)vdev->msix->table_offset +
-                                  (vdev->msix->entries * PCI_MSIX_ENTRY_SIZE));
-
-        size = start < bar->region.size ? bar->region.size - start : 0;
-        strncat(name, " msix-hi", sizeof(name) - strlen(name) - 1);
-        /* VFIOMSIXInfo contains another MemoryRegion for this mapping */
-        if (vfio_mmap_region(OBJECT(vdev), &bar->region, &bar->region.mem,
-                          &vdev->msix->mmap_mem,
-                          &vdev->msix->mmap, size, start, name)) {
-            error_report("%s unsupported. Performance may be slow", name);
-        }
+    if (vfio_region_mmap(&bar->region)) {
+        error_report("Failed to mmap %s BAR %d. Performance may be slow",
+                     vdev->vbasedev.name, nr);
     }
 
     vfio_bar_quirk_setup(vdev, nr);
@@ -3531,25 +3678,18 @@ static int vfio_get_device(VFIOGroup *group, const char *name,
     }
 
     for (i = VFIO_PCI_BAR0_REGION_INDEX; i < VFIO_PCI_ROM_REGION_INDEX; i++) {
-        ret = vfio_get_region_info(&vdev->vbasedev, i, &reg_info);
+        char *name = g_strdup_printf("%s BAR %d", vdev->vbasedev.name, i);
+
+        ret = vfio_region_setup(OBJECT(vdev), &vdev->vbasedev,
+                                &vdev->bars[i].region, i, name);
+        g_free(name);
+
         if (ret) {
             error_report("vfio: Error getting region %d info: %m", i);
             goto error;
         }
 
-        DPRINTF("Device %s region %d:\n", name, i);
-        DPRINTF("  size: 0x%lx, offset: 0x%lx, flags: 0x%lx\n",
-                (unsigned long)reg_info->size, (unsigned long)reg_info->offset,
-                (unsigned long)reg_info->flags);
-
-        vdev->bars[i].region.vbasedev = &vdev->vbasedev;
-        vdev->bars[i].region.flags = reg_info->flags;
-        vdev->bars[i].region.size = reg_info->size;
-        vdev->bars[i].region.fd_offset = reg_info->offset;
-        vdev->bars[i].region.nr = i;
         QLIST_INIT(&vdev->bars[i].quirks);
-
-        g_free(reg_info);
     }
 
     ret = vfio_get_region_info(&vdev->vbasedev,
@@ -3644,10 +3784,8 @@ static void vfio_put_device(VFIOPCIDevice *vdev)
     DPRINTF("vfio_put_device: close vdev->vbasedev.fd\n");
     close(vdev->vbasedev.fd);
     g_free(vdev->vbasedev.name);
-    if (vdev->msix) {
-        g_free(vdev->msix);
-        vdev->msix = NULL;
-    }
+    g_free(vdev->msix);
+
 }
 
 static int vfio_get_region_info(VFIODevice *vbasedev, int index,
