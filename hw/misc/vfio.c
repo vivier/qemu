@@ -3867,8 +3867,8 @@ static int vfio_initfn(PCIDevice *pdev)
         if (!(~vdev->host.domain || ~vdev->host.bus ||
               ~vdev->host.slot || ~vdev->host.function)) {
             error_report("No provided host device - "
-                         "Use -vfio-pci,host=DDDD:BB:DD.F "
-                         "or -vfio-pci,sysfsdev=PATH_TO_DEVICE");
+                         "Use -device vfio-pci,host=DDDD:BB:DD.F "
+                         "or -device vfio-pci,sysfsdev=PATH_TO_DEVICE");
             return -EINVAL;
         }
         vdev->vbasedev.sysfsdev =
