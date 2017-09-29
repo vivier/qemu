@@ -288,12 +288,12 @@ static void vfio_disable_irqindex(VFIOPCIDevice *vdev, int index)
 /*
  * INTx
  */
-static void vfio_unmask_intx(VFIOPCIDevice *vdev)
+static void vfio_unmask_single_irqindex(VFIOPCIDevice *vdev, int index)
 {
     struct vfio_irq_set irq_set = {
         .argsz = sizeof(irq_set),
         .flags = VFIO_IRQ_SET_DATA_NONE | VFIO_IRQ_SET_ACTION_UNMASK,
-        .index = VFIO_PCI_INTX_IRQ_INDEX,
+        .index = index,
         .start = 0,
         .count = 1,
     };
@@ -302,12 +302,12 @@ static void vfio_unmask_intx(VFIOPCIDevice *vdev)
 }
 
 #ifdef CONFIG_KVM /* Unused outside of CONFIG_KVM code */
-static void vfio_mask_intx(VFIOPCIDevice *vdev)
+static void vfio_mask_single_irqindex(VFIOPCIDevice *vdev, int index)
 {
     struct vfio_irq_set irq_set = {
         .argsz = sizeof(irq_set),
         .flags = VFIO_IRQ_SET_DATA_NONE | VFIO_IRQ_SET_ACTION_MASK,
-        .index = VFIO_PCI_INTX_IRQ_INDEX,
+        .index = index,
         .start = 0,
         .count = 1,
     };
@@ -376,7 +376,7 @@ static void vfio_eoi(VFIOPCIDevice *vdev)
 
     vdev->intx.pending = false;
     qemu_set_irq(vdev->pdev.irq[vdev->intx.pin], 0);
-    vfio_unmask_intx(vdev);
+    vfio_unmask_single_irqindex(vdev, VFIO_PCI_INTX_IRQ_INDEX);
 }
 
 static void vfio_enable_intx_kvm(VFIOPCIDevice *vdev)
@@ -399,7 +399,7 @@ static void vfio_enable_intx_kvm(VFIOPCIDevice *vdev)
 
     /* Get to a known interrupt state */
     qemu_set_fd_handler(irqfd.fd, NULL, NULL, vdev);
-    vfio_mask_intx(vdev);
+    vfio_mask_single_irqindex(vdev, VFIO_PCI_INTX_IRQ_INDEX);
     vdev->intx.pending = false;
     qemu_set_irq(vdev->pdev.irq[vdev->intx.pin], 0);
 
@@ -437,7 +437,7 @@ static void vfio_enable_intx_kvm(VFIOPCIDevice *vdev)
     }
 
     /* Let'em rip */
-    vfio_unmask_intx(vdev);
+    vfio_unmask_single_irqindex(vdev, VFIO_PCI_INTX_IRQ_INDEX);
 
     vdev->intx.kvm_accel = true;
 
@@ -454,7 +454,7 @@ fail_irqfd:
     event_notifier_cleanup(&vdev->intx.unmask);
 fail:
     qemu_set_fd_handler(irqfd.fd, vfio_intx_interrupt, NULL, vdev);
-    vfio_unmask_intx(vdev);
+    vfio_unmask_single_irqindex(vdev, VFIO_PCI_INTX_IRQ_INDEX);
 #endif
 }
 
@@ -475,7 +475,7 @@ static void vfio_disable_intx_kvm(VFIOPCIDevice *vdev)
      * Get to a known state, hardware masked, QEMU ready to accept new
      * interrupts, QEMU IRQ de-asserted.
      */
-    vfio_mask_intx(vdev);
+    vfio_mask_single_irqindex(vdev, VFIO_PCI_INTX_IRQ_INDEX);
     vdev->intx.pending = false;
     qemu_set_irq(vdev->pdev.irq[vdev->intx.pin], 0);
 
@@ -493,7 +493,7 @@ static void vfio_disable_intx_kvm(VFIOPCIDevice *vdev)
     vdev->intx.kvm_accel = false;
 
     /* If we've missed an event, let it re-fire through QEMU */
-    vfio_unmask_intx(vdev);
+    vfio_unmask_single_irqindex(vdev, VFIO_PCI_INTX_IRQ_INDEX);
 
     DPRINTF("%s(%04x:%02x:%02x.%x) KVM INTx accel disabled\n",
             __func__, vdev->host.domain, vdev->host.bus,
