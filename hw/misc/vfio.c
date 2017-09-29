@@ -4060,6 +4060,10 @@ post_reset:
     vfio_pci_post_reset(vdev);
 }
 
+static void vfio_instance_init(Object *obj)
+{
+}
+
 static Property vfio_pci_dev_properties[] = {
     DEFINE_PROP_PCI_HOST_DEVADDR("host", VFIOPCIDevice, host),
     DEFINE_PROP_STRING("sysfsdev", VFIOPCIDevice, vbasedev.sysfsdev),
@@ -4105,6 +4109,7 @@ static const TypeInfo vfio_pci_dev_info = {
     .parent = TYPE_PCI_DEVICE,
     .instance_size = sizeof(VFIOPCIDevice),
     .class_init = vfio_pci_dev_class_init,
+    .instance_init = vfio_instance_init,
 };
 
 static void register_vfio_pci_dev_type(void)
