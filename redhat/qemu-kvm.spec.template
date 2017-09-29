@@ -880,6 +880,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Sep 29 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-1.el7
+- Rebase to 2.10.0 [bz#1470749]
+- Resolves: bz#1470749
+  (Rebase qemu-kvm-rhev for RHEL-7.5)
+
 * Thu Sep 21 2017 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 2.9.0-23.el7a
 - kvm-vfio-spapr-Fix-levels-calculation.patch [bz#1491749]
 - Resolves: bz#1491749
