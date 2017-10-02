@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon Oct 02 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-144.el7
+- kvm-qemu-nbd-Ignore-SIGPIPE.patch [bz#1466463]
+- Resolves: bz#1466463
+  (CVE-2017-10664 qemu-kvm: Qemu: qemu-nbd: server breaks with SIGPIPE upon client abort [rhel-7.5])
+
 * Thu Sep 28 2017 Wainer dos Santos Moschetta <wainersm@redhat.com> - 1.5.3-143.el7
 - kvm-block-Limit-multiwrite-merge-downstream-only.patch [bz#1492559]
 - Resolves: bz#1492559
