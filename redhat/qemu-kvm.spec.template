@@ -16,10 +16,6 @@
 %global have_vhost_user 1
 %global have_pgste    0
 
-%ifarch s390 s390x
-    %global have_seccomp 0
-%endif
-
 %ifnarch %{ix86} x86_64
     %global have_usbredir 0
 %endif
@@ -132,7 +128,7 @@ Requires: SLOF >= %{SLOF_gittagdate}-1.git%{SLOF_gittagcommit}
 %endif
 Requires: %{pkgname}-common%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 %if %{have_seccomp}
-Requires: libseccomp >= 1.0.0
+Requires: libseccomp >= 2.3.0
 %endif
 # For compressed guest memory dumps
 Requires: lzo snappy
