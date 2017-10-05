@@ -1047,7 +1047,7 @@ void vga_mem_writeb(VGACommonState *s, hwaddr addr, uint32_t val)
 typedef void vga_draw_line_func(VGACommonState *s1, uint8_t *d,
                                 const uint8_t *s, int width);
 
-#include "vga_template.h"
+#include "vga-helpers.h"
 
 static unsigned int rgb_to_pixel32_dup(unsigned int r, unsigned int g, unsigned b)
 {
