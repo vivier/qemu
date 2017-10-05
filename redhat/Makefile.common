@@ -22,5 +22,5 @@ else
   BUILD_DIR=$(UNAME)-$(GITCOMMIT)
 endif
 
-SOURCES_FILELIST:= ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt qemu-ga.sysconfig rhel6-virtio.rom rhel6-pcnet.rom rhel6-rtl8139.rom rhel6-ne2k_pci.rom bios-256k.bin README.rhel6-gpxe-source kvm-setup kvm-setup.service 85-kvm.preset build_configure.sh kvm-unit-tests.git-4ea7633.tar.bz2 vhost.conf bridge.conf kvm.conf 95-kvm-memlock.conf rhel6-e1000.rom pxe-e1000e.rom 50-kvm-pgste.conf
+SOURCES_FILELIST:= ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu-ga.sysconfig rhel6-virtio.rom rhel6-pcnet.rom rhel6-rtl8139.rom rhel6-ne2k_pci.rom bios-256k.bin README.rhel6-gpxe-source kvm-setup kvm-setup.service 85-kvm.preset build_configure.sh kvm-unit-tests.git-4ea7633.tar.bz2 vhost.conf bridge.conf kvm.conf 95-kvm-memlock.conf rhel6-e1000.rom pxe-e1000e.rom 50-kvm-pgste.conf
 

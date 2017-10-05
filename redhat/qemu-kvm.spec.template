@@ -154,7 +154,6 @@ Requires: usbredir >= 0.7.1
 
 Source0: http://wiki.qemu.org/download/%%TARBALL%%
 
-Source1: qemu.binfmt
 # Creates /dev/kvm
 Source3: 80-kvm.rules
 # KSM control scripts
