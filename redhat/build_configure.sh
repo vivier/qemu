@@ -48,6 +48,8 @@ have_live_block_ops=$1
 shift
 have_vhost_user=$1
 shift
+is_rhv=$1
+shift
 
 if [ "$have_rbd" == "enable" ]; then
   rbd_driver=rbd,
@@ -59,6 +61,12 @@ fi
 
 if [ "$have_vxhs" == "enable" ]; then
   vxhs_driver=vxhs,
+fi
+
+if [ "$is_rhv" == "enable" ]; then
+  rhel_target=rhv
+else
+  rhel_target=rhel
 fi
 
 ./configure \
@@ -153,4 +161,5 @@ fi
     --audio-drv-list= \
     --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,${gluster_driver}${rbd_driver}${vxhs_driver}blkdebug,luks,null-co \
     --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
+    --rhel-target=${rhel_target} \
     "$@"

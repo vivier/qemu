@@ -407,6 +407,7 @@ jemalloc="no"
 replication="yes"
 vxhs=""
 vtd="yes"
+rhel_target="rhv"
 
 supported_cpu="no"
 supported_os="no"
@@ -1301,6 +1302,8 @@ for opt do
   ;;
   --enable-vtd) vtd="yes"
   ;;
+  --rhel-target=*) rhel_target="$optarg"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1469,6 +1472,7 @@ Advanced options (experts only):
                            xen pv domain builder
   --enable-debug-stack-usage
                            track the maximum stack usage of stacks created by qemu_alloc_stack
+  --rhel-target            set RHEL target (rhv or rhel)
 
 Optional features, enabled with --enable-FEATURE and
 disabled with --disable-FEATURE, default is enabled if available:
@@ -5395,6 +5399,7 @@ echo "avx2 optimization $avx2_opt"
 echo "replication support $replication"
 echo "VxHS block device $vxhs"
 echo "VT-d emulation    $vtd"
+echo "RHEL target       $rhel_target"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -6062,6 +6067,10 @@ fi
 
 if test "$vtd" = "yes" ; then
   echo "CONFIG_VTD=y" >> $config_host_mak
+fi
+
+if test "$rhel_target" = "rhv" ; then
+  echo "CONFIG_RHV=y" >> $config_host_mak
 fi
 
 if test "$tcg_interpreter" = "yes"; then
