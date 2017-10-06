@@ -813,6 +813,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Oct 06 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-145.el7
+- kvm-qemu-char-add-Czech-characters-to-VNC-keysyms.patch [bz#1476641]
+- kvm-qemu-char-add-missing-characters-used-in-keymaps.patch [bz#1476641]
+- kvm-qemu-char-add-cyrillic-characters-numerosign-to-VNC-.patch [bz#1476641]
+- kvm-block-ssh-Use-QemuOpts-for-runtime-options.patch [bz#1461672]
+- Resolves: bz#1461672
+  (qemu-img core dumped when create external snapshot through ssh protocol without specifying image size)
+- Resolves: bz#1476641
+  (ui/vnc_keysym.h is very out of date and does not correctly support many Eastern European keyboards)
+
 * Mon Oct 02 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-144.el7
 - kvm-qemu-nbd-Ignore-SIGPIPE.patch [bz#1466463]
 - Resolves: bz#1466463
