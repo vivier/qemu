@@ -43,6 +43,7 @@ common-obj-y += host-libusb.o host-legacy.o
 else
 common-obj-y += host-stub.o
 endif
+common-obj-$(CONFIG_ALL) += host-stub.o
 
 ifeq ($(CONFIG_USB_LIBUSB),y)
 common-obj-$(CONFIG_XEN) += xen-usb.o
