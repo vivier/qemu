@@ -413,4 +413,23 @@
         .value    = "off",\
     },
 
+/* Mostly like HW_COMPAT_2_9 except
+ * x-mtu-bypass-backend has already been
+ * backported to RHEL7.4
+ */
+#define HW_COMPAT_RHEL7_4 \
+    { /* HW_COMPAT_RHEL7_4 */ \
+        .driver   = "pci-bridge",\
+        .property = "shpc",\
+        .value    = "off",\
+    },{ /* HW_COMPAT_RHEL7_4 */ \
+        .driver   = "intel-iommu",\
+        .property = "pt",\
+        .value    = "off",\
+    },{ /* HW_COMPAT_RHEL7_4 */ \
+        .driver   = "pcie-root-port",\
+        .property = "x-migrate-msix",\
+        .value    = "false",\
+    },
+
 #endif /* HW_COMPAT_H */
