@@ -3946,32 +3946,47 @@ DEFINE_SPAPR_MACHINE(2_1, "2.1", false);
 #endif
 
 /*
- * pseries-rhel7.4.0alt
+ * pseries-rhel7.5.0
  */
-static void spapr_machine_rhel740alt_instance_options(MachineState *machine)
+
+static void spapr_machine_rhel750_instance_options(MachineState *machine)
 {
 }
 
-static void spapr_machine_rhel740alt_class_options(MachineClass *mc)
+static void spapr_machine_rhel750_class_options(MachineClass *mc)
 {
     /* Defaults for the latest behaviour inherited from the base class */
 }
 
-DEFINE_SPAPR_MACHINE(rhel740alt, "rhel7.4.0alt", true);
-
+DEFINE_SPAPR_MACHINE(rhel750, "rhel7.5.0", true);
 
 /*
  * pseries-rhel7.4.0
+ * like SPAPR_COMPAT_2_9
  */
+
+#define SPAPR_COMPAT_RHEL7_4                                           \
+    HW_COMPAT_RHEL7_4                                                  \
+    {                                                                  \
+        .driver = TYPE_POWERPC_CPU,                                    \
+        .property = "pre-2.10-migration",                              \
+        .value    = "on",                                              \
+    },                                                                 \
 
 static void spapr_machine_rhel740_instance_options(MachineState *machine)
 {
-    spapr_machine_rhel740alt_instance_options(machine);
+    spapr_machine_rhel750_instance_options(machine);
 }
 
 static void spapr_machine_rhel740_class_options(MachineClass *mc)
 {
-    spapr_machine_rhel740alt_class_options(mc);
+    sPAPRMachineClass *smc = SPAPR_MACHINE_CLASS(mc);
+
+    spapr_machine_rhel750_class_options(mc);
+    SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_RHEL7_4);
+    mc->numa_auto_assign_ram = numa_legacy_auto_assign_ram;
+    smc->pre_2_10_has_unused_icps = true;
+    smc->resize_hpt_default = SPAPR_RESIZE_HPT_DISABLED;
 }
 
 DEFINE_SPAPR_MACHINE(rhel740, "rhel7.4.0", false);
