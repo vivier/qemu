@@ -3734,6 +3734,7 @@ DEFINE_SPAPR_MACHINE(2_8, "2.8", false);
     },
 #endif
 
+#if defined(CONFIG_RHV)
 static void phb_placement_2_7(sPAPRMachineState *spapr, uint32_t index,
                               uint64_t *buid, hwaddr *pio,
                               hwaddr *mmio32, hwaddr *mmio64,
@@ -3782,6 +3783,7 @@ static void phb_placement_2_7(sPAPRMachineState *spapr, uint32_t index,
      * window into contiguous 32-bit and 64-bit windows
      */
 }
+#endif /* CONFIG_RHV */
 
 #if 0 /* Disabled for Red Hat Enterprise Linux */
 static void spapr_machine_2_7_instance_options(MachineState *machine)
@@ -3960,6 +3962,8 @@ static void spapr_machine_rhel750_class_options(MachineClass *mc)
 
 DEFINE_SPAPR_MACHINE(rhel750, "rhel7.5.0", true);
 
+#if defined(CONFIG_RHV)
+
 /*
  * pseries-rhel7.4.0
  * like SPAPR_COMPAT_2_9
@@ -4079,6 +4083,7 @@ static void spapr_machine_rhel720_class_options(MachineClass *mc)
 }
 
 DEFINE_SPAPR_MACHINE(rhel720, "rhel7.2.0", false);
+#endif /* CONFIG_RHV */
 
 static void spapr_machine_register_types(void)
 {
