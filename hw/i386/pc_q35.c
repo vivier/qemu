@@ -395,6 +395,20 @@ static void pc_q35_machine_rhel7_options(MachineClass *m)
     SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
 }
 
+static void pc_q35_init_rhel750(MachineState *machine)
+{
+    pc_q35_init(machine);
+}
+
+static void pc_q35_machine_rhel750_options(MachineClass *m)
+{
+    pc_q35_machine_rhel7_options(m);
+    m->desc = "RHEL-7.5.0 PC (Q35 + ICH9, 2009)";
+}
+
+DEFINE_PC_MACHINE(q35_rhel750, "pc-q35-rhel7.5.0", pc_q35_init_rhel750,
+                  pc_q35_machine_rhel750_options);
+
 static void pc_q35_init_rhel740(MachineState *machine)
 {
     pc_q35_init(machine);
@@ -402,8 +416,11 @@ static void pc_q35_init_rhel740(MachineState *machine)
 
 static void pc_q35_machine_rhel740_options(MachineClass *m)
 {
-    pc_q35_machine_rhel7_options(m);
+    pc_q35_machine_rhel750_options(m);
+    m->alias = NULL;
     m->desc = "RHEL-7.4.0 PC (Q35 + ICH9, 2009)";
+    m->numa_auto_assign_ram = numa_legacy_auto_assign_ram;
+    SET_MACHINE_COMPAT(m, PC_RHEL7_4_COMPAT);
 }
 
 DEFINE_PC_MACHINE(q35_rhel740, "pc-q35-rhel7.4.0", pc_q35_init_rhel740,

@@ -1001,6 +1001,15 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .value = "on",\
         },
 
+#define PC_RHEL7_4_COMPAT \
+        HW_COMPAT_RHEL7_4 \
+        { /* PC_RHEL7_4_COMPAT from PC_COMPAT_2_9 */ \
+            .driver   = "mch",\
+            .property = "extended-tseg-mbytes",\
+            .value    = stringify(0),\
+        },
+
+
 #define PC_RHEL7_3_COMPAT \
         HW_COMPAT_RHEL7_3 \
         { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_8 */ \
