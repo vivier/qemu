@@ -1007,6 +1007,11 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .driver   = "mch",\
             .property = "extended-tseg-mbytes",\
             .value    = stringify(0),\
+        },\
+        { /* PC_RHEL7_4_COMPAT bz 1489800 */ \
+            .driver   = "ICH9-LPC",\
+            .property = "__com.redhat_force-rev1-fadt",\
+            .value    = "on",\
         },
 
 

@@ -61,6 +61,9 @@ typedef struct ICH9LPCPMRegs {
     uint8_t smm_enabled;
     bool enable_tco;
     TCOIORegs tco_regs;
+
+    /* RH addition, see bz 1489800 */
+    bool force_rev1_fadt;
 } ICH9LPCPMRegs;
 
 void ich9_pm_init(PCIDevice *lpc_pci, ICH9LPCPMRegs *pm,

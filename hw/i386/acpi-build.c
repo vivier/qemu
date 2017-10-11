@@ -146,6 +146,8 @@ static void acpi_get_pm_info(AcpiPmInfo *pm)
     }
     if (lpc) {
         obj = lpc;
+        pm->force_rev1_fadt = object_property_get_bool(lpc,
+                                  "__com.redhat_force-rev1-fadt", NULL);
         pm->cpu_hp_io_base = ICH9_CPU_HOTPLUG_IO_BASE;
     }
     assert(obj);
