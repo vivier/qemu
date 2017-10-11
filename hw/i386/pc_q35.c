@@ -416,10 +416,12 @@ static void pc_q35_init_rhel740(MachineState *machine)
 
 static void pc_q35_machine_rhel740_options(MachineClass *m)
 {
+    PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pc_q35_machine_rhel750_options(m);
     m->alias = NULL;
     m->desc = "RHEL-7.4.0 PC (Q35 + ICH9, 2009)";
     m->numa_auto_assign_ram = numa_legacy_auto_assign_ram;
+    pcmc->pc_rom_ro = false;
     SET_MACHINE_COMPAT(m, PC_RHEL7_4_COMPAT);
 }
 

@@ -141,6 +141,9 @@ struct PCMachineClass {
 
     /* use DMA capable linuxboot option rom */
     bool linuxboot_dma_enabled;
+
+    /* RH only, see bz 1489800 */
+    bool pc_rom_ro;
 };
 
 #define TYPE_PC_MACHINE "generic-pc-machine"

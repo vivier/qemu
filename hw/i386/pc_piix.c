@@ -1164,11 +1164,13 @@ static void pc_init_rhel740(MachineState *machine)
 
 static void pc_machine_rhel740_options(MachineClass *m)
 {
+    PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pc_machine_rhel750_options(m);
     m->alias = NULL;
     m->is_default = 0;
     m->desc = "RHEL 7.4.0 PC (i440FX + PIIX, 1996)";
     m->numa_auto_assign_ram = numa_legacy_auto_assign_ram;
+    pcmc->pc_rom_ro = false;
     SET_MACHINE_COMPAT(m, PC_RHEL7_4_COMPAT);
 }
 
