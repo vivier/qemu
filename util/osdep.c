@@ -23,6 +23,11 @@
  */
 #include "qemu/osdep.h"
 
+#ifndef F_OFD_SETLK
+#define F_OFD_GETLK    36
+#define F_OFD_SETLK    37
+#endif
+
 /* Needed early for CONFIG_BSD etc. */
 
 #ifdef CONFIG_SOLARIS
