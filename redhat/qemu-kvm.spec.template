@@ -114,7 +114,11 @@ Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
+%if %{rhev}
 ExclusiveArch: x86_64 %{power64} aarch64 s390x
+%else
+ExclusiveArch: %{power64} aarch64 s390x
+%endif
 %ifarch %{ix86} x86_64
 Requires: seabios-bin >= 1.10.2-1
 Requires: sgabios-bin
