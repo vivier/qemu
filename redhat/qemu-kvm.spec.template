@@ -817,6 +817,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Oct 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.12
+- kvm-Fix-memory-slot-page-alignment-logic.patch [bz#1468577]
+- Resolves: bz#1468577
+  (Backport fix for broken logic that's supposed to ensure memory slots are page aligned)
+
 * Tue Aug 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.11
 - kvm-virtio-net-dynamic-network-offloads-configuration.patch [bz#1482467]
 - kvm-Workaround-rhel6-ctrl_guest_offloads-machine-type-mi.patch [bz#1482467]
