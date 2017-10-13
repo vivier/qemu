@@ -879,6 +879,70 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Oct 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-2.el7
+- kvm-vhost-Release-memory-references-on-cleanup.patch [bz#1489670]
+- kvm-configure-Allow-enable-seccomp-on-s390x-too.patch [bz#1491647]
+- kvm-redhat-qemu-kvm.spec.template-Enable-seccomp-on-s390.patch [bz#1491647]
+- kvm-hw-ppc-spapr_drc.c-change-spapr_drc_needed-to-use-dr.patch [bz#1448344]
+- kvm-hw-ppc-clear-pending_events-on-machine-reset.patch [bz#1448344]
+- kvm-hw-ppc-CAS-reset-on-early-device-hotplug.patch [bz#1448344]
+- kvm-spapr-fix-CAS-generated-reset.patch [bz#1448344]
+- kvm-redhat-Remove-qemu.binfmt-from-the-downstream-reposi.patch [bz#1498122]
+- kvm-redhat-fix-HW_COMPAT_RHEL7_3.patch [bz#1498754]
+- kvm-vga-stop-passing-pointers-to-vga_draw_line-functions.patch [bz#1486643]
+- kvm-s390x-ais-for-2.10-stable-disable-ais-facility.patch [bz#1494548]
+- kvm-s390x-cpumodel-remove-ais-from-z14-default-model-als.patch [bz#1494548]
+- kvm-PPC-KVM-Support-machine-option-to-set-VSMT-mode.patch [bz#1479178]
+- kvm-nbd-client-avoid-read_reply_co-entry-if-send-failed.patch [bz#1482478]
+- kvm-qemu-iotests-improve-nbd-fault-injector.py-startup-p.patch [bz#1482478]
+- kvm-qemu-iotests-test-NBD-over-UNIX-domain-sockets-in-08.patch [bz#1482478]
+- kvm-block-nbd-client-nbd_co_send_request-fix-return-code.patch [bz#1482478]
+- kvm-usb-drop-HOST_USB.patch [bz#1492033]
+- kvm-usb-only-build-usb-host-with-CONFIG_USB-y.patch [bz#1492033]
+- kvm-usb-fix-libusb-config-variable-name.patch [bz#1492033]
+- kvm-usb-fix-host-stub.c-build-race.patch [bz#1492033]
+- kvm-s390x-s390-stattrib-Mark-the-storage-attribute-as-no.patch [bz#1492033]
+- kvm-s390x-s390-skeys-Mark-the-storage-key-devices-with-u.patch [bz#1492033]
+- kvm-watchdog-wdt_diag288-Mark-diag288-watchdog-as-non-ho.patch [bz#1492033]
+- kvm-s390x-ipl-The-s390-ipl-device-is-not-hot-pluggable.patch [bz#1492033]
+- kvm-hw-s390x-Mark-the-sclpquiesce-device-with-user_creat.patch [bz#1492033]
+- kvm-s390x-sclp-mark-sclp-cpu-hotplug-as-non-usercreatabl.patch [bz#1492033]
+- kvm-s390x-sclp-Mark-the-sclp-device-with-user_creatable-.patch [bz#1492033]
+- kvm-RHEL-Disable-vfio-ccw-and-x-terminal3270-devices.patch [bz#1492033]
+- kvm-s390x-css-fix-css-migration-compat-handling.patch [bz#1473292]
+- kvm-RHEL-Add-RHEL7-machine-type-for-qemu-on-s390x.patch [bz#1473292]
+- kvm-hw-nvram-spapr_nvram-Device-can-not-be-created-by-th.patch [bz#1490869]
+- kvm-vl-exit-if-maxcpus-is-negative.patch [bz#1491743]
+- kvm-Disable-build-of-qemu-kvm-ma-for-x86_64.patch [bz#1501230]
+- Resolves: bz#1448344
+  (Failed to hot unplug cpu core which hotplugged in early boot stages)
+- Resolves: bz#1473292
+  (Need RHEL-specific machine types for qemu-kvm on s390x)
+- Resolves: bz#1479178
+  (QEMU does not yet have support for setting the virtual SMT mode on Power 9, which is required to run with KVM and more than one thread per core.)
+- Resolves: bz#1482478
+  (Fail to quit source qemu when do live migration after mirroring guest to NBD server)
+- Resolves: bz#1486643
+  (CVE-2017-13672 qemu-kvm-rhev: Qemu: vga: OOB read access during display update [rhel-7.5])
+- Resolves: bz#1489670
+  (Hot-unplugging a vhost network device leaks references to VFIOPCIDevice's)
+- Resolves: bz#1490869
+  ([Pegas1.0] qemu device spapr-nvram crashes with SIGABRT (qemu-kvm))
+- Resolves: bz#1491647
+  ([RFE] Enable seccomp (sandbox) support in QEMU for s390x)
+- Resolves: bz#1491743
+  (qemu crashes with 'Abort' when a negative number is used for 'maxcpus' argument (qemu-kvm))
+- Resolves: bz#1492033
+  (Disable unwanted device in QEMU for s390x)
+- Resolves: bz#1494548
+  (Disable ais facility on s390x)
+- Resolves: bz#1498122
+  (Remove superfluous file qemu.binfmt from the qemu-kvm-rhev package)
+- Resolves: bz#1498754
+  (Definition of HW_COMPAT_RHEL7_3 is not correct)
+- Resolves: bz#1501230
+  (Disable x86_64 build for qemu-kvm-ma)
+
 * Fri Sep 29 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-1.el7
 - Rebase to 2.10.0 [bz#1470749]
 - Resolves: bz#1470749
