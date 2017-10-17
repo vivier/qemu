@@ -36,6 +36,9 @@ filter by guest name
 @item h
 @kindex h
 display interactive commands reference
+@item o
+@kindex o
+toggle sorting order (Total vs CurAvg/s)
 @item p
 @kindex p
 filter by PID
