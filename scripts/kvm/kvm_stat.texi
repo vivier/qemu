@@ -39,6 +39,9 @@ filter by PID
 @item q
 @kindex q
 quit
+@item r
+@kindex r
+reset stats
 @item x
 @kindex x
 toggle reporting of stats for child trace events
