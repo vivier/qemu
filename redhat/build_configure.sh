@@ -143,6 +143,8 @@ fi
     --enable-vnc \
     --disable-virglrenderer \
     --disable-xen-pci-passthrough \
+    --enable-tcg \
+    --disable-crypto-afalg \
     --${have_fdt}-fdt \
     --${have_gluster}-glusterfs \
     --${have_guest_agent}-guest-agent \
