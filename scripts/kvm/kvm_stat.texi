@@ -73,6 +73,8 @@ Press any other key to refresh statistics immediately.
   retrieve statistics from debugfs
 @item -p, --pid=@var{pid}
   limit statistics to one virtual machine (pid)
+@item -i, --debugfs-include-past
+  include all available data on past events for debugfs
 @item -g, --guest=@var{guest_name}
   limit statistics to one virtual machine (guest name)
 @item -f, --fields=@var{fields}
