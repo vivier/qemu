@@ -33,6 +33,9 @@ filter by regular expression
 @item g
 @kindex g
 filter by guest name
+@item h
+@kindex h
+display interactive commands reference
 @item p
 @kindex p
 filter by PID
