@@ -24,6 +24,9 @@ Use batch and logging modes for scripting purposes.
 While running in regular (interactive) mode, use any of the following keys:
 
 @table @key
+@item c
+@kindex c
+clear filter
 @item f
 @kindex f
 filter by regular expression
