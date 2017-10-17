@@ -24,6 +24,9 @@ Use batch and logging modes for scripting purposes.
 While running in regular (interactive) mode, use any of the following keys:
 
 @table @key
+@item b
+@kindex b
+toggle events by guests (debugfs only, honors filters)
 @item c
 @kindex c
 clear filter
