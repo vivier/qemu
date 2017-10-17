@@ -45,6 +45,9 @@ quit
 @item r
 @kindex r
 reset stats
+@item s
+@kindex s
+set update interval
 @item x
 @kindex x
 toggle reporting of stats for child trace events
