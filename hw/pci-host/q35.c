@@ -158,7 +158,6 @@ static void q35_host_class_init(ObjectClass *klass, void *data)
     dc->user_creatable = false;
     set_bit(DEVICE_CATEGORY_BRIDGE, dc->categories);
     dc->fw_name = "pci";
-    dc->user_creatable = false; /* RH state preserve */
 }
 
 static void q35_host_initfn(Object *obj)
