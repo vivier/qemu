@@ -3148,6 +3148,7 @@ static
 void spapr_core_unplug_request(HotplugHandler *hotplug_dev, DeviceState *dev,
                                Error **errp)
 {
+#if defined(CONFIG_RHV)
     int index;
     sPAPRDRConnector *drc;
     CPUCore *cc = CPU_CORE(dev);
@@ -3169,6 +3170,9 @@ void spapr_core_unplug_request(HotplugHandler *hotplug_dev, DeviceState *dev,
     spapr_drc_detach(drc);
 
     spapr_hotplug_req_remove_by_index(drc);
+#else
+    error_setg(errp, "this feature or command is not currently supported");
+#endif /* CONFIG_RHV */
 }
 
 static void spapr_core_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
