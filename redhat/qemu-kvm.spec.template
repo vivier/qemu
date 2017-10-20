@@ -874,6 +874,113 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Oct 20 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-3.el7
+- kvm-virtio-gpu-don-t-clear-QemuUIInfo-information-on-res.patch [bz#1460595]
+- kvm-vga-fix-display-update-region-calculation-split-scre.patch [bz#1486648]
+- kvm-target-i386-cpu-Add-new-EPYC-CPU-model.patch [bz#1445834]
+- kvm-redhat-add-CONFIG_RHV-flag.patch [bz#1498865]
+- kvm-intel_iommu-fix-missing-BQL-in-pt-fast-path.patch [bz#1449067]
+- kvm-redhat-define-HW_COMPAT_RHEL7_4.patch [bz#1478478]
+- kvm-redhat-define-pseries-rhel7.5.0-machine-type.patch [bz#1478478]
+- kvm-qemu-kvm-ma-define-only-pseries-rhel7.5.0-machine-ty.patch [bz#1478478]
+- kvm-Create-x86-7.5.0-machine-types.patch [bz#1499011]
+- kvm-i386-kvm-use-a-switch-statement-for-MSR-detection.patch [bz#1500347]
+- kvm-i386-kvm-set-tsc_khz-before-configuring-Hyper-V-CPUI.patch [bz#1500347]
+- kvm-i386-kvm-introduce-tsc_is_stable_and_known.patch [bz#1500347]
+- kvm-i386-kvm-advertise-Hyper-V-frequency-MSRs.patch [bz#1500347]
+- kvm-acpi-Force-rev1-FADT-on-old-q35-machine-types.patch [bz#1489800]
+- kvm-pc-make-pc_rom-RO-only-on-new-machine-types.patch [bz#1489800]
+- kvm-osdep-Force-define-F_OFD_GETLK-RHEL-only.patch [bz#1378241]
+- kvm-Disable-vhost-user-scsi-and-vhost-user-scsi-pci.patch [bz#1498496]
+- kvm-Disable-sm501-and-sysbus-sm501-devices.patch [bz#1498496]
+- kvm-configure-enable-s390-pgste-linker-option.patch [bz#1485399]
+- kvm-s390x-vm.allocate_pgste-sysctl-is-no-longer-needed.patch [bz#1485399]
+- kvm-arm-virt-Add-RHEL-7.5-machine-type.patch [bz#1498662]
+- kvm-tools-kvm_stat-hide-cursor.patch [bz#1497137]
+- kvm-tools-kvm_stat-catch-curses-exceptions-only.patch [bz#1497137]
+- kvm-tools-kvm_stat-handle-SIGINT-in-log-and-batch-modes.patch [bz#1497137]
+- kvm-tools-kvm_stat-fix-misc-glitches.patch [bz#1497137]
+- kvm-tools-kvm_stat-fix-trace-setup-glitch-on-field-updat.patch [bz#1497137]
+- kvm-tools-kvm_stat-full-PEP8-compliance.patch [bz#1497137]
+- kvm-tools-kvm_stat-reduce-perceived-idle-time-on-filter-.patch [bz#1497137]
+- kvm-tools-kvm_stat-document-list-of-interactive-commands.patch [bz#1497137]
+- kvm-tools-kvm_stat-display-guest-name-when-using-pid-fil.patch [bz#1497137]
+- kvm-tools-kvm_stat-remove-pid-filter-on-empty-input.patch [bz#1497137]
+- kvm-tools-kvm_stat-print-error-messages-on-faulty-pid-fi.patch [bz#1497137]
+- kvm-tools-kvm_stat-display-regex-when-set-to-non-default.patch [bz#1497137]
+- kvm-tools-kvm_stat-remove-regex-filter-on-empty-input.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-option-guest.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-interactive-command-c.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-interactive-command-r.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-Total-column.patch [bz#1497137]
+- kvm-tools-kvm_stat-fix-typo.patch [bz#1497137]
+- kvm-tools-kvm_stat-fix-event-counts-display-for-interrup.patch [bz#1497137]
+- kvm-tools-kvm_stat-fix-undue-use-of-initial-sleeptime.patch [bz#1497137]
+- kvm-tools-kvm_stat-remove-unnecessary-header-redraws.patch [bz#1497137]
+- kvm-tools-kvm_stat-simplify-line-print-logic.patch [bz#1497137]
+- kvm-tools-kvm_stat-removed-unused-function.patch [bz#1497137]
+- kvm-tools-kvm_stat-remove-extra-statement.patch [bz#1497137]
+- kvm-tools-kvm_stat-simplify-initializers.patch [bz#1497137]
+- kvm-tools-kvm_stat-move-functions-to-corresponding-class.patch [bz#1497137]
+- kvm-tools-kvm_stat-show-cursor-in-selection-screens.patch [bz#1497137]
+- kvm-tools-kvm_stat-display-message-indicating-lack-of-ev.patch [bz#1497137]
+- kvm-tools-kvm_stat-make-heading-look-a-bit-more-like-top.patch [bz#1497137]
+- kvm-tools-kvm_stat-rename-Current-column-to-CurAvg-s.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-new-interactive-command-h.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-new-interactive-command-s.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-new-interactive-command-o.patch [bz#1497137]
+- kvm-tools-kvm_stat-display-guest-list-in-pid-guest-selec.patch [bz#1497137]
+- kvm-tools-kvm_stat-display-guest-list-in-pid-guest-sele2.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-new-command-line-switch-i.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-new-interactive-command-b.patch [bz#1497137]
+- kvm-tools-kvm_stat-use-variables-instead-of-hard-paths-i.patch [bz#1497137]
+- kvm-tools-kvm_stat-add-f-help-to-get-the-available-event.patch [bz#1497137]
+- kvm-iothread-Make-iothread_stop-idempotent.patch [bz#1460848]
+- kvm-vl-Clean-up-user-creatable-objects-when-exiting.patch [bz#1460848]
+- kvm-osdep-Define-QEMU_MADV_REMOVE.patch [bz#1460848]
+- kvm-hostmem-file-Add-discard-data-option.patch [bz#1460848]
+- kvm-hw-dma-i8257-Remove-redundant-downstream-user_creata.patch [bz#1503998]
+- kvm-hw-pci-host-q35-Remove-redundant-downstream-user_cre.patch [bz#1503998]
+- kvm-hw-Remove-the-redundant-user_creatable-false-from-SY.patch [bz#1503998]
+- kvm-spapr-disable-cpu-hot-remove.patch [bz#1499320]
+- kvm-Update-build_configure-for-2.10.0-options.patch [bz#1502949]
+- Resolves: bz#1378241
+  (QEMU image file locking)
+- Resolves: bz#1445834
+  (Add support for AMD EPYC processors)
+- Resolves: bz#1449067
+  ([RFE] Device passthrough support for VT-d emulation)
+- Resolves: bz#1460595
+  ([virtio-vga]Display 2 should be dropped when guest reboot)
+- Resolves: bz#1460848
+  (RFE: Enhance qemu to support freeing memory before exit when using memory-backend-file)
+- Resolves: bz#1478478
+  (RHEL 7.5 machine types for Power 8 and 9 - qemu-kvm-ma)
+- Resolves: bz#1485399
+  (Backport selective allocation of PGSTE to avoid global vm.allocate_pgste)
+- Resolves: bz#1486648
+  (CVE-2017-13673 qemu-kvm-rhev: Qemu: vga: reachable assert failure during during display update [rhel-7.5])
+- Resolves: bz#1489800
+  (q35/ovmf: Machine type compat vs OVMF vs windows)
+- Resolves: bz#1497137
+  (Update kvm_stat)
+- Resolves: bz#1498496
+  (Handle device tree changes in QEMU 2.10.0)
+- Resolves: bz#1498662
+  (RHEL-7.5 machine machine type for aarch64 (qemu-kvm-ma))
+- Resolves: bz#1498865
+  (There is no switch to build qemu-kvm-rhev or qemu-kvm-ma packages)
+- Resolves: bz#1499011
+  (7.5: x86 machine types for 7.5)
+- Resolves: bz#1499320
+  (qemu-kvm-ma differentiation - cpu unplug)
+- Resolves: bz#1500347
+  ([Hyper-V][RHEL-7.4]Nested virt: Windows guest doesn't use TSC page when Hyper-V role is enabled)
+- Resolves: bz#1502949
+  (Update configure parameters to cover changes in 2.10.0)
+- Resolves: bz#1503998
+  (Remove redundant "user_creatable = false" flags from the downstream qemu-kvm-rhev code)
+
 * Fri Oct 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-2.el7
 - kvm-vhost-Release-memory-references-on-cleanup.patch [bz#1489670]
 - kvm-configure-Allow-enable-seccomp-on-s390x-too.patch [bz#1491647]
