@@ -475,7 +475,8 @@ address_space_translate_internal(AddressSpaceDispatch *d, hwaddr addr, hwaddr *x
 static MemoryRegionSection address_space_do_translate(AddressSpace *as,
                                                       hwaddr addr,
                                                       hwaddr *xlat,
-                                                      hwaddr *plen,
+                                                      hwaddr *plen_out,
+                                                      hwaddr *page_mask_out,
                                                       bool is_write,
                                                       bool is_mmio)
 {
@@ -483,10 +484,16 @@ static MemoryRegionSection address_space_do_translate(AddressSpace *as,
     MemoryRegionSection *section;
     IOMMUMemoryRegion *iommu_mr;
     IOMMUMemoryRegionClass *imrc;
+    hwaddr page_mask = (hwaddr)(-1);
+    hwaddr plen = (hwaddr)(-1);
+
+    if (plen_out) {
+        plen = *plen_out;
+    }
 
     for (;;) {
         AddressSpaceDispatch *d = atomic_rcu_read(&as->dispatch);
-        section = address_space_translate_internal(d, addr, &addr, plen, is_mmio);
+        section = address_space_translate_internal(d, addr, &addr, &plen, is_mmio);
 
         iommu_mr = memory_region_get_iommu(section->mr);
         if (!iommu_mr) {
@@ -498,7 +505,8 @@ static MemoryRegionSection address_space_do_translate(AddressSpace *as,
                                 IOMMU_WO : IOMMU_RO);
         addr = ((iotlb.translated_addr & ~iotlb.addr_mask)
                 | (addr & iotlb.addr_mask));
-        *plen = MIN(*plen, (addr | iotlb.addr_mask) - addr + 1);
+        page_mask &= iotlb.addr_mask;
+        plen = MIN(plen, (addr | iotlb.addr_mask) - addr + 1);
         if (!(iotlb.perm & (1 << is_write))) {
             goto translate_fail;
         }
@@ -507,6 +515,19 @@ static MemoryRegionSection address_space_do_translate(AddressSpace *as,
     }
 
     *xlat = addr;
+
+    if (page_mask == (hwaddr)(-1)) {
+        /* Not behind an IOMMU, use default page size. */
+        page_mask = ~TARGET_PAGE_MASK;
+    }
+
+    if (page_mask_out) {
+        *page_mask_out = page_mask;
+    }
+
+    if (plen_out) {
+        *plen_out = plen;
+    }
 
     return *section;
 
@@ -526,7 +547,7 @@ IOMMUTLBEntry address_space_get_iotlb_entry(AddressSpace *as, hwaddr addr,
 
     /* This can never be MMIO. */
     section = address_space_do_translate(as, addr, &xlat, &plen,
-                                         is_write, false);
+                                         NULL, is_write, false);
 
     /* Illegal translation */
     if (section.mr == &io_mem_unassigned) {
@@ -570,7 +591,8 @@ MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
     MemoryRegionSection section;
 
     /* This can be MMIO, so setup MMIO bit. */
-    section = address_space_do_translate(as, addr, xlat, plen, is_write, true);
+    section = address_space_do_translate(as, addr, xlat, plen, NULL,
+                                         is_write, true);
     mr = section.mr;
 
     if (xen_enabled() && memory_access_is_direct(mr, is_write)) {
