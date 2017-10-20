@@ -19,6 +19,7 @@
 #include "target/ppc/mmu-hash64.h"
 #include "sysemu/numa.h"
 #include "qemu/error-report.h"
+#include "cpu-models.h"
 
 void spapr_cpu_parse_features(sPAPRMachineState *spapr)
 {
@@ -111,12 +112,24 @@ static void spapr_cpu_init(sPAPRMachineState *spapr, PowerPCCPU *cpu,
                            Error **errp)
 {
     CPUPPCState *env = &cpu->env;
+    sPAPRMachineClass *smc = SPAPR_MACHINE_GET_CLASS(spapr);
 
     /* Set time-base frequency to 512 MHz */
     cpu_ppc_tb_init(env, SPAPR_TIMEBASE_FREQ);
 
     /* Enable PAPR mode in TCG or KVM */
     cpu_ppc_set_papr(cpu, PPC_VIRTUAL_HYPERVISOR(spapr));
+
+    if (!smc->has_power9_support &&
+        (((spapr->max_compat_pvr &&
+           ppc_compat_cmp(spapr->max_compat_pvr,
+                          CPU_POWERPC_LOGICAL_3_00) >= 0)) ||
+          (!spapr->max_compat_pvr &&
+           ppc_check_compat(cpu, CPU_POWERPC_LOGICAL_3_00, 0, 0)))) {
+        error_set(errp, ERROR_CLASS_DEVICE_NOT_FOUND,
+                  "POWER9 CPU is not supported by this machine class");
+        return;
+    }
 
     qemu_register_reset(spapr_cpu_reset, cpu);
     spapr_cpu_reset(cpu);

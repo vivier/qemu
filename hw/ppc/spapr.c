@@ -3592,6 +3592,7 @@ static void spapr_machine_class_init(ObjectClass *oc, void *data)
      * in which LMBs are represented and hot-added
      */
     mc->numa_mem_align_shift = 28;
+    smc->has_power9_support = true;
 }
 
 static const TypeInfo spapr_machine_info = {
@@ -3993,6 +3994,7 @@ static void spapr_machine_rhel740_class_options(MachineClass *mc)
     spapr_machine_rhel750_class_options(mc);
     SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_RHEL7_4);
     mc->numa_auto_assign_ram = numa_legacy_auto_assign_ram;
+    smc->has_power9_support = false;
     smc->pre_2_10_has_unused_icps = true;
     smc->resize_hpt_default = SPAPR_RESIZE_HPT_DISABLED;
 }
