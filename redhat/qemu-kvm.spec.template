@@ -813,6 +813,43 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Oct 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-146.el7
+- kvm-vfio-pass-device-to-vfio_mmap_bar-and-use-it-to-set-.patch [bz#1494181]
+- kvm-hw-vfio-pci-Rename-VFIODevice-into-VFIOPCIDevice.patch [bz#1494181]
+- kvm-hw-vfio-pci-generalize-mask-unmask-to-any-IRQ-index.patch [bz#1494181]
+- kvm-hw-vfio-pci-introduce-minimalist-VFIODevice-with-fd.patch [bz#1494181]
+- kvm-hw-vfio-pci-add-type-name-and-group-fields-in-VFIODe.patch [bz#1494181]
+- kvm-hw-vfio-pci-handle-reset-at-VFIODevice.patch [bz#1494181]
+- kvm-hw-vfio-pci-Introduce-VFIORegion.patch [bz#1494181]
+- kvm-hw-vfio-pci-use-name-field-in-format-strings.patch [bz#1494181]
+- kvm-vfio-Add-sysfsdev-property-for-pci-platform.patch [bz#1494181]
+- kvm-vfio-remove-bootindex-property-from-qdev-to-qom.patch [bz#1494181]
+- kvm-vfio-pci-Handle-host-oversight.patch [bz#1494181]
+- kvm-vfio-pci-Fix-incorrect-error-message.patch [bz#1494181]
+- kvm-vfio-Wrap-VFIO_DEVICE_GET_REGION_INFO.patch [bz#1494181]
+- kvm-vfio-Generalize-region-support.patch [bz#1494181]
+- kvm-vfio-Enable-sparse-mmap-capability.patch [bz#1494181]
+- kvm-vfio-Handle-zero-length-sparse-mmap-ranges.patch [bz#1494181]
+- kvm-bswap.h-Remove-cpu_to_32wu.patch [bz#1486642]
+- kvm-hw-use-ld_p-st_p-instead-of-ld_raw-st_raw.patch [bz#1486642]
+- kvm-vga-Start-cutting-out-non-32bpp-conversion-support.patch [bz#1486642]
+- kvm-vga-Remove-remainder-of-old-conversion-cruft.patch [bz#1486642]
+- kvm-vga-Separate-LE-and-BE-conversion-functions.patch [bz#1486642]
+- kvm-vga-Rename-vga_template.h-to-vga-helpers.h.patch [bz#1486642]
+- kvm-vga-stop-passing-pointers-to-vga_draw_line-functions.patch [bz#1486642]
+- kvm-target-i386-Add-Intel-SHA_NI-instruction-support.patch [bz#1450396]
+- kvm-target-i386-cpu-Add-new-EPYC-CPU-model.patch [bz#1450396]
+- kvm-target-i386-Enable-clflushopt-clwb-pcommit-instructi.patch [bz#1501510]
+- kvm-i386-add-Skylake-Server-cpu-model.patch [bz#1501510]
+- Resolves: bz#1450396
+  (Add support for AMD EPYC processors)
+- Resolves: bz#1486642
+  (CVE-2017-13672 qemu-kvm: Qemu: vga: OOB read access during display update [rhel-7.5])
+- Resolves: bz#1494181
+  (Backport vGPU support to qemu-kvm)
+- Resolves: bz#1501510
+  (Add Skylake-Server CPU model (qemu-kvm))
+
 * Fri Oct 06 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-145.el7
 - kvm-qemu-char-add-Czech-characters-to-VNC-keysyms.patch [bz#1476641]
 - kvm-qemu-char-add-missing-characters-used-in-keymaps.patch [bz#1476641]
