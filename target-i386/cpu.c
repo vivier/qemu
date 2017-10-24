@@ -149,8 +149,8 @@ static const char *cpuid_7_0_ebx_feature_name[] = {
     "bmi2", "erms", "invpcid", "rtm",
     NULL, NULL, "mpx", NULL,
     "avx512f", "avx512dq", "rdseed", "adx",
-    "smap", "avx512ifma", NULL, NULL,
-    NULL, NULL, "avx512pf", "avx512er",
+    "smap", "avx512ifma", "pcommit", "clflushopt",
+    "clwb", NULL, "avx512pf", "avx512er",
     "avx512cd", "sha-ni", "avx512bw", "avx512vl",
 };
 
