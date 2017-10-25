@@ -1426,6 +1426,16 @@ bool migrate_use_events(void)
     return s->enabled_capabilities[MIGRATION_CAPABILITY_EVENTS];
 }
 
+bool migrate_pause_before_switchover(void)
+{
+    MigrationState *s;
+
+    s = migrate_get_current();
+
+    return s->enabled_capabilities[
+        MIGRATION_CAPABILITY_PAUSE_BEFORE_SWITCHOVER];
+}
+
 int migrate_use_xbzrle(void)
 {
     MigrationState *s;

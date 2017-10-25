@@ -919,12 +919,15 @@
 # @return-path: If enabled, migration will use the return path even
 #               for precopy. (since 2.10)
 #
+# @pause-before-switchover: Pause outgoing migration before serialising device
+#          state and before disabling block IO (since 2.11)
+#
 # Since: 1.2
 ##
 { 'enum': 'MigrationCapability',
   'data': ['xbzrle', 'rdma-pin-all', 'auto-converge', 'zero-blocks',
            'compress', 'events', 'postcopy-ram', 'x-colo', 'release-ram',
-           'block', 'return-path' ] }
+           'block', 'return-path', 'pause-before-switchover' ] }
 
 ##
 # @MigrationCapabilityStatus:
