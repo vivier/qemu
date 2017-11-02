@@ -874,6 +874,35 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Nov 02 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-4.el7
+- kvm-vga-drop-line_offset-variable.patch [bz#1501301]
+- kvm-vga-handle-cirrus-vbe-mode-wraparounds.patch [bz#1501301]
+- kvm-cirrus-fix-oob-access-in-mode4and5-write-functions.patch [bz#1501301]
+- kvm-exec-add-page_mask-for-address_space_do_translate.patch [bz#1498817]
+- kvm-exec-simplify-address_space_get_iotlb_entry.patch [bz#1498817]
+- kvm-xio3130_downstream-Report-error-if-pcie_chassis_add_.patch [bz#1390348]
+- kvm-pci-conventional-pci-device-and-pci-express-device-i.patch [bz#1390348]
+- kvm-pci-Add-interface-names-to-hybrid-PCI-devices.patch [bz#1390348]
+- kvm-pci-Add-INTERFACE_PCIE_DEVICE-to-all-PCIe-devices.patch [bz#1390348]
+- kvm-pci-Add-INTERFACE_CONVENTIONAL_PCI_DEVICE-to-Convent.patch [bz#1390348]
+- kvm-xen-pt-Mark-TYPE_XEN_PT_DEVICE-as-hybrid.patch [bz#1390348]
+- kvm-pci-Validate-interfaces-on-base_class_init.patch [bz#1390348]
+- kvm-migration-Add-pause-before-switchover-capability.patch [bz#1497120]
+- kvm-migration-Add-pre-switchover-and-device-statuses.patch [bz#1497120]
+- kvm-migration-Wait-for-semaphore-before-completing-migra.patch [bz#1497120]
+- kvm-migration-migrate-continue.patch [bz#1497120]
+- kvm-migrate-HMP-migate_continue.patch [bz#1497120]
+- kvm-migration-allow-cancel-to-unpause.patch [bz#1497120]
+- kvm-migration-pause-before-switchover-for-postcopy.patch [bz#1497120]
+- Resolves: bz#1390348
+  (PCI: Provide to libvirt a new query command whether a device is PCI/PCIe/hybrid)
+- Resolves: bz#1497120
+  (migration+new block migration race: bdrv_co_do_pwritev: Assertion `!(bs->open_flags & 0x0800)' failed)
+- Resolves: bz#1498817
+  (Vhost IOMMU support regression since qemu-kvm-rhev-2.9.0-16.el7_4.5)
+- Resolves: bz#1501301
+  (CVE-2017-15289 qemu-kvm-rhev: Qemu: cirrus: OOB access issue in  mode4and5 write functions [rhel-7.5])
+
 * Fri Oct 20 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-3.el7
 - kvm-virtio-gpu-don-t-clear-QemuUIInfo-information-on-res.patch [bz#1460595]
 - kvm-vga-fix-display-update-region-calculation-split-scre.patch [bz#1486648]
