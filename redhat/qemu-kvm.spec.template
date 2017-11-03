@@ -813,6 +813,19 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Nov 03 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-147.el7
+- kvm-vga-drop-line_offset-variable.patch [bz#1501295]
+- kvm-vga-Add-mechanism-to-force-the-use-of-a-shadow-surfa.patch [bz#1501295]
+- kvm-vga-handle-cirrus-vbe-mode-wraparounds.patch [bz#1501295]
+- kvm-cirrus-fix-oob-access-in-mode4and5-write-functions.patch [bz#1501295]
+- kvm-i6300esb-Fix-signed-integer-overflow.patch [bz#1470244]
+- kvm-i6300esb-fix-timer-overflow.patch [bz#1470244]
+- kvm-i6300esb-remove-muldiv64.patch [bz#1470244]
+- Resolves: bz#1470244
+  (reboot leads to shutoff of qemu-kvm-vm if i6300esb-watchdog set to poweroff)
+- Resolves: bz#1501295
+  (CVE-2017-15289 qemu-kvm: Qemu: cirrus: OOB access issue in  mode4and5 write functions [rhel-7.5])
+
 * Tue Oct 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-146.el7
 - kvm-vfio-pass-device-to-vfio_mmap_bar-and-use-it-to-set-.patch [bz#1494181]
 - kvm-hw-vfio-pci-Rename-VFIODevice-into-VFIOPCIDevice.patch [bz#1494181]
