@@ -419,10 +419,6 @@
  */
 #define HW_COMPAT_RHEL7_4 \
     { /* HW_COMPAT_RHEL7_4 */ \
-        .driver   = "pci-bridge",\
-        .property = "shpc",\
-        .value    = "off",\
-    },{ /* HW_COMPAT_RHEL7_4 */ \
         .driver   = "intel-iommu",\
         .property = "pt",\
         .value    = "off",\
