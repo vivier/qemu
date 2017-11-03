@@ -162,8 +162,9 @@ static void parse_option_number(const char *name, const char *value,
     uint64_t number;
 
     if (value != NULL) {
+        errno = 0;
         number = strtoull(value, &postfix, 0);
-        if (*postfix != '\0') {
+        if (errno != 0 || *postfix != '\0' || postfix == value) {
             error_set(errp, QERR_INVALID_PARAMETER_VALUE, name, "a number");
             return;
         }
