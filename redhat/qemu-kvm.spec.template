@@ -813,6 +813,21 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Nov 07 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7_4.3
+- kvm-bswap.h-Remove-cpu_to_32wu.patch [bz#1501294]
+- kvm-hw-use-ld_p-st_p-instead-of-ld_raw-st_raw.patch [bz#1501294]
+- kvm-vga-Start-cutting-out-non-32bpp-conversion-support.patch [bz#1501294]
+- kvm-vga-Remove-remainder-of-old-conversion-cruft.patch [bz#1501294]
+- kvm-vga-Separate-LE-and-BE-conversion-functions.patch [bz#1501294]
+- kvm-vga-Rename-vga_template.h-to-vga-helpers.h.patch [bz#1501294]
+- kvm-vga-stop-passing-pointers-to-vga_draw_line-functions.patch [bz#1501294]
+- kvm-vga-drop-line_offset-variable.patch [bz#1501294]
+- kvm-vga-Add-mechanism-to-force-the-use-of-a-shadow-surfa.patch [bz#1501294]
+- kvm-vga-handle-cirrus-vbe-mode-wraparounds.patch [bz#1501294]
+- kvm-cirrus-fix-oob-access-in-mode4and5-write-functions.patch [bz#1501294]
+- Resolves: bz#1501294
+  (CVE-2017-15289 qemu-kvm: Qemu: cirrus: OOB access issue in  mode4and5 write functions [rhel-7.4.z])
+
 * Mon Aug 21 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7_4.2
 - kvm-virtio-net-dynamic-network-offloads-configuration.patch [bz#1482468]
 - kvm-Workaround-rhel6-ctrl_guest_offloads-machine-type-mi.patch [bz#1482468]
