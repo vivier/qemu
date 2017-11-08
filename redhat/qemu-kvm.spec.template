@@ -874,6 +874,27 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Nov 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-5.el7
+- kvm-qemu-kvm-rhev-only-allows-pseries-rhel7.5.0-machine-.patch [bz#1478469]
+- kvm-pc-bios-keymaps-keymaps-update.patch [bz#1503128]
+- kvm-migration-Reset-rather-than-destroy-main_thread_load.patch [bz#1508799]
+- kvm-snapshot-tests-Try-loadvm-twice.patch [bz#1508799]
+- kvm-machine-compat-pci_bridge-shpc-always-enable.patch [bz#1508271]
+- kvm-hw-pci-host-gpex-Set-INTx-index-gsi-mapping.patch [bz#1460957]
+- kvm-hw-arm-virt-Set-INTx-gsi-mapping.patch [bz#1460957]
+- kvm-hw-pci-host-gpex-Implement-PCI-INTx-routing.patch [bz#1460957]
+- kvm-hw-pci-host-gpex-Improve-INTX-to-gsi-routing-error-c.patch [bz#1460957]
+- Resolves: bz#1460957
+  (Implement INTx to GSI routing on ARM virt)
+- Resolves: bz#1478469
+  (RHEL 7.5 machine types for Power 8 and 9 - qemu-kvm-rhev)
+- Resolves: bz#1503128
+  (update reverse keymaps for qemu vnc server)
+- Resolves: bz#1508271
+  (Migration is failed from host RHEL7.4.z to host RHEL7.5 with "-machine pseries-rhel7.4.0 -device pci-bridge,id=pci_bridge,bus=pci.0,addr=03,chassis_nr=1")
+- Resolves: bz#1508799
+  (qemu-kvm core dumped when doing 'savevm/loadvm/delvm' for the second time)
+
 * Thu Nov 02 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-4.el7
 - kvm-vga-drop-line_offset-variable.patch [bz#1501301]
 - kvm-vga-handle-cirrus-vbe-mode-wraparounds.patch [bz#1501301]
