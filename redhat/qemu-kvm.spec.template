@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Nov 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7_4.4
+- kvm-multiboot-validate-multiboot-header-address-values.patch [bz#1501120]
+- Resolves: bz#1501120
+  (CVE-2017-14167 qemu-kvm: Qemu: i386: multiboot OOB access while loading kernel image [rhel-7.4.z])
+
 * Tue Nov 07 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7_4.3
 - kvm-bswap.h-Remove-cpu_to_32wu.patch [bz#1501294]
 - kvm-hw-use-ld_p-st_p-instead-of-ld_raw-st_raw.patch [bz#1501294]
