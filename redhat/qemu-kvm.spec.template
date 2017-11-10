@@ -813,6 +813,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Nov 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-148.el7
+- kvm-multiboot-validate-multiboot-header-address-values.patch [bz#1501121]
+- kvm-qemu-option-reject-empty-number-value.patch [bz#1417864]
+- Resolves: bz#1417864
+  (Qemu-kvm starts with unspecified port)
+- Resolves: bz#1501121
+  (CVE-2017-14167 qemu-kvm: Qemu: i386: multiboot OOB access while loading kernel image [rhel-7.5])
+
 * Fri Nov 03 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-147.el7
 - kvm-vga-drop-line_offset-variable.patch [bz#1501295]
 - kvm-vga-Add-mechanism-to-force-the-use-of-a-shadow-surfa.patch [bz#1501295]
