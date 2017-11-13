@@ -827,6 +827,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Nov 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.11
+- kvm-exec-use-qemu_ram_ptr_length-to-access-guest-ram.patch [bz#1472185]
+- kvm-multiboot-validate-multiboot-header-address-values.patch [bz#1501123]
+- Resolves: bz#1472185
+  (CVE-2017-11334 qemu-kvm-rhev: Qemu: exec: oob access during dma operation [rhel-7.4.z])
+- Resolves: bz#1501123
+  (CVE-2017-14167 qemu-kvm-rhev: Qemu: i386: multiboot OOB access while loading kernel image [rhel-7.4.z])
+
 * Mon Oct 23 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.10
 - kvm-vga-stop-passing-pointers-to-vga_draw_line-functions.patch [bz#1501300]
 - kvm-vga-drop-line_offset-variable.patch [bz#1501300]
