@@ -874,6 +874,23 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Nov 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-6.el7
+- kvm-multiboot-validate-multiboot-header-address-values.patch [bz#1501124]
+- kvm-monitor-fix-dangling-CPU-pointer.patch [bz#1510001]
+- kvm-qdev-store-DeviceState-s-canonical-path-to-use-when-.patch [bz#1445460]
+- kvm-Revert-qdev-Free-QemuOpts-when-the-QOM-path-goes-awa.patch [bz#1445460]
+- kvm-qdev-defer-DEVICE_DEL-event-until-instance_finalize.patch [bz#1445460]
+- kvm-s390x-print-CPU-definitions-in-sorted-order.patch [bz#1504138]
+- kvm-s390x-cpumodel-Disable-unsupported-CPU-models.patch [bz#1504138]
+- Resolves: bz#1445460
+  (EEH freeze up when reattaching an i40evf VF to host)
+- Resolves: bz#1501124
+  (CVE-2017-14167 qemu-kvm-rhev: Qemu: i386: multiboot OOB access while loading kernel image [rhel-7.5])
+- Resolves: bz#1504138
+  (Disable older CPU models in qemu-kvm-ma on s390x)
+- Resolves: bz#1510001
+  (Pegas1.0 - qemu crashed during "info cpus" in monitor with change in default cpu in hotplug/unplug sequence (kvm))
+
 * Wed Nov 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-5.el7
 - kvm-qemu-kvm-rhev-only-allows-pseries-rhel7.5.0-machine-.patch [bz#1478469]
 - kvm-pc-bios-keymaps-keymaps-update.patch [bz#1503128]
