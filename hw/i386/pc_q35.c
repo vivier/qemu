@@ -301,7 +301,6 @@ static void pc_q35_machine_options(MachineClass *m)
     m->no_floppy = 1;
     m->has_dynamic_sysbus = true;
     m->max_cpus = 288;
-    SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
 }
 
 static void pc_q35_2_10_machine_options(MachineClass *m)
