@@ -478,7 +478,8 @@ static MemoryRegionSection address_space_do_translate(AddressSpace *as,
                                                       hwaddr *plen_out,
                                                       hwaddr *page_mask_out,
                                                       bool is_write,
-                                                      bool is_mmio)
+                                                      bool is_mmio,
+                                                      AddressSpace **target_as)
 {
     IOMMUTLBEntry iotlb;
     MemoryRegionSection *section;
@@ -512,6 +513,7 @@ static MemoryRegionSection address_space_do_translate(AddressSpace *as,
         }
 
         as = iotlb.target_as;
+        *target_as = iotlb.target_as;
     }
 
     *xlat = addr;
@@ -547,7 +549,7 @@ IOMMUTLBEntry address_space_get_iotlb_entry(AddressSpace *as, hwaddr addr,
      * but page mask.
      */
     section = address_space_do_translate(as, addr, &xlat, NULL,
-                                         &page_mask, is_write, false);
+                                         &page_mask, is_write, false, &as);
 
     /* Illegal translation */
     if (section.mr == &io_mem_unassigned) {
@@ -559,7 +561,7 @@ IOMMUTLBEntry address_space_get_iotlb_entry(AddressSpace *as, hwaddr addr,
         section.offset_within_region;
 
     return (IOMMUTLBEntry) {
-        .target_as = section.address_space,
+        .target_as = as,
         .iova = addr & ~page_mask,
         .translated_addr = xlat & ~page_mask,
         .addr_mask = page_mask,
@@ -581,7 +583,7 @@ MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
 
     /* This can be MMIO, so setup MMIO bit. */
     section = address_space_do_translate(as, addr, xlat, plen, NULL,
-                                         is_write, true);
+                                         is_write, true, &as);
     mr = section.mr;
 
     if (xen_enabled() && memory_access_is_direct(mr, is_write)) {
