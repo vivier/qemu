@@ -827,6 +827,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Nov 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.12
+- kvm-util-async-use-atomic_mb_set-in-qemu_bh_cancel.patch [bz#1513362]
+- Resolves: bz#1513362
+  (QEMU's AIO subsystem gets stuck inhibiting all I/O operations on virtio-blk-pci devices [rhel-7.4.z])
+
 * Mon Nov 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.11
 - kvm-exec-use-qemu_ram_ptr_length-to-access-guest-ram.patch [bz#1472185]
 - kvm-multiboot-validate-multiboot-header-address-values.patch [bz#1501123]
