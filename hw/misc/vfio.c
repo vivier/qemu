@@ -2576,7 +2576,8 @@ static int vfio_mmap_bar(VFIOBAR *bar, MemoryRegion *mem, MemoryRegion *submem,
 {
     int ret = 0;
 
-    if (VFIO_ALLOW_MMAP && size && bar->flags & VFIO_REGION_INFO_FLAG_MMAP) {
+    if (VFIO_ALLOW_MMAP && size && bar->flags & VFIO_REGION_INFO_FLAG_MMAP &&
+        !(size & ~TARGET_PAGE_MASK)) {
         int prot = 0;
 
         if (bar->flags & VFIO_REGION_INFO_FLAG_READ) {
