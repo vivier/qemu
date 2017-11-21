@@ -225,3 +225,12 @@ out_free_state:
     g_free(s);
     return NULL;
 }
+
+void laio_cleanup(void *s_)
+{
+    struct qemu_laio_state *s = s_;
+
+    qemu_aio_set_fd_handler(s->efd, NULL, NULL, NULL, NULL);
+    close(s->efd);
+    g_free(s);
+}

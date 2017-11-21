@@ -1081,6 +1081,12 @@ static BlockDriverAIOCB *raw_aio_flush(BlockDriverState *bs,
 static void raw_close(BlockDriverState *bs)
 {
     BDRVRawState *s = bs->opaque;
+
+#ifdef CONFIG_LINUX_AIO
+    if (s->use_aio) {
+        laio_cleanup(s->aio_ctx);
+    }
+#endif
     if (s->fd >= 0) {
         qemu_close(s->fd);
         s->fd = -1;
