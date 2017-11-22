@@ -22,11 +22,10 @@ void ram_mig_init(void);
 
 /* migration/block.c */
 
-#ifdef CONFIG_LIVE_BLOCK_MIGRATION
+/* RHEL7 allows incoming block migration even with
+ * --disable-live-block-migration to allow RHEL6->7 migration.
+ */
 void blk_mig_init(void);
-#else
-static inline void blk_mig_init(void) {}
-#endif
 
 #define SELF_ANNOUNCE_ROUNDS 5
 
