@@ -14,7 +14,11 @@
 #ifndef MIGRATION_BLOCK_H
 #define MIGRATION_BLOCK_H
 
-#ifdef CONFIG_LIVE_BLOCK_MIGRATION
+/* RHEL7: live block migration is still compiled in even
+ * with --disable-live-block-migration since we must
+ * allow inbound migration from RHEL6.
+ */
+#if 1 /* CONFIG_LIVE_BLOCK_MIGRATION */
 int blk_mig_active(void);
 int blk_mig_bulk_active(void);
 uint64_t blk_mig_bytes_transferred(void);

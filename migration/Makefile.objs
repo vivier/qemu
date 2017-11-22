@@ -10,6 +10,6 @@ common-obj-y += block-dirty-bitmap.o
 
 common-obj-$(CONFIG_RDMA) += rdma.o
 
-common-obj-$(CONFIG_LIVE_BLOCK_MIGRATION) += block.o
+common-obj-y += block.o
 
 rdma.o-libs := $(RDMA_LIBS)
