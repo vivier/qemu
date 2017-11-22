@@ -620,8 +620,11 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/u-boot.e500
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/qemu_vga.ndrv
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/skiboot.lid
 
-%ifnarch s390x
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-ccw.img
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-ccw.img
+%ifarch s390x
+    # Use the s390-ccw.img that we've just built, not the pre-built one
+    install -m 0644 pc-bios/s390-ccw/s390-ccw.img $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+%else
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-netboot.img
 %endif
 
