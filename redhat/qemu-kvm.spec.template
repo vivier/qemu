@@ -879,6 +879,52 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Nov 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-7.el7
+- kvm-hw-pci-introduce-bridge-only-vendor-specific-capabil.patch [bz#1437113]
+- kvm-hw-pci-add-QEMU-specific-PCI-capability-to-the-Gener.patch [bz#1437113]
+- kvm-util-async-use-atomic_mb_set-in-qemu_bh_cancel.patch [bz#1508886]
+- kvm-hw-gen_pcie_root_port-make-IO-RO-0-on-IO-disabled.patch [bz#1344299]
+- kvm-pcie_root_port-Fix-x-migrate-msix-compat.patch [bz#1511312]
+- kvm-q35-Fix-mismerge.patch [bz#1511312]
+- kvm-virtio-pci-Replace-modern_as-with-direct-access-to-m.patch [bz#1481593]
+- kvm-atomic-update-documentation.patch [bz#1481593]
+- kvm-memory-avoid-resurrection-of-dead-FlatViews.patch [bz#1481593]
+- kvm-exec-Explicitly-export-target-AS-from-address_space_.patch [bz#1481593]
+- kvm-memory-Open-code-FlatView-rendering.patch [bz#1481593]
+- kvm-memory-Move-FlatView-allocation-to-a-helper.patch [bz#1481593]
+- kvm-memory-Move-AddressSpaceDispatch-from-AddressSpace-t.patch [bz#1481593]
+- kvm-memory-Remove-AddressSpace-pointer-from-AddressSpace.patch [bz#1481593]
+- kvm-memory-Switch-memory-from-using-AddressSpace-to-Flat.patch [bz#1481593]
+- kvm-memory-Cleanup-after-switching-to-FlatView.patch [bz#1481593]
+- kvm-memory-Rename-mem_begin-mem_commit-mem_add-helpers.patch [bz#1481593]
+- kvm-memory-Store-physical-root-MR-in-FlatView.patch [bz#1481593]
+- kvm-memory-Alloc-dispatch-tree-where-topology-is-generar.patch [bz#1481593]
+- kvm-memory-Move-address_space_update_ioeventfds.patch [bz#1481593]
+- kvm-memory-Share-FlatView-s-and-dispatch-trees-between-a.patch [bz#1481593]
+- kvm-memory-Do-not-allocate-FlatView-in-address_space_ini.patch [bz#1481593]
+- kvm-memory-Rework-info-mtree-to-print-flat-views-and-dis.patch [bz#1481593]
+- kvm-memory-Get-rid-of-address_space_init_shareable.patch [bz#1481593]
+- kvm-memory-Create-FlatView-directly.patch [bz#1481593]
+- kvm-memory-trace-FlatView-creation-and-destruction.patch [bz#1481593]
+- kvm-memory-seek-FlatView-sharing-candidates-among-childr.patch [bz#1481593]
+- kvm-memory-Share-special-empty-FlatView.patch [bz#1481593]
+- kvm-hw-pci-host-Fix-x86-Host-Bridges-64bit-PCI-hole.patch [bz#1390346]
+- kvm-redhat-Provide-s390x-specific-etc-modprobe.d-kvm.con.patch [bz#1511990]
+- Resolves: bz#1344299
+  (PCIe: Add an option to PCIe ports to disable IO port space support)
+- Resolves: bz#1390346
+  (PCI: Reserve MMIO space over 4G for PCI hotplug)
+- Resolves: bz#1437113
+  (PCIe: Allow configuring  Generic PCIe Root Ports MMIO Window)
+- Resolves: bz#1481593
+  (Boot guest failed with "src/central_freelist.cc:333] tcmalloc: allocation failed 196608" when 465 disks are attached to 465 pci-bridges)
+- Resolves: bz#1508886
+  (QEMU's AIO subsystem gets stuck inhibiting all I/O operations on virtio-blk-pci devices)
+- Resolves: bz#1511312
+  (Migrate an VM with  pci-bridge or pcie-root-port failed)
+- Resolves: bz#1511990
+  (Provide a s390x specific /etc/modprobe.d/kvm.conf)
+
 * Mon Nov 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-6.el7
 - kvm-multiboot-validate-multiboot-header-address-values.patch [bz#1501124]
 - kvm-monitor-fix-dangling-CPU-pointer.patch [bz#1510001]
