@@ -2645,7 +2645,7 @@ static int img_resize(int argc, char **argv)
         error_report("Image is read-only");
         break;
     default:
-        error_report("Error resizing image (%d)", -ret);
+        error_report("Error resizing image: %s", strerror(-ret));
         break;
     }
 out:
