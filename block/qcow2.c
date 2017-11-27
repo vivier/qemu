@@ -1497,6 +1497,10 @@ static int qcow2_change_backing_file(BlockDriverState *bs,
 {
     BDRVQcowState *s = bs->opaque;
 
+    if (backing_file && strlen(backing_file) > 1023) {
+        return -EINVAL;
+    }
+
     pstrcpy(bs->backing_file, sizeof(bs->backing_file), backing_file ?: "");
     pstrcpy(bs->backing_format, sizeof(bs->backing_format), backing_fmt ?: "");
 
