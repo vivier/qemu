@@ -882,6 +882,31 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Nov 27 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-8.el7
+- kvm-block-move-ThrottleGroup-membership-to-ThrottleGroup.patch [bz#1492295]
+- kvm-block-add-aio_context-field-in-ThrottleGroupMember.patch [bz#1492295]
+- kvm-block-tidy-ThrottleGroupMember-initializations.patch [bz#1492295]
+- kvm-block-all-I-O-should-be-completed-before-removing-th.patch [bz#1492295]
+- kvm-throttle-groups-drain-before-detaching-ThrottleState.patch [bz#1492295]
+- kvm-block-Check-for-inserted-BlockDriverState-in-blk_io_.patch [bz#1492295]
+- kvm-block-Leave-valid-throttle-timers-when-removing-a-BD.patch [bz#1492295]
+- kvm-qemu-iotests-Test-I-O-limits-with-removable-media.patch [bz#1492295]
+- kvm-throttle-groups-forget-timer-and-schedule-next-TGM-o.patch [bz#1492295]
+- kvm-i386-cpu-hyperv-support-over-64-vcpus-for-windows-gu.patch [bz#1451959]
+- kvm-target-ppc-correct-htab-shift-for-hash-on-radix.patch [bz#1396120]
+- kvm-target-ppc-Update-setting-of-cpu-features-to-account.patch [bz#1396120]
+- kvm-s390-ccw-Fix-alignment-for-CCW1.patch [bz#1514352]
+- kvm-pc-bios-s390-ccw-Fix-problem-with-invalid-virtio-scs.patch [bz#1514352]
+- kvm-redhat-qemu-kvm.spec-Use-the-freshly-built-s390-ccw..patch [bz#1514352]
+- Resolves: bz#1396120
+  ([IBM 7.5 FEAT] POWER9 - Virt: QEMU: POWER8/P8-Compat mode - HPT to guest)
+- Resolves: bz#1451959
+  (Windows 2016 guest blue screen with page fault in nonpaged area when using hv flags)
+- Resolves: bz#1492295
+  (Guest hit call trace with iothrottling(iops) after the status from stop to cont during doing io testing)
+- Resolves: bz#1514352
+  ([RHEL-ALT][s390x] qemu process terminated after rebooting the guest)
+
 * Wed Nov 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-7.el7
 - kvm-hw-pci-introduce-bridge-only-vendor-specific-capabil.patch [bz#1437113]
 - kvm-hw-pci-add-QEMU-specific-PCI-capability-to-the-Gener.patch [bz#1437113]
