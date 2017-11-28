@@ -265,8 +265,6 @@ SCSIDevice *scsi_bus_legacy_add_drive(SCSIBus *bus, BlockBackend *blk,
 
 void scsi_bus_legacy_handle_cmdline(SCSIBus *bus, bool deprecated)
 {
-#if 0 /* Disabled for Red Hat Enterprise Linux */
-
     Location loc;
     DriveInfo *dinfo;
     int unit;
@@ -279,6 +277,7 @@ void scsi_bus_legacy_handle_cmdline(SCSIBus *bus, bool deprecated)
         }
         qemu_opts_loc_restore(dinfo->opts);
         if (deprecated) {
+#if 0 /* Disabled for Red Hat Enterprise Linux */
             /* Handling -drive not claimed by machine initialization */
             if (blk_get_attached_dev(blk_by_legacy_dinfo(dinfo))) {
                 continue;       /* claimed */
@@ -288,12 +287,14 @@ void scsi_bus_legacy_handle_cmdline(SCSIBus *bus, bool deprecated)
                             " machine type",
                             bus->busnr, unit);
             }
+#else
+            continue;
+#endif
         }
         scsi_bus_legacy_add_drive(bus, blk_by_legacy_dinfo(dinfo),
                                   unit, false, -1, NULL, &error_fatal);
     }
     loc_pop(&loc);
-#endif
 }
 
 #if 0 /* Disabled for Red Hat Enterprise Linux */
