@@ -2,10 +2,10 @@ include Makefile.common
 include Makefile.local
 
 
-rh-brew rh-local: RHEV=1
+rh-brew rh-local rh-srpm: RHEV=1
 rh-brew rh-local: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
 rh-brew: BUILD_TARGET=rhevh-rhel-7.5-candidate
-rh-brew-rhel: RHEV=0
+rh-brew-rhel rh-srpm-rhel: RHEV=0
 rh-brew-rhel: SRPM_NAME=$(NAME)-ma-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
 rh-brew-rhel: BUILD_TARGET=rhel-7.5-candidate
 
@@ -66,7 +66,7 @@ rh-prep: rh-clean-sources
     fi
 
 
-rh-srpm: rh-prep
+rh-srpm rh-srpm-rhel: rh-prep
 	$(DS)rpmbuild --define "_sourcedir $(RPMBUILD)/SOURCES" --define "_builddir $(RPMBUILD)/BUILD" --define "_srcrpmdir $(RPMBUILD)/SRPMS" --define "_rpmdir $(RPMBUILD)/RPMS" --define "_specdir $(RPMBUILD)/SPECS" --define "dist $(DIST)" --nodeps -bs $(RPMBUILD)/SPECS/$(SPECFILE)
 
 rh-brew rh-brew-rhel: rh-srpm
@@ -83,7 +83,8 @@ rh-local: rh-env-prep
 rh-help:
 	@echo "rh-brew: Build RHEV package on brew"
 	@echo "rh-brew-rhel: Build RHEL package on brew"
-	@echo "rh-srpm: Prepare srpm package"
+	@echo "rh-srpm: Prepare srpm package for RHEV package"
+	@echo "rh-srpm-rhel: Prepare srpm package for RHEL package"
 	@echo "rh-prep: Prepare sources and spec file in rpmbuild/"
 	@echo "rh-help: Print this help"
 	@echo "rh-env-prep: Install rpms required for redhat build and run configure"
