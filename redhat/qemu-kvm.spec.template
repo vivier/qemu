@@ -887,6 +887,29 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Nov 28 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-9.el7
+- kvm-spapr-Correct-RAM-size-calculation-for-HPT-resizing.patch [bz#1499647]
+- kvm-migration-Reenable-incoming-live-block-migration.patch [bz#1515173]
+- kvm-ppc-fix-VTB-migration.patch [bz#1506882]
+- kvm-hw-ppc-spapr-Fix-virtio-scsi-bootindex-handling-for-.patch [bz#1515393]
+- kvm-spapr-Implement-bug-in-spapr-vty-device-to-be-compat.patch [bz#1495090]
+- kvm-spapr-reset-DRCs-after-devices.patch [bz#1516145]
+- kvm-redhat-install-generic-kvm.conf-except-for-s390-and-.patch [bz#1517144]
+- Resolves: bz#1495090
+  (Transfer a file about 10M failed from host to guest through spapr-vty device)
+- Resolves: bz#1499647
+  (qemu miscalculates guest RAM size during HPT resizing)
+- Resolves: bz#1506882
+  (Call trace showed up in dmesg after migrating guest when "stress-ng --numa 2" was running inside guest)
+- Resolves: bz#1515173
+  (Cross migration from rhel6.9 to rhel7.5 failed)
+- Resolves: bz#1515393
+  (bootindex is not taken into account for virtio-scsi devices on ppc64 if the LUN is >= 256)
+- Resolves: bz#1516145
+  (Pegas1.0 - [memory hotplug/unplug] qemu crashes with assertion failed from hw/virtio/vhost.c:649 (qemu-kvm))
+- Resolves: bz#1517144
+  (Provide a ppc64le specific /etc/modprobe.d/kvm.conf)
+
 * Mon Nov 27 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-8.el7
 - kvm-block-move-ThrottleGroup-membership-to-ThrottleGroup.patch [bz#1492295]
 - kvm-block-add-aio_context-field-in-ThrottleGroupMember.patch [bz#1492295]
