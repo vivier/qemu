@@ -104,6 +104,14 @@ typedef struct SCSIDiskState
     char *product;
     bool tray_open;
     bool tray_locked;
+    /*
+     * 0x0000        - rotation rate not reported
+     * 0x0001        - non-rotating medium (SSD)
+     * 0x0002-0x0400 - reserved
+     * 0x0401-0xffe  - rotations per minute
+     * 0xffff        - reserved
+     */
+    uint16_t rotation_rate;
 } SCSIDiskState;
 
 static int scsi_handle_rw_error(SCSIDiskReq *r, int error, bool acct_failed);
@@ -597,6 +605,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
             outbuf[buflen++] = 0x83; // device identification
             if (s->qdev.type == TYPE_DISK) {
                 outbuf[buflen++] = 0xb0; // block limits
+                outbuf[buflen++] = 0xb1; /* block device characteristics */
                 outbuf[buflen++] = 0xb2; // thin provisioning
             }
             break;
@@ -737,6 +746,15 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
             outbuf[41] = (max_io_sectors >> 16) & 0xff;
             outbuf[42] = (max_io_sectors >> 8) & 0xff;
             outbuf[43] = max_io_sectors & 0xff;
+            break;
+        }
+        case 0xb1: /* block device characteristics */
+        {
+            buflen = 8;
+            outbuf[4] = (s->rotation_rate >> 8) & 0xff;
+            outbuf[5] = s->rotation_rate & 0xff;
+            outbuf[6] = 0;
+            outbuf[7] = 0;
             break;
         }
         case 0xb2: /* thin provisioning */
@@ -2903,6 +2921,7 @@ static Property scsi_hd_properties[] = {
                        DEFAULT_MAX_UNMAP_SIZE),
     DEFINE_PROP_UINT64("max_io_size", SCSIDiskState, max_io_size,
                        DEFAULT_MAX_IO_SIZE),
+    DEFINE_PROP_UINT16("rotation_rate", SCSIDiskState, rotation_rate, 0),
     DEFINE_BLOCK_CHS_PROPERTIES(SCSIDiskState, qdev.conf),
     DEFINE_PROP_END_OF_LIST(),
 };
@@ -2973,6 +2992,7 @@ static const TypeInfo scsi_cd_info = {
 #ifdef __linux__
 static Property scsi_block_properties[] = {
     DEFINE_PROP_DRIVE("drive", SCSIDiskState, qdev.conf.blk),
+    DEFINE_PROP_UINT16("rotation_rate", SCSIDiskState, rotation_rate, 0),
     DEFINE_PROP_END_OF_LIST(),
 };
 
