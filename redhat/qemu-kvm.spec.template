@@ -813,6 +813,25 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Nov 29 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-149.el7
+- kvm-block-linux-aio-fix-memory-and-fd-leak.patch [bz#1491434]
+- kvm-linux-aio-Fix-laio-resource-leak.patch [bz#1491434]
+- kvm-slirp-cleanup-leftovers-from-misc.h.patch [bz#1508745]
+- kvm-Avoid-embedding-struct-mbuf-in-other-structures.patch [bz#1508745]
+- kvm-slirp-Fix-access-to-freed-memory.patch [bz#1508745]
+- kvm-slirp-fix-clearing-ifq_so-from-pending-packets.patch [bz#1508745]
+- kvm-qcow2-Prevent-backing-file-names-longer-than-1023.patch [bz#1459714]
+- kvm-qemu-img-Use-strerror-for-generic-resize-error.patch [bz#1459725]
+- kvm-qcow2-Avoid-making-the-L1-table-too-big.patch [bz#1459725]
+- Resolves: bz#1459714
+  (Throw error if qemu-img rebasing backing file is too long or provide way to fix a "too long" backing file.)
+- Resolves: bz#1459725
+  (Prevent qemu-img resize from causing "Active L1 table too large")
+- Resolves: bz#1491434
+  (KVM leaks file descriptors when attaching and detaching virtio-scsi block devices)
+- Resolves: bz#1508745
+  (CVE-2017-13711 qemu-kvm: Qemu: Slirp: use-after-free when sending response [rhel-7.5])
+
 * Fri Nov 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-148.el7
 - kvm-multiboot-validate-multiboot-header-address-values.patch [bz#1501121]
 - kvm-qemu-option-reject-empty-number-value.patch [bz#1417864]
