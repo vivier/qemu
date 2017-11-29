@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Nov 29 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7_4.5
+- kvm-vfio-pci-Only-mmap-TARGET_PAGE_SIZE-regions.patch [bz#1515110]
+- Resolves: bz#1515110
+  (Regression in QEMU handling for sub-page MMIO BARs for vfio-pci devices [rhel-7.4.z])
+
 * Fri Nov 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7_4.4
 - kvm-multiboot-validate-multiboot-header-address-values.patch [bz#1501120]
 - Resolves: bz#1501120
