@@ -887,6 +887,42 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Nov 30 2017 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-10.el7
+- kvm-qcow2-fix-return-error-code-in-qcow2_truncate.patch [bz#1414049]
+- kvm-qcow2-Fix-unaligned-preallocated-truncation.patch [bz#1414049]
+- kvm-qcow2-Always-execute-preallocate-in-a-coroutine.patch [bz#1414049]
+- kvm-iotests-Add-cluster_size-64k-to-125.patch [bz#1414049]
+- kvm-fw_cfg-rename-read-callback.patch [bz#1398633]
+- kvm-fw_cfg-add-write-callback.patch [bz#1398633]
+- kvm-hw-misc-add-vmcoreinfo-device.patch [bz#1398633]
+- kvm-dump-add-guest-ELF-note.patch [bz#1398633]
+- kvm-dump-update-phys_base-header-field-based-on-VMCOREIN.patch [bz#1398633]
+- kvm-kdump-set-vmcoreinfo-location.patch [bz#1398633]
+- kvm-scripts-dump-guest-memory.py-add-vmcoreinfo.patch [bz#1398633]
+- kvm-vmcoreinfo-put-it-in-the-misc-device-category.patch [bz#1398633]
+- kvm-build-sys-restrict-vmcoreinfo-to-fw_cfg-dma-capable-.patch [bz#1398633]
+- kvm-slirp-fix-clearing-ifq_so-from-pending-packets.patch [bz#1508750]
+- kvm-migration-ram.c-do-not-set-postcopy_running-in-POSTC.patch [bz#1516956]
+- kvm-scsi-Fix-onboard-HBAs-to-pick-up-drive-if-scsi.patch [bz#1497740]
+- kvm-virtio-net-don-t-touch-virtqueue-if-vm-is-stopped.patch [bz#1506151]
+- kvm-scsi-disk-support-reporting-of-rotation-rate.patch [bz#1498042]
+- kvm-ide-support-reporting-of-rotation-rate.patch [bz#1498042]
+- kvm-ide-avoid-referencing-NULL-dev-in-rotational-rate-se.patch [bz#1498042]
+- Resolves: bz#1398633
+  ([RFE] Kernel address space layout randomization [KASLR] support (qemu-kvm-rhev))
+- Resolves: bz#1414049
+  ([RFE] Add support to qemu-img  for resizing with preallocation)
+- Resolves: bz#1497740
+  (-cdrom option is broken)
+- Resolves: bz#1498042
+  (RFE: option to mark virtual block device as rotational/non-rotational)
+- Resolves: bz#1506151
+  ([data-plane] Quitting qemu in destination side encounters "core dumped" when doing live migration)
+- Resolves: bz#1508750
+  (CVE-2017-13711 qemu-kvm-rhev: Qemu: Slirp: use-after-free when sending response [rhel-7.5])
+- Resolves: bz#1516956
+  (Pegas1.0 - [qemu]: loadvm fails to restore VM snapshot saved using savevm in destination after postcopy migration (kvm))
+
 * Tue Nov 28 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-9.el7
 - kvm-spapr-Correct-RAM-size-calculation-for-HPT-resizing.patch [bz#1499647]
 - kvm-migration-Reenable-incoming-live-block-migration.patch [bz#1515173]
