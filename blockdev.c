@@ -2909,7 +2909,8 @@ void qmp___com_redhat_drive_del(const char *id, Error **errp)
 
     blk = blk_by_name(id);
     if (!blk) {
-        error_setg(errp, "Device '%s' not found", id);
+        error_set(errp, ERROR_CLASS_DEVICE_NOT_FOUND,
+                  "Device '%s' not found", id);
         return;
     }
 
