@@ -1638,9 +1638,9 @@ static int kvm_init(MachineState *ms)
      *
      * However the POWER hard limit advertised by the kernel is 2048
      * (== NR_CPUS) but we only want to allow up to the number of
-     * vCPUs we actually test, so we force the hard limit to 240
+     * vCPUs we actually test, so we force the hard limit to 384
      */
-    hard_vcpus_limit = 240;
+    hard_vcpus_limit = 384;
     if (soft_vcpus_limit > hard_vcpus_limit) {
         soft_vcpus_limit = hard_vcpus_limit;
     }
