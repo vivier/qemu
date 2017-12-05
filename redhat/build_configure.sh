@@ -141,6 +141,7 @@ fi
     --enable-vhost-net \
     --enable-vhost-vsock \
     --enable-vnc \
+    --enable-mpath \
     --disable-virglrenderer \
     --disable-xen-pci-passthrough \
     --enable-tcg \

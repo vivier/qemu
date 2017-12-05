@@ -187,6 +187,9 @@ Source28: 95-kvm-memlock.conf
 Source29: pxe-e1000e.rom
 Source30: kvm-s390x.conf
 Source31: kvm-x86.conf
+Source32: qemu-pr-helper.service
+Source33: qemu-pr-helper.socket
+
 
 
 %%PATCHLIST%%
@@ -277,6 +280,11 @@ BuildRequires: lzo-devel snappy-devel
 BuildRequires: numactl-devel
 %endif
 BuildRequires: libgcrypt-devel
+# qemu-pr-helper multipath support (requires libudev too)
+BuildRequires: device-mapper-multipath-devel
+BuildRequires: systemd-devel
+# used by qemu-bridge-helper and qemu-pr-helper
+BuildRequires: libcap-ng-devel
 
 # For kvm-unit-tests
 %ifarch x86_64
@@ -355,7 +363,6 @@ cp %{SOURCE17} pc-bios
 cp %{SOURCE18} pc-bios
 cp %{SOURCE20} pc-bios
 cp %{SOURCE29} pc-bios
-
 
 # if patch fuzzy patch applying will be forbidden
 %define with_fuzzy_patches 0
@@ -711,6 +718,10 @@ rom_link() {
 # Install rules to use the bridge helper with libvirt's virbr0
 install -D -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{pkgname}/bridge.conf
 
+# Install qemu-pr-helper service
+install -m 0644 %{_sourcedir}/qemu-pr-helper.service %{buildroot}%{_unitdir}
+install -m 0644 %{_sourcedir}/qemu-pr-helper.socket %{buildroot}%{_unitdir}
+
 %if 0
 make %{?_smp_mflags} $buildldflags DESTDIR=$RPM_BUILD_ROOT install-libcacard
 
@@ -781,6 +792,9 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %doc %{qemudocdir}/qemu-qmp-ref.html
 %doc %{qemudocdir}/qemu-qmp-ref.txt
 %{_mandir}/man7/qemu-qmp-ref.7*
+%{_bindir}/qemu-pr-helper
+%{_unitdir}/qemu-pr-helper.service
+%{_unitdir}/qemu-pr-helper.socket
 
 %dir %{_datadir}/%{pkgname}/
 %{_datadir}/%{pkgname}/keymaps/
