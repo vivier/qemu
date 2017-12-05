@@ -902,6 +902,60 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Dec 05 2017 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-11.el7
+- kvm-qcow2-don-t-permit-changing-encryption-parameters.patch [bz#1406803]
+- kvm-qcow2-fix-image-corruption-after-committing-qcow2-im.patch [bz#1406803]
+- kvm-qemu-doc-Add-UUID-support-in-initiator-name.patch [bz#1494210]
+- kvm-docs-add-qemu-block-drivers-7-man-page.patch [bz#1494210]
+- kvm-docs-Add-image-locking-subsection.patch [bz#1494210]
+- kvm-qemu-options-Mention-locking-option-of-file-driver.patch [bz#1494210]
+- kvm-Package-qemu-block-drivers-manpage.patch [bz#1494210]
+- kvm-block-don-t-add-driver-to-options-when-referring-to-.patch [bz#1505701]
+- kvm-blockdev-Report-proper-error-class-in-__com.redhat.d.patch [bz#1487515]
+- kvm-block-use-1-MB-bounce-buffers-for-crypto-instead-of-.patch [bz#1500334]
+- kvm-io-add-new-qio_channel_-readv-writev-read-write-_all.patch [bz#1464908]
+- kvm-io-Yield-rather-than-wait-when-already-in-coroutine.patch [bz#1464908]
+- kvm-scsi-bus-correct-responses-for-INQUIRY-and-REQUEST-S.patch [bz#1464908]
+- kvm-scsi-Refactor-scsi-sense-interpreting-code.patch [bz#1464908]
+- kvm-scsi-Improve-scsi_sense_to_errno.patch [bz#1464908]
+- kvm-scsi-Introduce-scsi_sense_buf_to_errno.patch [bz#1464908]
+- kvm-scsi-rename-scsi_build_sense-to-scsi_convert_sense.patch [bz#1464908]
+- kvm-scsi-move-non-emulation-specific-code-to-scsi.patch [bz#1464908]
+- kvm-scsi-introduce-scsi_build_sense.patch [bz#1464908]
+- kvm-scsi-introduce-sg_io_sense_from_errno.patch [bz#1464908]
+- kvm-scsi-move-block-scsi.h-to-include-scsi-constants.h.patch [bz#1464908]
+- kvm-scsi-file-posix-add-support-for-persistent-reservati.patch [bz#1464908]
+- kvm-scsi-build-qemu-pr-helper.patch [bz#1464908]
+- kvm-scsi-add-multipath-support-to-qemu-pr-helper.patch [bz#1464908]
+- kvm-scsi-add-persistent-reservation-manager-using-qemu-p.patch [bz#1464908]
+- kvm-update-spec-to-build-and-install-qemu-pr-helper.patch [bz#1464908]
+- kvm-qemu-pr-helper-miscellaneous-fixes.patch [bz#1464908]
+- kvm-Match-POWER-max-cpus-to-x86.patch [bz#1495456]
+- kvm-qemu-io-Drop-write-permissions-before-read-only-reop.patch [bz#1492178]
+- kvm-block-Add-reopen_queue-to-bdrv_child_perm.patch [bz#1492178]
+- kvm-block-Add-reopen-queue-to-bdrv_check_perm.patch [bz#1492178]
+- kvm-block-Base-permissions-on-rw-state-after-reopen.patch [bz#1492178]
+- kvm-block-reopen-Queue-children-after-their-parents.patch [bz#1492178]
+- kvm-block-Fix-permissions-after-bdrv_reopen.patch [bz#1492178]
+- kvm-qemu-iotests-Test-change-backing-file-command.patch [bz#1492178]
+- kvm-iotests-Fix-195-if-IMGFMT-is-part-of-TEST_DIR.patch [bz#1492178]
+- Resolves: bz#1406803
+  (RFE: native integration of LUKS and qcow2)
+- Resolves: bz#1464908
+  ([RFE] Add S3 PR support to qemu (similar to mpathpersist))
+- Resolves: bz#1487515
+  (wrong error code is reported if __com.redhat.drive_del can't find the device to delete)
+- Resolves: bz#1492178
+  (Non-top-level change-backing-file causes assertion failure)
+- Resolves: bz#1494210
+  (Document image locking in the qemu-img manpage)
+- Resolves: bz#1495456
+  (Update downstream qemu's max supported cpus for pseries to the RHEL supported number)
+- Resolves: bz#1500334
+  (LUKS driver has poor performance compared to in-kernel driver)
+- Resolves: bz#1505701
+  (-blockdev fails if a qcow2 image has backing store format and backing store is referenced via node-name)
+
 * Thu Nov 30 2017 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-10.el7
 - kvm-qcow2-fix-return-error-code-in-qcow2_truncate.patch [bz#1414049]
 - kvm-qcow2-Fix-unaligned-preallocated-truncation.patch [bz#1414049]
