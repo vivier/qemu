@@ -1150,8 +1150,10 @@
                 "PowerPC 970 v2.2")
 #endif
 
-    POWERPC_DEF("POWER9_v1.0",   CPU_POWERPC_POWER9_BASE,            POWER9,
+    POWERPC_DEF("POWER9_v1.0",   CPU_POWERPC_POWER9_DD1,             POWER9,
                 "POWER9 v1.0")
+    POWERPC_DEF("POWER9_v2.0",   CPU_POWERPC_POWER9_DD20,            POWER9,
+                "POWER9 v2.0")
 
 #if 0  /* Disabled for Red Hat Enterprise Linux */
     POWERPC_DEF("970fx_v1.0",    CPU_POWERPC_970FX_v10,              970,
@@ -1403,7 +1405,7 @@ PowerPCCPUAlias ppc_cpu_aliases[] = {
     { "POWER8E", "POWER8E_v2.1" },
     { "POWER8", "POWER8_v2.0" },
     { "POWER8NVL", "POWER8NVL_v1.0" },
-    { "POWER9", "POWER9_v1.0" },
+    { "POWER9", "POWER9_v2.0" },
 #if 0  /* Disabled for Red Hat Enterprise Linux */
     { "970", "970_v2.2" },
     { "970fx", "970fx_v3.1" },
