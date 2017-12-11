@@ -902,6 +902,45 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Dec 11 2017 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-12.el7
+- kvm-block-add-bdrv_co_drain_end-callback.patch [bz#1506531]
+- kvm-block-rename-bdrv_co_drain-to-bdrv_co_drain_begin.patch [bz#1506531]
+- kvm-blockjob-do-not-allow-coroutine-double-entry-or-entr.patch [bz#1506531]
+- kvm-coroutine-abort-if-we-try-to-schedule-or-enter-a-pen.patch [bz#1506531]
+- kvm-qemu-iotests-add-option-in-common.qemu-for-mismatch-.patch [bz#1506531]
+- kvm-qemu-iotest-add-test-for-blockjob-coroutine-race-con.patch [bz#1506531]
+- kvm-blockjob-Remove-the-job-from-the-list-earlier-in-blo.patch [bz#1506531]
+- kvm-block-Expect-graph-changes-in-bdrv_parent_drained_be.patch [bz#1506531]
+- kvm-blockjob-remove-clock-argument-from-block_job_sleep_.patch [bz#1506531]
+- kvm-blockjob-introduce-block_job_do_yield.patch [bz#1506531]
+- kvm-blockjob-reimplement-block_job_sleep_ns-to-allow-can.patch [bz#1506531]
+- kvm-blockjob-Make-block_job_pause_all-keep-a-reference-t.patch [bz#1506531]
+- kvm-target-ppc-Move-setting-of-patb_entry-on-hash-table-.patch [bz#1517051]
+- kvm-target-ppc-Fix-setting-of-cpu-compat_pvr-on-incoming.patch [bz#1517051]
+- kvm-BZ1513294-spapr-Include-pre-plugged-DIMMS-in-ram-siz.patch [bz#1513294]
+- kvm-virtio-Add-queue-interface-to-restore-avail-index-fr.patch [bz#1491909]
+- kvm-vhost-restore-avail-index-from-vring-used-index-on-d.patch [bz#1491909]
+- kvm-dump-guest-memory.py-fix-No-symbol-vmcoreinfo_find.patch [bz#1398633]
+- kvm-ppc-fix-setting-of-compat-mode.patch [bz#1396119]
+- kvm-pc-fix-crash-on-attempted-cpu-unplug.patch [bz#1506856]
+- kvm-sockets-avoid-crash-when-cleaning-up-sockets-for-an-.patch [bz#1506218]
+- Resolves: bz#1396119
+  ([IBM 7.5 Feature] POWER9 - Virt: QEMU: POWER8/P8-Compat mode for POWER8 Guests on POWER9 platform)
+- Resolves: bz#1398633
+  ([RFE] Kernel address space layout randomization [KASLR] support (qemu-kvm-rhev))
+- Resolves: bz#1491909
+  (IP network can not recover after several vhost-user reconnect)
+- Resolves: bz#1506218
+  (seg at exit - due to missing fd?)
+- Resolves: bz#1506531
+  ([data-plane] Qemu-kvm core dumped when hot-unplugging a block device with data-plane while the drive-mirror job is running)
+- Resolves: bz#1506856
+  ([abrt] qemu-kvm-rhev: object_get_class(): qemu-kvm killed by SIGSEGV)
+- Resolves: bz#1513294
+  (Guest got stuck when attached memory beforehand.[-device dimm and object memory-backend-ram])
+- Resolves: bz#1517051
+  (POWER9 - Virt: QEMU: Migration of HPT guest on Radix host fails)
+
 * Tue Dec 05 2017 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-11.el7
 - kvm-qcow2-don-t-permit-changing-encryption-parameters.patch [bz#1406803]
 - kvm-qcow2-fix-image-corruption-after-committing-qcow2-im.patch [bz#1406803]
