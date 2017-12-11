@@ -115,7 +115,8 @@ static void bdrv_vxhs_load_libs(Error **errp)
     libvxhs_handle = g_module_open(LIBVXHS_FULL_PATHNAME,
                                    G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL);
     if (!libvxhs_handle) {
-        error_setg(errp, "error loading libvxhs: %s", g_module_error());
+        error_setg(errp, "The VXHS library from Veritas might not be installed "
+                   "correctly (%s)", g_module_error());
         return;
     }
 
