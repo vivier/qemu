@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Dec 12 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-150.el7
+- kvm-Build-only-x86_64-packages.patch [bz#1520793]
+- Resolves: bz#1520793
+  (Do not build non-x86_64 subpackages)
+
 * Wed Nov 29 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-149.el7
 - kvm-block-linux-aio-fix-memory-and-fd-leak.patch [bz#1491434]
 - kvm-linux-aio-Fix-laio-resource-leak.patch [bz#1491434]
