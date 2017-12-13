@@ -5,7 +5,7 @@ common-obj-$(CONFIG_ISA_DEBUG) += debugexit.o
 common-obj-$(CONFIG_SGA) += sga.o
 common-obj-$(CONFIG_ISA_TESTDEV) += pc-testdev.o
 common-obj-$(CONFIG_PCI_TESTDEV) += pci-testdev.o
-common-obj-y += vmcoreinfo.o
+common-obj-$(CONFIG_FW_CFG_DMA) += vmcoreinfo.o
 
 obj-$(CONFIG_VMPORT) += vmport.o
 
