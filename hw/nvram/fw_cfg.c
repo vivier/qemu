@@ -506,6 +506,7 @@ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
         sysbus_mmio_map(d, 1, data_addr);
     }
     fw_cfg_add_bytes(s, FW_CFG_SIGNATURE, (char *)"QEMU", 4);
+    fw_cfg_add_i32(s, FW_CFG_ID, 1);
     fw_cfg_add_bytes(s, FW_CFG_UUID, qemu_uuid, 16);
     fw_cfg_add_i16(s, FW_CFG_NOGRAPHIC, (uint16_t)(display_type == DT_NOGRAPHIC));
     fw_cfg_add_i16(s, FW_CFG_NB_CPUS, (uint16_t)smp_cpus);
