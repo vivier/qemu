@@ -1444,8 +1444,18 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "x2apic",\
             .value = "on",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Nehalem-IBRS" "-" TYPE_X86_CPU,\
+            .property = "x2apic",\
+            .value = "on",\
+        },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "x2apic",\
+            .value = "on",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
             .property = "x2apic",\
             .value = "on",\
         },\
@@ -1454,8 +1464,18 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "pclmulqdq",\
             .value = "off",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
+            .property = "pclmulqdq",\
+            .value = "off",\
+        },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "fxsr",\
+            .value = "on",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
             .property = "fxsr",\
             .value = "on",\
         },\
@@ -1464,8 +1484,18 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "mmx",\
             .value = "on",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
+            .property = "mmx",\
+            .value = "on",\
+        },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "pat",\
+            .value = "on",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
             .property = "pat",\
             .value = "on",\
         },\
@@ -1474,8 +1504,18 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "cmov",\
             .value = "on",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
+            .property = "cmov",\
+            .value = "on",\
+        },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "pge",\
+            .value = "on",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
             .property = "pge",\
             .value = "on",\
         },\
@@ -1484,8 +1524,18 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "apic",\
             .value = "on",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
+            .property = "apic",\
+            .value = "on",\
+        },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "cx8",\
+            .value = "on",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
             .property = "cx8",\
             .value = "on",\
         },\
@@ -1494,8 +1544,18 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "mce",\
             .value = "on",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
+            .property = "mce",\
+            .value = "on",\
+        },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "pae",\
+            .value = "on",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
             .property = "pae",\
             .value = "on",\
         },\
@@ -1504,8 +1564,18 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "msr",\
             .value = "on",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
+            .property = "msr",\
+            .value = "on",\
+        },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "tsc",\
+            .value = "on",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
             .property = "tsc",\
             .value = "on",\
         },\
@@ -1514,8 +1584,18 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "pse",\
             .value = "on",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
+            .property = "pse",\
+            .value = "on",\
+        },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "de",\
+            .value = "on",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
             .property = "de",\
             .value = "on",\
         },\
@@ -1524,13 +1604,28 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .property = "fpu",\
             .value = "on",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
+            .property = "fpu",\
+            .value = "on",\
+        },\
         {\
             .driver = "Broadwell" "-" TYPE_X86_CPU,\
             .property = "rdtscp",\
             .value = "off",\
         },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Broadwell-IBRS" "-" TYPE_X86_CPU,\
+            .property = "rdtscp",\
+            .value = "off",\
+        },\
         {\
             .driver = "Broadwell" "-" TYPE_X86_CPU,\
+            .property = "smap",\
+            .value = "off",\
+        },\
+        { /* PC_RHEL6_6_COMPAT (copied from the entry above) */ \
+            .driver = "Broadwell-IBRS" "-" TYPE_X86_CPU,\
             .property = "smap",\
             .value = "off",\
         },\
@@ -1750,6 +1845,11 @@ DEFINE_PC_MACHINE(rhel640, "rhel6.4.0", pc_init_rhel640,
         },\
         {\
             .driver = "SandyBridge" "-" TYPE_X86_CPU,\
+            .property = "tsc-deadline",\
+            .value = "off",\
+        },\
+        { /* PC_RHEL6_3_COMPAT (copied from the entry above) */ \
+            .driver = "SandyBridge-IBRS" "-" TYPE_X86_CPU,\
             .property = "tsc-deadline",\
             .value = "off",\
         },
