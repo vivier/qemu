@@ -87,6 +87,13 @@ void qmp_quit(Error **err)
 
 void qmp_stop(Error **errp)
 {
+    /* if there is a dump in background, we should wait until the dump
+     * finished */
+    if (dump_in_progress()) {
+        error_setg(errp, "There is a dump in process, please wait.");
+        return;
+    }
+
     if (runstate_check(RUN_STATE_INMIGRATE)) {
         autostart = 0;
     } else {
@@ -158,6 +165,13 @@ static void encrypted_bdrv_it(void *opaque, BlockDriverState *bs)
 void qmp_cont(Error **errp)
 {
     Error *local_err = NULL;
+
+    /* if there is a dump in background, we should wait until the dump
+     * finished */
+    if (dump_in_progress()) {
+        error_setg(errp, "There is a dump in process, please wait.");
+        return;
+    }
 
     if (runstate_needs_reset()) {
         error_set(errp, QERR_RESET_REQUIRED);

@@ -481,4 +481,8 @@ size_t buffer_find_nonzero_offset(const void *buf, size_t len);
  */
 int parse_debug_env(const char *name, int max, int initial);
 
+/* returns non-zero if dump is in progress, otherwise zero is
+ * returned. */
+bool dump_in_progress(void);
+
 #endif
