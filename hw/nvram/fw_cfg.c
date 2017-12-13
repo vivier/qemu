@@ -30,6 +30,7 @@
 #include "trace.h"
 #include "qemu/error-report.h"
 #include "qemu/config-file.h"
+#include "qemu/option.h"
 
 #define FW_CFG_CTL_SIZE 2
 #define FW_CFG_DATA_SIZE 1
@@ -675,6 +676,17 @@ static void fw_cfg_machine_ready(struct Notifier *n, void *data)
     fw_cfg_add_file(s, "bootorder", (uint8_t*)bootindex, len);
 }
 
+static int driver_is_vmcoreinfo(QemuOpts *opts, void *opaque)
+{
+    return g_strcmp0(qemu_opt_get(opts, "driver"), "vmcoreinfo") == 0;
+}
+
+static bool opts_has_vmcoreinfo(void)
+{
+    return qemu_opts_foreach(qemu_find_opts("device"),
+                             driver_is_vmcoreinfo, NULL, 1) != 0;
+}
+
 static FWCfgState *
 fw_cfg_init_dma(uint32_t ctl_port, uint32_t data_port,
                 uint32_t dma_port,
@@ -691,6 +703,11 @@ fw_cfg_init_dma(uint32_t ctl_port, uint32_t data_port,
     qdev_prop_set_uint32(dev, "ctl_iobase", ctl_port);
     qdev_prop_set_uint32(dev, "data_iobase", data_port);
     qdev_prop_set_uint32(dev, "dma_iobase", dma_port);
+
+    if (opts_has_vmcoreinfo()) {
+        /* RHEL-only: enable DMA operations for vmcoreinfo device */
+        qdev_prop_set_bit(dev, "dma_enabled", true);
+    }
 
     if (!dma_requested) {
         qdev_prop_set_bit(dev, "dma_enabled", false);
