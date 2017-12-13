@@ -7,6 +7,7 @@
 
 #include "exec/hwaddr.h"
 #include "qemu/typedefs.h"
+#include "qemu/compiler.h"
 #endif
 
 #define FW_CFG_SIGNATURE        0x00
@@ -61,6 +62,15 @@ typedef struct FWCfgFiles {
     FWCfgFile f[];
 } FWCfgFiles;
 
+/* Control as first field allows for different structures selected by this
+ * field, which might be useful in the future
+ */
+typedef struct FWCfgDmaAccess {
+    uint32_t control;
+    uint32_t length;
+    uint64_t address;
+} QEMU_PACKED FWCfgDmaAccess;
+
 typedef void (*FWCfgCallback)(void *opaque, uint8_t *data);
 typedef void (*FWCfgReadCallback)(void *opaque, uint32_t offset);
 
@@ -76,6 +86,8 @@ void fw_cfg_add_file_callback(FWCfgState *s, const char *filename,
                               void *data, size_t len);
 FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
                         hwaddr crl_addr, hwaddr data_addr);
+FWCfgState *fw_cfg_init_io_dma(uint32_t iobase, uint32_t dma_iobase,
+                               AddressSpace *dma_as);
 
 FWCfgState *fw_cfg_find(void);
 

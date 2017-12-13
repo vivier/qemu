@@ -23,6 +23,7 @@
  */
 #include "hw/hw.h"
 #include "sysemu/sysemu.h"
+#include "sysemu/dma.h"
 #include "hw/isa/isa.h"
 #include "hw/nvram/fw_cfg.h"
 #include "hw/sysbus.h"
@@ -30,11 +31,21 @@
 #include "qemu/error-report.h"
 #include "qemu/config-file.h"
 
-#define FW_CFG_SIZE 2
+#define FW_CFG_CTL_SIZE 2
 #define FW_CFG_DATA_SIZE 1
 #define TYPE_FW_CFG "fw_cfg"
 #define FW_CFG_NAME "fw_cfg"
 #define FW_CFG_PATH "/machine/" FW_CFG_NAME
+
+/* FW_CFG_VERSION bits */
+#define FW_CFG_VERSION      0x01
+#define FW_CFG_VERSION_DMA  0x02
+
+/* FW_CFG_DMA_CONTROL bits */
+#define FW_CFG_DMA_CTL_ERROR   0x01
+#define FW_CFG_DMA_CTL_READ    0x02
+#define FW_CFG_DMA_CTL_SKIP    0x04
+#define FW_CFG_DMA_CTL_SELECT  0x08
 
 typedef struct FWCfgEntry {
     uint32_t len;
@@ -46,12 +57,17 @@ typedef struct FWCfgEntry {
 struct FWCfgState {
     SysBusDevice busdev;
     MemoryRegion ctl_iomem, data_iomem, comb_iomem;
-    uint32_t ctl_iobase, data_iobase;
+    uint32_t ctl_iobase, data_iobase, dma_iobase;
     FWCfgEntry entries[2][FW_CFG_MAX_ENTRY];
     FWCfgFiles *files;
     uint16_t cur_entry;
     uint32_t cur_offset;
     Notifier machine_ready;
+
+    bool dma_enabled;
+    dma_addr_t dma_addr;
+    DMAContext *dma;
+    MemoryRegion dma_iomem;
 };
 
 #define JPG_FILE 0
@@ -257,6 +273,124 @@ static void fw_cfg_data_mem_write(void *opaque, hwaddr addr,
     fw_cfg_write(opaque, (uint8_t)value);
 }
 
+static void fw_cfg_dma_transfer(FWCfgState *s)
+{
+    dma_addr_t len;
+    FWCfgDmaAccess dma;
+    int arch;
+    FWCfgEntry *e;
+    int read;
+    dma_addr_t dma_addr;
+
+    /* Reset the address before the next access */
+    dma_addr = s->dma_addr;
+    s->dma_addr = 0;
+
+    if (dma_memory_read(s->dma, dma_addr, &dma, sizeof(dma))) {
+        stl_be_dma(s->dma, dma_addr + offsetof(FWCfgDmaAccess, control),
+                   FW_CFG_DMA_CTL_ERROR);
+        return;
+    }
+
+    dma.address = be64_to_cpu(dma.address);
+    dma.length = be32_to_cpu(dma.length);
+    dma.control = be32_to_cpu(dma.control);
+
+    if (dma.control & FW_CFG_DMA_CTL_SELECT) {
+        fw_cfg_select(s, dma.control >> 16);
+    }
+
+    arch = !!(s->cur_entry & FW_CFG_ARCH_LOCAL);
+    e = &s->entries[arch][s->cur_entry & FW_CFG_ENTRY_MASK];
+
+    if (dma.control & FW_CFG_DMA_CTL_READ) {
+        read = 1;
+    } else if (dma.control & FW_CFG_DMA_CTL_SKIP) {
+        read = 0;
+    } else {
+        dma.length = 0;
+    }
+
+    dma.control = 0;
+
+    while (dma.length > 0 && !(dma.control & FW_CFG_DMA_CTL_ERROR)) {
+        if (s->cur_entry == FW_CFG_INVALID || !e->data ||
+                                s->cur_offset >= e->len) {
+            len = dma.length;
+
+            /* If the access is not a read access, it will be a skip access,
+             * tested before.
+             */
+            if (read) {
+                if (dma_memory_set(s->dma, dma.address, 0, len)) {
+                    dma.control |= FW_CFG_DMA_CTL_ERROR;
+                }
+            }
+
+        } else {
+            if (dma.length <= (e->len - s->cur_offset)) {
+                len = dma.length;
+            } else {
+                len = (e->len - s->cur_offset);
+            }
+
+            if (e->read_callback) {
+                e->read_callback(e->callback_opaque, s->cur_offset);
+            }
+
+            /* If the access is not a read access, it will be a skip access,
+             * tested before.
+             */
+            if (read) {
+                if (dma_memory_write(s->dma, dma.address,
+                                    &e->data[s->cur_offset], len)) {
+                    dma.control |= FW_CFG_DMA_CTL_ERROR;
+                }
+            }
+
+            s->cur_offset += len;
+        }
+
+        dma.address += len;
+        dma.length  -= len;
+
+    }
+
+    stl_be_dma(s->dma, dma_addr + offsetof(FWCfgDmaAccess, control),
+                dma.control);
+
+    trace_fw_cfg_read(s, 0);
+}
+
+static void fw_cfg_dma_mem_write(void *opaque, hwaddr addr,
+                                 uint64_t value, unsigned size)
+{
+    FWCfgState *s = opaque;
+
+    if (size == 4) {
+        value = be32_to_cpu(value);
+        if (addr == 0) {
+            /* FWCfgDmaAccess high address */
+            s->dma_addr = value << 32;
+        } else if (addr == 4) {
+            /* FWCfgDmaAccess low address */
+            s->dma_addr |= value;
+            fw_cfg_dma_transfer(s);
+        }
+    } else if (size == 8 && addr == 0) {
+        value = be64_to_cpu(value);
+        s->dma_addr = value;
+        fw_cfg_dma_transfer(s);
+    }
+}
+
+static bool fw_cfg_dma_mem_valid(void *opaque, hwaddr addr,
+                                 unsigned size, bool is_write)
+{
+    return is_write && ((size == 4 && (addr == 0 || addr == 4)) ||
+                        (size == 8 && addr == 0));
+}
+
 static void fw_cfg_ctl_mem_write(void *opaque, hwaddr addr,
                                  uint64_t value, unsigned size)
 {
@@ -317,6 +451,14 @@ static const MemoryRegionOps fw_cfg_comb_mem_ops = {
     .valid.accepts = fw_cfg_comb_valid,
 };
 
+static const MemoryRegionOps fw_cfg_dma_mem_ops = {
+    .write = fw_cfg_dma_mem_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+    .valid.accepts = fw_cfg_dma_mem_valid,
+    .valid.max_access_size = 8,
+    .impl.max_access_size = 8,
+};
+
 static void fw_cfg_reset(DeviceState *d)
 {
     FWCfgState *s = DO_UPCAST(FWCfgState, busdev.qdev, d);
@@ -357,6 +499,21 @@ static bool is_version_1(void *opaque, int version_id)
     return version_id == 1;
 }
 
+static bool fw_cfg_dma_enabled(void *opaque)
+{
+    FWCfgState *s = opaque;
+
+    return s->dma_enabled;
+}
+
+static const VMStateDescription vmstate_fw_cfg_dma = {
+    .name = "fw_cfg/dma",
+    .fields = (VMStateField[]) {
+        VMSTATE_UINT64(dma_addr, FWCfgState),
+        VMSTATE_END_OF_LIST()
+    },
+};
+
 static const VMStateDescription vmstate_fw_cfg = {
     .name = "fw_cfg",
     .version_id = 2,
@@ -367,6 +524,14 @@ static const VMStateDescription vmstate_fw_cfg = {
         VMSTATE_UINT16_HACK(cur_offset, FWCfgState, is_version_1),
         VMSTATE_UINT32_V(cur_offset, FWCfgState, 2),
         VMSTATE_END_OF_LIST()
+    },
+    .subsections = (const VMStateSubsection[]) {
+        {
+            .vmsd = &vmstate_fw_cfg_dma,
+            .needed = fw_cfg_dma_enabled,
+        }, {
+            /* empty */
+        }
     }
 };
 
@@ -478,16 +643,24 @@ static void fw_cfg_machine_ready(struct Notifier *n, void *data)
     fw_cfg_add_file(s, "bootorder", (uint8_t*)bootindex, len);
 }
 
-FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
-                        hwaddr ctl_addr, hwaddr data_addr)
+static FWCfgState *
+fw_cfg_init_dma(uint32_t ctl_port, uint32_t data_port,
+                uint32_t dma_port,
+                hwaddr ctl_addr, hwaddr data_addr, hwaddr dma_addr,
+                AddressSpace *dma_as)
 {
     DeviceState *dev;
     SysBusDevice *d;
     FWCfgState *s;
+    uint32_t version = FW_CFG_VERSION;
+    bool dma_enabled = dma_port && dma_as;
 
     dev = qdev_create(NULL, "fw_cfg");
     qdev_prop_set_uint32(dev, "ctl_iobase", ctl_port);
     qdev_prop_set_uint32(dev, "data_iobase", data_port);
+    qdev_prop_set_uint32(dev, "dma_iobase", dma_port);
+    qdev_prop_set_bit(dev, "dma_enabled", dma_enabled);
+
     d = SYS_BUS_DEVICE(dev);
 
     s = DO_UPCAST(FWCfgState, busdev.qdev, dev);
@@ -505,8 +678,19 @@ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
     if (data_addr) {
         sysbus_mmio_map(d, 1, data_addr);
     }
+    if (dma_enabled) {
+        /* 64 bits for the address field */
+        s->dma = &dma_context_memory;
+        s->dma_addr = 0;
+
+        version |= FW_CFG_VERSION_DMA;
+        if (dma_addr) {
+            sysbus_mmio_map(d, 2, dma_addr);
+        }
+    }
+
     fw_cfg_add_bytes(s, FW_CFG_SIGNATURE, (char *)"QEMU", 4);
-    fw_cfg_add_i32(s, FW_CFG_ID, 1);
+    fw_cfg_add_i32(s, FW_CFG_ID, version);
     fw_cfg_add_bytes(s, FW_CFG_UUID, qemu_uuid, 16);
     fw_cfg_add_i16(s, FW_CFG_NOGRAPHIC, (uint16_t)(display_type == DT_NOGRAPHIC));
     fw_cfg_add_i16(s, FW_CFG_NB_CPUS, (uint16_t)smp_cpus);
@@ -520,19 +704,37 @@ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
     return s;
 }
 
+FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
+                        hwaddr ctl_addr, hwaddr data_addr)
+{
+    return fw_cfg_init_dma(ctl_port, data_addr, 0, ctl_addr, data_addr, 0, NULL);
+}
+
+FWCfgState *fw_cfg_init_io_dma(uint32_t iobase, uint32_t dma_iobase,
+                               AddressSpace *dma_as)
+{
+    return fw_cfg_init_dma(iobase, iobase + 1, dma_iobase, 0, 0, 0, dma_as);
+}
+
 static int fw_cfg_init1(SysBusDevice *dev)
 {
     FWCfgState *s = FROM_SYSBUS(FWCfgState, dev);
 
     memory_region_init_io(&s->ctl_iomem, &fw_cfg_ctl_mem_ops, s,
-                          "fwcfg.ctl", FW_CFG_SIZE);
+                          "fwcfg.ctl", FW_CFG_CTL_SIZE);
     sysbus_init_mmio(dev, &s->ctl_iomem);
     memory_region_init_io(&s->data_iomem, &fw_cfg_data_mem_ops, s,
                           "fwcfg.data", FW_CFG_DATA_SIZE);
     sysbus_init_mmio(dev, &s->data_iomem);
     /* In case ctl and data overlap: */
     memory_region_init_io(&s->comb_iomem, &fw_cfg_comb_mem_ops, s,
-                          "fwcfg", FW_CFG_SIZE);
+                          "fwcfg", FW_CFG_CTL_SIZE);
+
+    if (s->dma_enabled) {
+        memory_region_init_io(&s->dma_iomem, &fw_cfg_dma_mem_ops, s,
+                              "fwcfg.dma", sizeof(dma_addr_t));
+        sysbus_init_mmio(dev, &s->dma_iomem);
+    }
 
     if (s->ctl_iobase + 1 == s->data_iobase) {
         sysbus_add_io(dev, s->ctl_iobase, &s->comb_iomem);
@@ -544,12 +746,19 @@ static int fw_cfg_init1(SysBusDevice *dev)
             sysbus_add_io(dev, s->data_iobase, &s->data_iomem);
         }
     }
+
+    if (s->dma_iobase) {
+        sysbus_add_io(dev, s->dma_iobase, &s->dma_iomem);
+    }
+
     return 0;
 }
 
 static Property fw_cfg_properties[] = {
     DEFINE_PROP_HEX32("ctl_iobase", FWCfgState, ctl_iobase, -1),
     DEFINE_PROP_HEX32("data_iobase", FWCfgState, data_iobase, -1),
+    DEFINE_PROP_HEX32("dma_iobase", FWCfgState, dma_iobase, -1),
+    DEFINE_PROP_BOOL("dma_enabled", FWCfgState, dma_enabled, false),
     DEFINE_PROP_END_OF_LIST(),
 };
 
