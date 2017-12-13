@@ -722,6 +722,24 @@ static const VMStateDescription vmstate_xss = {
     }
 };
 
+static bool spec_ctrl_needed(void *opaque)
+{
+    X86CPU *cpu = opaque;
+    CPUX86State *env = &cpu->env;
+
+    return env->spec_ctrl != 0;
+}
+
+static const VMStateDescription vmstate_spec_ctrl = {
+    .name = "cpu/spec_ctrl",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .fields = (VMStateField[]){
+        VMSTATE_UINT64(env.spec_ctrl, X86CPU),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 const VMStateDescription vmstate_x86_cpu = {
     .name = "cpu",
     .version_id = 12,
@@ -871,6 +889,9 @@ const VMStateDescription vmstate_x86_cpu = {
          }, {
             .vmsd = &vmstate_xss,
             .needed = xss_needed,
+        }, {
+            .vmsd = &vmstate_spec_ctrl,
+            .needed = spec_ctrl_needed,
         } , {
             /* empty */
         }

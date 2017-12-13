@@ -304,6 +304,7 @@
 #define MSR_IA32_APICBASE_ENABLE        (1<<11)
 #define MSR_IA32_APICBASE_BASE          (0xfffff<<12)
 #define MSR_TSC_ADJUST                  0x0000003b
+#define MSR_IA32_SPEC_CTRL              0x48
 #define MSR_IA32_TSCDEADLINE            0x6e0
 
 #define MSR_P6_PERFCTR0                 0xc1
@@ -958,6 +959,7 @@ typedef struct CPUX86State {
     uint64_t msr_fixed_counters[MAX_FIXED_COUNTERS];
     uint64_t msr_gp_counters[MAX_GP_COUNTERS];
     uint64_t msr_gp_evtsel[MAX_GP_COUNTERS];
+
     uint64_t msr_hv_hypercall;
     uint64_t msr_hv_guest_os_id;
     uint64_t msr_hv_vapic;
@@ -1029,6 +1031,8 @@ typedef struct CPUX86State {
 
     uint64_t xcr0;
     uint64_t xss;
+
+    uint64_t spec_ctrl;
 
     TPRAccess tpr_access_type;
 } CPUX86State;
