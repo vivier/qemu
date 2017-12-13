@@ -575,13 +575,13 @@ static void rom_insert(Rom *rom)
     QTAILQ_INSERT_TAIL(&roms, rom, next);
 }
 
-static void *rom_set_mr(Rom *rom, const char *name)
+static void *rom_set_mr(Rom *rom, const char *name, bool ro)
 {
     void *data;
 
     rom->mr = g_malloc(sizeof(*rom->mr));
     memory_region_init_ram(rom->mr, name, rom->datasize);
-    memory_region_set_readonly(rom->mr, true);
+    memory_region_set_readonly(rom->mr, ro);
     vmstate_register_ram_global(rom->mr);
 
     data = memory_region_get_ram_ptr(rom->mr);
@@ -645,7 +645,7 @@ int rom_add_file(const char *file, const char *fw_dir,
         snprintf(devpath, sizeof(devpath), "/rom@%s", fw_file_name);
 
         if ((!option_rom || option_rom_has_mr) && rom_file_has_mr) {
-            data = rom_set_mr(rom, devpath);
+            data = rom_set_mr(rom, devpath, true);
         } else {
             data = rom->data;
         }
@@ -670,7 +670,8 @@ err:
 
 void *rom_add_blob(const char *name, const void *blob, size_t len,
                    hwaddr addr, const char *fw_file_name,
-                   FWCfgReadCallback fw_callback, void *callback_opaque)
+                   FWCfgReadCallback fw_callback, void *callback_opaque,
+                   bool read_only)
 {
     Rom *rom;
     void *data = NULL;
@@ -686,17 +687,21 @@ void *rom_add_blob(const char *name, const void *blob, size_t len,
     if (fw_file_name && fw_cfg) {
         char devpath[100];
 
-        snprintf(devpath, sizeof(devpath), "/rom@%s", fw_file_name);
+        if (read_only) {
+            snprintf(devpath, sizeof(devpath), "/rom@%s", fw_file_name);
+        } else {
+            snprintf(devpath, sizeof(devpath), "/ram@%s", fw_file_name);
+        }
 
         if (rom_file_has_mr) {
-            data = rom_set_mr(rom, devpath);
+            data = rom_set_mr(rom, devpath, read_only);
         } else {
             data = rom->data;
         }
 
         fw_cfg_add_file_callback(fw_cfg, fw_file_name,
                                  fw_callback, callback_opaque,
-                                 data, rom->romsize);
+                                 data, rom->romsize, read_only);
     }
     return data;
 }

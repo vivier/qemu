@@ -83,7 +83,7 @@ void fw_cfg_add_file(FWCfgState *s, const char *filename, void *data,
                      size_t len);
 void fw_cfg_add_file_callback(FWCfgState *s, const char *filename,
                               FWCfgReadCallback callback, void *callback_opaque,
-                              void *data, size_t len);
+                              void *data, size_t len, bool read_only);
 FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
                         hwaddr crl_addr, hwaddr data_addr);
 FWCfgState *fw_cfg_init_io_dma(uint32_t iobase, uint32_t dma_iobase,
