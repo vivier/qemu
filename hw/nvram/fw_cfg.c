@@ -677,13 +677,16 @@ fw_cfg_init_dma(uint32_t ctl_port, uint32_t data_port,
     SysBusDevice *d;
     FWCfgState *s;
     uint32_t version = FW_CFG_VERSION;
-    bool dma_enabled = dma_port && dma_as;
+    bool dma_requested = dma_port && dma_as;
 
     dev = qdev_create(NULL, "fw_cfg");
     qdev_prop_set_uint32(dev, "ctl_iobase", ctl_port);
     qdev_prop_set_uint32(dev, "data_iobase", data_port);
     qdev_prop_set_uint32(dev, "dma_iobase", dma_port);
-    qdev_prop_set_bit(dev, "dma_enabled", dma_enabled);
+
+    if (!dma_requested) {
+        qdev_prop_set_bit(dev, "dma_enabled", false);
+    }
 
     d = SYS_BUS_DEVICE(dev);
 
@@ -702,7 +705,7 @@ fw_cfg_init_dma(uint32_t ctl_port, uint32_t data_port,
     if (data_addr) {
         sysbus_mmio_map(d, 1, data_addr);
     }
-    if (dma_enabled) {
+    if (s->dma_enabled) {
         /* 64 bits for the address field */
         s->dma = &dma_context_memory;
         s->dma_addr = 0;
