@@ -74,6 +74,16 @@ DefinitionBlock ("ssdt-misc.aml", "SSDT", 0x01, "BXPC", "BXSSDTSUSP", 0x1)
     External(\_SB.PCI0, DeviceObj)
     External(\_SB.PCI0.ISA, DeviceObj)
 
+    Scope(\_SB.PCI0) {
+        Device(FWCF) {
+            Name(_HID, "QEMU0002")
+            Name(_STA, 0x0B)
+            Name(_CRS, ResourceTemplate () {
+                IO(Decode16, 0x0510, 0x0510, 0x01, 0x0C, IO)
+            })
+        }
+    }
+
     Scope(\_SB.PCI0.ISA) {
         Device(PEVT) {
             Name(_HID, "QEMU0001")
