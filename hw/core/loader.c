@@ -700,7 +700,7 @@ void *rom_add_blob(const char *name, const void *blob, size_t len,
         }
 
         fw_cfg_add_file_callback(fw_cfg, fw_file_name,
-                                 fw_callback, callback_opaque,
+                                 fw_callback, NULL, callback_opaque,
                                  data, rom->romsize, read_only);
     }
     return data;
