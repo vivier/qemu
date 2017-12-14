@@ -827,6 +827,9 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Dec 14 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.13
+- Fix CVE-2017-5715
+
 * Thu Nov 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.12
 - kvm-util-async-use-atomic_mb_set-in-qemu_bh_cancel.patch [bz#1513362]
 - Resolves: bz#1513362
