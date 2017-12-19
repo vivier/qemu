@@ -813,6 +813,51 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Dec 19 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-151.el7
+- kvm-fw_cfg-remove-support-for-guest-side-data-writes.patch [bz#1411490]
+- kvm-fw_cfg-prevent-selector-key-conflict.patch [bz#1411490]
+- kvm-fw_cfg-prohibit-insertion-of-duplicate-fw_cfg-file-n.patch [bz#1411490]
+- kvm-fw_cfg-factor-out-initialization-of-FW_CFG_ID-rev.-n.patch [bz#1411490]
+- kvm-Implement-fw_cfg-DMA-interface.patch [bz#1411490]
+- kvm-fw_cfg-avoid-calculating-invalid-current-entry-point.patch [bz#1411490]
+- kvm-fw-cfg-support-writeable-blobs.patch [bz#1411490]
+- kvm-Enable-fw_cfg-DMA-interface-for-x86.patch [bz#1411490]
+- kvm-fw_cfg-unbreak-migration-compatibility.patch [bz#1411490]
+- kvm-i386-expose-fw_cfg-QEMU0002-in-SSDT.patch [bz#1411490]
+- kvm-fw_cfg-add-write-callback.patch [bz#1411490]
+- kvm-hw-misc-add-vmcoreinfo-device.patch [bz#1411490]
+- kvm-vmcoreinfo-put-it-in-the-misc-device-category.patch [bz#1411490]
+- kvm-fw_cfg-enable-DMA-if-device-vmcoreinfo.patch [bz#1411490]
+- kvm-build-sys-restrict-vmcoreinfo-to-fw_cfg-dma-capable-.patch [bz#1411490]
+- kvm-dump-Make-DumpState-and-endian-conversion-routines-a.patch [bz#1411490]
+- kvm-dump.c-Fix-memory-leak-issue-in-cleanup-processing-f.patch [bz#1411490]
+- kvm-dump-Propagate-errors-into-qmp_dump_guest_memory.patch [bz#1411490]
+- kvm-dump-Turn-some-functions-to-void-to-make-code-cleane.patch [bz#1411490]
+- kvm-dump-Fix-dump-guest-memory-termination-and-use-after.patch [bz#1411490]
+- kvm-dump-allow-target-to-set-the-page-size.patch [bz#1411490]
+- kvm-dump-allow-target-to-set-the-physical-base.patch [bz#1411490]
+- kvm-dump-guest-memory-cleanup-removing-dump_-error-clean.patch [bz#1411490]
+- kvm-dump-guest-memory-using-static-DumpState-add-DumpSta.patch [bz#1411490]
+- kvm-dump-guest-memory-add-dump_in_progress-helper-functi.patch [bz#1411490]
+- kvm-dump-guest-memory-introduce-dump_process-helper-func.patch [bz#1411490]
+- kvm-dump-guest-memory-disable-dump-when-in-INMIGRATE-sta.patch [bz#1411490]
+- kvm-DumpState-adding-total_size-and-written_size-fields.patch [bz#1411490]
+- kvm-dump-do-not-dump-non-existent-guest-memory.patch [bz#1411490]
+- kvm-dump-add-guest-ELF-note.patch [bz#1411490]
+- kvm-dump-update-phys_base-header-field-based-on-VMCOREIN.patch [bz#1411490]
+- kvm-kdump-set-vmcoreinfo-location.patch [bz#1411490]
+- kvm-scripts-dump-guest-memory.py-Move-constants-to-the-t.patch [bz#1411490]
+- kvm-scripts-dump-guest-memory.py-Make-methods-functions.patch [bz#1411490]
+- kvm-scripts-dump-guest-memory.py-Improve-python-3-compat.patch [bz#1411490]
+- kvm-scripts-dump-guest-memory.py-Cleanup-functions.patch [bz#1411490]
+- kvm-scripts-dump-guest-memory.py-Introduce-multi-arch-su.patch [bz#1411490]
+- kvm-Fix-typo-in-variable-name-found-and-fixed-by-codespe.patch [bz#1411490]
+- kvm-scripts-dump-guest-memory.py-add-vmcoreinfo.patch [bz#1411490]
+- kvm-dump-guest-memory.py-fix-No-symbol-vmcoreinfo_find.patch [bz#1411490]
+- kvm-dump-guest-memory.py-fix-You-can-t-do-that-without-a.patch [bz#1411490]
+- Resolves: bz#1411490
+  ([RFE] Kernel address space layout randomization [KASLR] support (qemu-kvm))
+
 * Tue Dec 12 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-150.el7
 - kvm-Build-only-x86_64-packages.patch [bz#1520793]
 - Resolves: bz#1520793
