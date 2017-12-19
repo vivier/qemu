@@ -902,6 +902,30 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Dec 19 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-13.el7
+- kvm-target-ppc-Add-POWER9-DD2.0-model-information.patch [bz#1523235]
+- kvm-block-vxhs-improve-error-message-for-missing-bad-vxh.patch [bz#1505654]
+- kvm-qemu-img-Clarify-about-relative-backing-file-options.patch [bz#1451269]
+- kvm-nbd-server-CVE-2017-15119-Reject-options-larger-than.patch [bz#1518529 bz#1518551]
+- kvm-nbd-server-CVE-2017-15118-Stack-smash-on-large-expor.patch [bz#1516545 bz#1518548]
+- kvm-vfio-Fix-vfio-kvm-group-registration.patch [bz#1520294]
+- Resolves: bz#1451269
+  (Clarify the relativity of backing file and created image in "qemu-img create")
+- Resolves: bz#1505654
+  (Missing libvxhs share-able object  file when try to query vxhs protocol)
+- Resolves: bz#1516545
+  (CVE-2017-15118 qemu-kvm-rhev: qemu NBD server vulnerable to stack smash from client requesting long export name [rhel-7.5])
+- Resolves: bz#1518529
+  (CVE-2017-15119 qemu-kvm-rhev: qemu: DoS via large option request [rhel-7.5])
+- Resolves: bz#1518548
+  (CVE-2017-15118 qemu-kvm-ma: Qemu: stack buffer overflow in NBD server triggered via long export name [rhel-7.5])
+- Resolves: bz#1518551
+  (CVE-2017-15119 qemu-kvm-ma: qemu: DoS via large option request [rhel-7.5])
+- Resolves: bz#1520294
+  (Hot-unplug the second pf cause qemu promote " Failed to remove group $iommu_group_num from KVM VFIO device:")
+- Resolves: bz#1523235
+  (Pegas1.0 - qemu cpu information is not up-to-date (qemu-kvm))
+
 * Mon Dec 11 2017 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-12.el7
 - kvm-block-add-bdrv_co_drain_end-callback.patch [bz#1506531]
 - kvm-block-rename-bdrv_co_drain-to-bdrv_co_drain_begin.patch [bz#1506531]
