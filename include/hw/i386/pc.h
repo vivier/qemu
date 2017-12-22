@@ -918,8 +918,18 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .property = "abm",\
             .value    = "off",\
         },\
+        { /* PC_RHEL7_2_COMPAT (copied from the entry above) */ \
+            .driver   = "Haswell-IBRS" "-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "off",\
+        },\
         { /* PC_RHEL7_2_COMPAT */ \
             .driver   = "Haswell-noTSX-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_2_COMPAT (copied from the entry above) */ \
+            .driver   = "Haswell-noTSX-IBRS" "-" TYPE_X86_CPU,\
             .property = "abm",\
             .value    = "off",\
         },\
@@ -928,8 +938,18 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .property = "abm",\
             .value    = "off",\
         },\
+        { /* PC_RHEL7_2_COMPAT (copied from the entry above) */ \
+            .driver   = "Broadwell-IBRS" "-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "off",\
+        },\
         { /* PC_RHEL7_2_COMPAT */ \
             .driver   = "Broadwell-noTSX-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_2_COMPAT (copied from the entry above) */ \
+            .driver   = "Broadwell-noTSX-IBRS" "-" TYPE_X86_CPU,\
             .property = "abm",\
             .value    = "off",\
         },\
@@ -998,8 +1018,18 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 		.property = "vme",\
 		.value = "off",\
 	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "Nehalem-IBRS" "-" TYPE_X86_CPU,\
+		.property = "vme",\
+		.value = "off",\
+	},\
 	{\
 		.driver = "Westmere" "-" TYPE_X86_CPU,\
+		.property = "vme",\
+		.value = "off",\
+	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
 		.property = "vme",\
 		.value = "off",\
 	},\
@@ -1008,13 +1038,28 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 		.property = "vme",\
 		.value = "off",\
 	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "SandyBridge-IBRS" "-" TYPE_X86_CPU,\
+		.property = "vme",\
+		.value = "off",\
+	},\
 	{\
 		.driver = "Haswell" "-" TYPE_X86_CPU,\
 		.property = "vme",\
 		.value = "off",\
 	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "Haswell-IBRS" "-" TYPE_X86_CPU,\
+		.property = "vme",\
+		.value = "off",\
+	},\
 	{\
 		.driver = "Broadwell" "-" TYPE_X86_CPU,\
+		.property = "vme",\
+		.value = "off",\
+	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "Broadwell-IBRS" "-" TYPE_X86_CPU,\
 		.property = "vme",\
 		.value = "off",\
 	},\
@@ -1048,8 +1093,18 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 		.property = "f16c",\
 		.value = "off",\
 	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "Haswell-IBRS" "-" TYPE_X86_CPU,\
+		.property = "f16c",\
+		.value = "off",\
+	},\
 	{\
 		.driver = "Haswell" "-" TYPE_X86_CPU,\
+		.property = "rdrand",\
+		.value = "off",\
+	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "Haswell-IBRS" "-" TYPE_X86_CPU,\
 		.property = "rdrand",\
 		.value = "off",\
 	},\
@@ -1058,8 +1113,18 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 		.property = "f16c",\
 		.value = "off",\
 	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "Broadwell-IBRS" "-" TYPE_X86_CPU,\
+		.property = "f16c",\
+		.value = "off",\
+	},\
 	{\
 		.driver = "Broadwell" "-" TYPE_X86_CPU,\
+		.property = "rdrand",\
+		.value = "off",\
+	},\
+	{ /* PC_RHEL7_1_COMPAT (copied from the entry above) */ \
+		.driver = "Broadwell-IBRS" "-" TYPE_X86_CPU,\
 		.property = "rdrand",\
 		.value = "off",\
 	},\
@@ -1231,8 +1296,18 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 		.property = "x2apic",\
 		.value = "on",\
 	},\
+	{ /* PC_RHEL7_0_COMPAT (copied from the entry above) */ \
+		.driver = "Nehalem-IBRS" "-" TYPE_X86_CPU,\
+		.property = "x2apic",\
+		.value = "on",\
+	},\
 	{\
 		.driver = "Westmere" "-" TYPE_X86_CPU,\
+		.property = "x2apic",\
+		.value = "on",\
+	},\
+	{ /* PC_RHEL7_0_COMPAT (copied from the entry above) */ \
+		.driver = "Westmere-IBRS" "-" TYPE_X86_CPU,\
 		.property = "x2apic",\
 		.value = "on",\
 	},\
