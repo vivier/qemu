@@ -198,6 +198,11 @@ class VM(qtest.QEMUQtestMachine):
             self._debug = True
         self._num_drives = 0
 
+    def add_object(self, opts):
+        self._args.append('-object')
+        self._args.append(opts)
+        return self
+
     def add_device(self, opts):
         self._args.append('-device')
         self._args.append(opts)
