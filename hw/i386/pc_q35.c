@@ -576,19 +576,28 @@ static void pc_q35_compat_rhel710(MachineState *machine)
     x86_cpu_compat_set_features("Conroe", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Penryn", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Nehalem", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Nehalem-IBRS", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Westmere", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Westmere-IBRS", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("SandyBridge", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("SandyBridge-IBRS", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Haswell", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Haswell-IBRS", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Broadwell", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Broadwell-IBRS", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Opteron_G1", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Opteron_G2", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Opteron_G3", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Opteron_G4", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Opteron_G5", FEAT_1_EDX, 0, CPUID_VME);
     x86_cpu_compat_set_features("Haswell", FEAT_1_ECX, 0, CPUID_EXT_F16C);
+    x86_cpu_compat_set_features("Haswell-IBRS", FEAT_1_ECX, 0, CPUID_EXT_F16C);
     x86_cpu_compat_set_features("Haswell", FEAT_1_ECX, 0, CPUID_EXT_RDRAND);
+    x86_cpu_compat_set_features("Haswell-IBRS", FEAT_1_ECX, 0, CPUID_EXT_RDRAND);
     x86_cpu_compat_set_features("Broadwell", FEAT_1_ECX, 0, CPUID_EXT_F16C);
+    x86_cpu_compat_set_features("Broadwell-IBRS", FEAT_1_ECX, 0, CPUID_EXT_F16C);
     x86_cpu_compat_set_features("Broadwell", FEAT_1_ECX, 0, CPUID_EXT_RDRAND);
+    x86_cpu_compat_set_features("Broadwell-IBRS", FEAT_1_ECX, 0, CPUID_EXT_RDRAND);
     machine->suppress_vmdesc = true;
 
     /* From pc_compat_2_1 */
@@ -631,7 +640,9 @@ static void pc_q35_compat_rhel700(MachineState *machine)
     x86_cpu_compat_set_features("Conroe", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Penryn", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Nehalem", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Nehalem-IBRS", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Westmere-IBRS", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     /* SandyBridge and Haswell already have x2apic enabled */
     x86_cpu_compat_set_features("Opteron_G1", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Opteron_G2", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
