@@ -75,6 +75,7 @@ static bool has_msr_hv_hypercall;
 static bool has_msr_hv_vapic;
 static bool has_msr_hv_tsc;
 static bool has_msr_mtrr;
+static bool has_msr_spec_ctrl;
 
 static bool has_msr_architectural_pmu;
 static uint32_t num_architectural_pmu_counters;
@@ -790,6 +791,10 @@ static int kvm_get_supported_msrs(KVMState *s)
                     has_msr_bndcfgs = true;
                     continue;
                 }
+                if (kvm_msr_list->indices[i] == MSR_IA32_SPEC_CTRL) {
+                    has_msr_spec_ctrl = true;
+                    continue;
+                }
             }
         }
 
@@ -1169,6 +1174,9 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
     if (has_msr_bndcfgs) {
         kvm_msr_entry_set(&msrs[n++], MSR_IA32_BNDCFGS, env->msr_bndcfgs);
     }
+    if (has_msr_spec_ctrl) {
+        kvm_msr_entry_set(&msrs[n++], MSR_IA32_SPEC_CTRL, env->spec_ctrl);
+    }
 #ifdef TARGET_X86_64
     if (lm_capable_kernel) {
         kvm_msr_entry_set(&msrs[n++], MSR_CSTAR, env->cstar);
@@ -1177,6 +1185,7 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
         kvm_msr_entry_set(&msrs[n++], MSR_LSTAR, env->lstar);
     }
 #endif
+
     if (level == KVM_PUT_FULL_STATE) {
         /*
          * KVM is yet unable to synchronize TSC values of multiple VCPUs on
@@ -1519,6 +1528,9 @@ static int kvm_get_msrs(X86CPU *cpu)
     if (has_msr_bndcfgs) {
         msrs[n++].index = MSR_IA32_BNDCFGS;
     }
+    if (has_msr_spec_ctrl) {
+        msrs[n++].index = MSR_IA32_SPEC_CTRL;
+    }
 
     if (!env->tsc_valid) {
         msrs[n++].index = MSR_IA32_TSC;
@@ -1753,6 +1765,9 @@ static int kvm_get_msrs(X86CPU *cpu)
             } else {
                 env->mtrr_var[MSR_MTRRphysIndex(index)].base = msrs[i].data;
             }
+            break;
+        case MSR_IA32_SPEC_CTRL:
+            env->spec_ctrl = msrs[i].data;
             break;
         }
     }
