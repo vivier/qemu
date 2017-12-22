@@ -150,6 +150,28 @@ static const char *cpuid_7_0_ebx_feature_name[] = {
     NULL, NULL, "avx512pf", "avx512er", "avx512cd", NULL, NULL, NULL,
 };
 
+static const char *cpuid_7_0_edx_feature_name[] = {
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, "spec-ctrl", "stibp",
+    NULL, "arch-facilities", NULL, NULL,
+};
+
+static const char *cpuid_80000008_ebx_feature_name[] = {
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    "ibpb", NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
 typedef struct FeatureWordInfo {
     const char **feat_names;
     uint32_t cpuid_eax;   /* Input EAX for CPUID */
@@ -191,6 +213,18 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .feat_names = cpuid_7_0_ebx_feature_name,
         .cpuid_eax = 7,
         .cpuid_needs_ecx = true, .cpuid_ecx = 0,
+        .cpuid_reg = R_EBX,
+    },
+    [FEAT_7_0_EDX] = {
+        .feat_names = cpuid_7_0_edx_feature_name,
+        .cpuid_eax = 7,
+        .cpuid_needs_ecx = true, .cpuid_ecx = 0,
+        .cpuid_reg = R_EDX,
+    },
+    [FEAT_8000_0008_EBX] = {
+        .feat_names = cpuid_80000008_ebx_feature_name,
+        .cpuid_eax = 0x80000008,
+        .cpuid_needs_ecx = false, .cpuid_ecx = 0,
         .cpuid_reg = R_EBX,
     },
 };
@@ -1130,8 +1164,11 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
     if (x86_cpu_def->level >= 7) {
         x86_cpu_def->features[FEAT_7_0_EBX] =
                     kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EBX);
+        x86_cpu_def->features[FEAT_7_0_EDX] =
+                    kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EDX);
     } else {
         x86_cpu_def->features[FEAT_7_0_EBX] = 0;
+        x86_cpu_def->features[FEAT_7_0_EDX] = 0;
     }
 
     x86_cpu_def->xlevel = kvm_arch_get_supported_cpuid(s, 0x80000000, 0, R_EAX);
@@ -1139,6 +1176,8 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
                 kvm_arch_get_supported_cpuid(s, 0x80000001, 0, R_EDX);
     x86_cpu_def->features[FEAT_8000_0001_ECX] =
                 kvm_arch_get_supported_cpuid(s, 0x80000001, 0, R_ECX);
+    x86_cpu_def->features[FEAT_8000_0008_EBX] =
+                kvm_arch_get_supported_cpuid(s, 0x80000008, 0, R_EBX);
 
     cpu_x86_fill_model_id(x86_cpu_def->model_id);
 
@@ -1213,6 +1252,12 @@ static int kvm_check_features_against_host(X86CPU *cpu)
         {&env->features[FEAT_7_0_EBX],
             &host_def.features[FEAT_7_0_EBX],
             FEAT_7_0_EBX },
+        {&env->features[FEAT_7_0_EDX],
+            &host_def.features[FEAT_7_0_EDX],
+            FEAT_7_0_EDX },
+        {&env->features[FEAT_8000_0008_EBX],
+            &host_def.features[FEAT_8000_0008_EBX],
+            FEAT_8000_0008_EBX },
         {&env->features[FEAT_SVM],
             &host_def.features[FEAT_SVM],
             FEAT_SVM },
@@ -1751,6 +1796,8 @@ static void cpu_x86_parse_featurestr(X86CPU *cpu, char *features, Error **errp)
     env->features[FEAT_KVM] |= plus_features[FEAT_KVM];
     env->features[FEAT_SVM] |= plus_features[FEAT_SVM];
     env->features[FEAT_7_0_EBX] |= plus_features[FEAT_7_0_EBX];
+    env->features[FEAT_7_0_EDX] |= plus_features[FEAT_7_0_EDX];
+    env->features[FEAT_8000_0008_EBX] |= plus_features[FEAT_8000_0008_EBX];
     env->features[FEAT_1_EDX] &= ~minus_features[FEAT_1_EDX];
     env->features[FEAT_1_ECX] &= ~minus_features[FEAT_1_ECX];
     env->features[FEAT_8000_0001_EDX] &= ~minus_features[FEAT_8000_0001_EDX];
@@ -1759,6 +1806,8 @@ static void cpu_x86_parse_featurestr(X86CPU *cpu, char *features, Error **errp)
     env->features[FEAT_KVM] &= ~minus_features[FEAT_KVM];
     env->features[FEAT_SVM] &= ~minus_features[FEAT_SVM];
     env->features[FEAT_7_0_EBX] &= ~minus_features[FEAT_7_0_EBX];
+    env->features[FEAT_7_0_EDX] &= ~minus_features[FEAT_7_0_EDX];
+    env->features[FEAT_8000_0008_EBX] &= ~minus_features[FEAT_8000_0008_EBX];
 
 out:
     return;
@@ -1894,6 +1943,8 @@ static void cpu_x86_register(X86CPU *cpu, const char *name, Error **errp)
     env->features[FEAT_SVM] = def->features[FEAT_SVM];
     env->features[FEAT_C000_0001_EDX] = def->features[FEAT_C000_0001_EDX];
     env->features[FEAT_7_0_EBX] = def->features[FEAT_7_0_EBX];
+    env->features[FEAT_7_0_EDX] = def->features[FEAT_7_0_EDX];
+    env->features[FEAT_8000_0008_EBX] = def->features[FEAT_8000_0008_EBX];
     env->cpuid_xlevel2 = def->xlevel2;
 
     object_property_set_str(OBJECT(cpu), def->model_id, "model-id", errp);
@@ -2131,7 +2182,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             *eax = 0; /* Maximum ECX value for sub-leaves */
             *ebx = env->features[FEAT_7_0_EBX]; /* Feature flags */
             *ecx = 0; /* Reserved */
-            *edx = 0; /* Reserved */
+            *edx = env->features[FEAT_7_0_EDX]; /* Feature flags */
         } else {
             *eax = 0;
             *ebx = 0;
@@ -2274,7 +2325,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                 *eax = 0x00000020; /* 32 bits physical */
             }
         }
-        *ebx = 0;
+        *ebx = env->features[FEAT_8000_0008_EBX];
         *ecx = 0;
         *edx = 0;
         if (cs->nr_cores * cs->nr_threads > 1) {
