@@ -860,6 +860,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Wed Dec 27 2017 Wainer dos Santos Moschetta <wainersm@redhat.com> - 1.5.3-105.el7_2.16
+- kvm-target-i386-cpu-add-new-CPUID-bits-for-indirect-bran.patch [bz#1526984]
+- kvm-target-i386-add-support-for-SPEC_CTRL-MSR.patch [bz#1526984]
+- kvm-target-i386-cpu-add-new-CPU-models-for-indirect-bran.patch [bz#1526984]
+- Resolves: bz#1526984
+  (EMBARGOED CVE-2017-5715 qemu-kvm-rhev: kernel: variant 2 [rhel-7.2.z])
+
 * Fri Aug 18 2017 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 1.5.3-105.el7_2.15
 - kvm-virtio-net-dynamic-network-offloads-configuration.patch [bz#1482466]
 - kvm-Workaround-rhel6-ctrl_guest_offloads-machine-type-mi.patch [bz#1482466]
