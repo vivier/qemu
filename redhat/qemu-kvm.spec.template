@@ -811,6 +811,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Dec 27 2017 Wainer dos Santos Moschetta <wainersm@redhat.com> - rhev-2.3.0-31.el7_2.26
+- kvm-target-i386-add-support-for-SPEC_CTRL-MSR.patch [bz#1526982]
+- kvm-target-i386-cpu-add-new-CPUID-bits-for-indirect-bran.patch [bz#1526982]
+- kvm-target-i386-cpu-add-new-CPU-models-for-indirect-bran.patch [bz#1526982]
+- Resolves: bz#1526982
+  (EMBARGOED CVE-2017-5715 qemu-kvm-rhev: kernel: variant 2 [rhel-7.2.z])
+
 * Fri Dec 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.25
 - kvm-virtio-introduce-virtqueue_unmap_sg.patch [bz#1400551]
 - kvm-virtio-introduce-virtqueue_discard.patch [bz#1400551]
