@@ -817,6 +817,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Dec 27 2017 Wainer dos Santos Moschetta <wainersm@redhat.com> - 1.5.3-126.el7_3.13
+- kvm-target-i386-cpu-add-new-CPUID-bits-for-indirect-bran.patch [bz#1526981]
+- kvm-target-i386-add-support-for-SPEC_CTRL-MSR.patch [bz#1526981]
+- kvm-target-i386-cpu-add-new-CPU-models-for-indirect-bran.patch [bz#1526981]
+- Resolves: bz#1526981
+  (EMBARGOED CVE-2017-5715 qemu-kvm: kernel: variant 2 [rhel-7.3.z])
+
 * Fri Oct 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.12
 - kvm-Fix-memory-slot-page-alignment-logic.patch [bz#1468577]
 - Resolves: bz#1468577
