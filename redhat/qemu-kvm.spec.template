@@ -902,6 +902,60 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jan 02 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-14.el7
+- kvm-spapr-don-t-initialize-PATB-entry-if-max-cpu-compat-.patch [bz#1525866]
+- kvm-block-avoid-recursive-AioContext-acquire-in-bdrv_ina.patch [bz#1520824]
+- kvm-io-send-proper-HTTP-response-for-websocket-errors.patch [bz#1518649]
+- kvm-io-include-full-error-message-in-websocket-handshake.patch [bz#1518649]
+- kvm-io-use-case-insensitive-check-for-Connection-Upgrade.patch [bz#1518649]
+- kvm-ui-Always-remove-an-old-VNC-channel-watch-before-add.patch [bz#1518649]
+- kvm-io-Small-updates-in-preparation-for-websocket-change.patch [bz#1518649]
+- kvm-io-Add-support-for-fragmented-websocket-binary-frame.patch [bz#1518649]
+- kvm-io-Allow-empty-websocket-payload.patch [bz#1518649]
+- kvm-io-Ignore-websocket-PING-and-PONG-frames.patch [bz#1518649]
+- kvm-io-Reply-to-ping-frames.patch [bz#1518649]
+- kvm-io-Attempt-to-send-websocket-close-messages-to-clien.patch [bz#1518649]
+- kvm-io-add-trace-events-for-websockets-frame-handling.patch [bz#1518649]
+- kvm-io-monitor-encoutput-buffer-size-from-websocket-GSou.patch [bz#1518650]
+- kvm-io-simplify-websocket-ping-reply-handling.patch [bz#1518649]
+- kvm-io-get-rid-of-qio_channel_websock_encode-helper-meth.patch [bz#1518649]
+- kvm-io-pass-a-struct-iovec-into-qio_channel_websock_enco.patch [bz#1518649]
+- kvm-io-get-rid-of-bounce-buffering-in-websock-write-path.patch [bz#1518649]
+- kvm-io-cope-with-websock-Connection-header-having-multip.patch [bz#1518649]
+- kvm-io-add-trace-points-for-websocket-HTTP-protocol-head.patch [bz#1518649]
+- kvm-io-fix-mem-leak-in-websock-error-path.patch [bz#1518649]
+- kvm-io-Add-missing-GCC_FMT_ATTR-fix-Werror-suggest-attri.patch [bz#1518649]
+- kvm-qemu.py-make-VM-a-context-manager.patch [bz#1519721]
+- kvm-iotests.py-add-FilePath-context-manager.patch [bz#1519721]
+- kvm-qemu-iothread-IOThread-supports-the-GMainContext-eve.patch [bz#1519721]
+- kvm-qom-provide-root-container-for-internal-objs.patch [bz#1519721]
+- kvm-iothread-provide-helpers-for-internal-use.patch [bz#1519721]
+- kvm-iothread-export-iothread_stop.patch [bz#1519721]
+- kvm-iothread-delay-the-context-release-to-finalize.patch [bz#1519721]
+- kvm-aio-fix-assert-when-remove-poll-during-destroy.patch [bz#1519721]
+- kvm-blockdev-hold-AioContext-for-bdrv_unref-in-external_.patch [bz#1519721]
+- kvm-block-don-t-keep-AioContext-acquired-after-external_.patch [bz#1519721]
+- kvm-block-don-t-keep-AioContext-acquired-after-drive_bac.patch [bz#1519721]
+- kvm-block-don-t-keep-AioContext-acquired-after-blockdev_.patch [bz#1519721]
+- kvm-block-don-t-keep-AioContext-acquired-after-internal_.patch [bz#1519721]
+- kvm-iothread-add-iothread_by_id-API.patch [bz#1519721]
+- kvm-blockdev-add-x-blockdev-set-iothread-testing-command.patch [bz#1519721]
+- kvm-qemu-iotests-add-202-external-snapshots-IOThread-tes.patch [bz#1519721]
+- kvm-blockdev-add-x-blockdev-set-iothread-force-boolean.patch [bz#1519721]
+- kvm-iotests-add-VM.add_object.patch [bz#1519721]
+- kvm-iothread-fix-iothread_stop-race-condition.patch [bz#1519721]
+- kvm-qemu-iotests-add-203-savevm-with-IOThreads-test.patch [bz#1519721]
+- Resolves: bz#1518649
+  (Client compatibility flaws in VNC websockets server)
+- Resolves: bz#1518650
+  (CVE-2017-15268 qemu-kvm-rhev: Qemu: I/O: potential memory exhaustion via websock connection to VNC [rhel-7.5])
+- Resolves: bz#1519721
+  (Both qemu and guest hang when performing live snapshot transaction with data-plane)
+- Resolves: bz#1520824
+  (Migration with dataplane, qemu processor hang, vm hang and migration can't finish)
+- Resolves: bz#1525866
+  (P9 to P8 guest migration fails when kernel is not started)
+
 * Tue Dec 19 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-13.el7
 - kvm-target-ppc-Add-POWER9-DD2.0-model-information.patch [bz#1523235]
 - kvm-block-vxhs-improve-error-message-for-missing-bad-vxh.patch [bz#1505654]
