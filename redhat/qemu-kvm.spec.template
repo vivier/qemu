@@ -902,6 +902,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Jan 04 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-15.el7
+- kvm-target-i386-add-support-for-SPEC_CTRL-MSR.patch [CVE-2017-5715]
+- kvm-target-i386-cpu-add-new-CPUID-bits-for-indirect-bran.patch [CVE-2017-5715]
+- kvm-target-i386-cpu-add-new-CPU-models-for-indirect-bran.patch [CVE-2017-5715]
+
 * Tue Jan 02 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-14.el7
 - kvm-spapr-don-t-initialize-PATB-entry-if-max-cpu-compat-.patch [bz#1525866]
 - kvm-block-avoid-recursive-AioContext-acquire-in-bdrv_ina.patch [bz#1520824]
