@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Thu Jan 04 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-152.el7
+- kvm-target-i386-cpu-add-new-CPUID-bits-for-indirect-bran.patch [CVE-2017-5715]
+- kvm-target-i386-add-support-for-SPEC_CTRL-MSR.patch [CVE-2017-5715]
+- kvm-target-i386-cpu-add-new-CPU-models-for-indirect-bran.patch [CVE-2017-5715]
+
 * Tue Dec 19 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-151.el7
 - kvm-fw_cfg-remove-support-for-guest-side-data-writes.patch [bz#1411490]
 - kvm-fw_cfg-prevent-selector-key-conflict.patch [bz#1411490]
