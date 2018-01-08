@@ -902,6 +902,23 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Jan 08 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-16.el7
+- kvm-gicv3-Convert-to-DEFINE_PROP_LINK.patch [bz#1513323]
+- kvm-hw-intc-arm_gicv3_its-Fix-the-VM-termination-in-vm_c.patch [bz#1513323]
+- kvm-hw-intc-arm_gicv3_its-Don-t-abort-on-table-save-fail.patch [bz#1513323]
+- kvm-hw-intc-arm_gicv3_its-Don-t-call-post_load-on-reset.patch [bz#1513323]
+- kvm-hw-intc-arm_gicv3_its-Implement-a-minimalist-reset.patch [bz#1513323]
+- kvm-linux-headers-Partial-header-update-against-v4.15-rc.patch [bz#1513323]
+- kvm-hw-intc-arm_gicv3_its-Implement-full-reset.patch [bz#1513323]
+- kvm-block-throttle-groups.c-allocate-RestartData-on-the-.patch [bz#1525868]
+- kvm-redhat-Fix-permissions-of-dev-kvm-on-a-freshly-boote.patch [bz#1527947]
+- Resolves: bz#1513323
+  (vITS reset)
+- Resolves: bz#1525868
+  (Guest hit core dump with both IO throttling and data plane)
+- Resolves: bz#1527947
+  (Pegas1.1 - virsh domcapabilities doesn't report KVM capabilities on s390x)
+
 * Thu Jan 04 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-15.el7
 - kvm-target-i386-add-support-for-SPEC_CTRL-MSR.patch [CVE-2017-5715]
 - kvm-target-i386-cpu-add-new-CPUID-bits-for-indirect-bran.patch [CVE-2017-5715]
