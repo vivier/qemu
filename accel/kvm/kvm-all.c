@@ -1629,21 +1629,11 @@ static int kvm_init(MachineState *ms)
 
 #ifdef HOST_PPC64
     /*
-     * RHEL hack:
-     *
      * On POWER, the kernel advertises a soft limit based on the
      * number of CPU threads on the host.  We want to allow exceeding
      * this for testing purposes, so we don't want to set hard limit
      * to soft limit as on x86.
-     *
-     * However the POWER hard limit advertised by the kernel is 2048
-     * (== NR_CPUS) but we only want to allow up to the number of
-     * vCPUs we actually test, so we force the hard limit to 384
      */
-    hard_vcpus_limit = 384;
-    if (soft_vcpus_limit > hard_vcpus_limit) {
-        soft_vcpus_limit = hard_vcpus_limit;
-    }
 #else
     /* RHEL doesn't support nr_vcpus > soft_vcpus_limit */
     hard_vcpus_limit = soft_vcpus_limit;
