@@ -722,10 +722,6 @@ static const VMStateDescription vmstate_serial_thr_ipending = {
 static bool serial_tsr_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
-    if (migrate_pre_2_2) {
-        return false;
-    }
-
     return s->tsr_retry != 0;
 }
 
@@ -745,10 +741,6 @@ static const VMStateDescription vmstate_serial_tsr = {
 static bool serial_recv_fifo_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
-    if (migrate_pre_2_2) {
-        return false;
-    }
-
     return !fifo8_is_empty(&s->recv_fifo);
 
 }
@@ -767,10 +759,6 @@ static const VMStateDescription vmstate_serial_recv_fifo = {
 static bool serial_xmit_fifo_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
-    if (migrate_pre_2_2) {
-        return false;
-    }
-
     return !fifo8_is_empty(&s->xmit_fifo);
 }
 
