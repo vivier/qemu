@@ -813,6 +813,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Jan 12 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-153.el7
+- kvm-i386-update-ssdt-misc.hex.generated.patch [bz#1411490]
+- kvm-main-loop-Acquire-main_context-lock-around-os_host_m.patch [bz#1435432 bz#1473536]
+- Resolves: bz#1411490
+  ([RFE] Kernel address space layout randomization [KASLR] support (qemu-kvm))
+- Resolves: bz#1435432
+  (Emulated ISA serial port hangs randomly when sending lots of data from guest -> host)
+- Resolves: bz#1473536
+  (Hangs in serial console under qemu)
+
 * Thu Jan 04 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-152.el7
 - kvm-target-i386-cpu-add-new-CPUID-bits-for-indirect-bran.patch [CVE-2017-5715]
 - kvm-target-i386-add-support-for-SPEC_CTRL-MSR.patch [CVE-2017-5715]
