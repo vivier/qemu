@@ -902,6 +902,38 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jan 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-17.el7
+- kvm-tools-kvm_stat-fix-command-line-option-g.patch [bz#1529676]
+- kvm-redhat-globally-limit-the-maximum-number-of-CPUs.patch [bz#1527449]
+- kvm-redhat-remove-manual-max_cpus-limitations-for-ppc.patch [bz#1527449]
+- kvm-dump-guest-memory.py-fix-You-can-t-do-that-without-a.patch [bz#1398633]
+- kvm-hw-ppc-spapr.c-abort-unplug_request-if-previous-unpl.patch [bz#1528173]
+- kvm-spapr-Correct-compatibility-mode-setting-for-hotplug.patch [bz#1528234]
+- kvm-ui-fix-dcl-unregister.patch [bz#1510809]
+- kvm-block-Open-backing-image-in-force-share-mode-for-siz.patch [bz#1526212]
+- kvm-fw_cfg-fix-memory-corruption-when-all-fw_cfg-slots-a.patch [bz#1462145]
+- kvm-block-Don-t-use-BLK_PERM_CONSISTENT_READ-for-format-.patch [bz#1515604]
+- kvm-block-Don-t-request-I-O-permission-with-BDRV_O_NO_IO.patch [bz#1515604]
+- kvm-block-Formats-don-t-need-CONSISTENT_READ-with-NO_IO.patch [bz#1515604]
+- Resolves: bz#1398633
+  ([RFE] Kernel address space layout randomization [KASLR] support (qemu-kvm-rhev))
+- Resolves: bz#1462145
+  (Qemu crashes when all fw_cfg slots are used)
+- Resolves: bz#1510809
+  (qemu-kvm core dumped when booting up guest using both virtio-vga and VGA)
+- Resolves: bz#1515604
+  (qemu-img info: failed to get "consistent read" lock on a mirroring image)
+- Resolves: bz#1526212
+  (qemu-img should not need a write lock for creating the overlay image)
+- Resolves: bz#1527449
+  (qemu-kvm-ma: vCPU count should be limited to 240 on all arches)
+- Resolves: bz#1528173
+  (Hot-unplug memory  during booting early stage induced qemu-kvm coredump)
+- Resolves: bz#1528234
+  (Pegas1.1 Alpha: Hotplugged vcpu does not guarantee CPU P8compat mode on POWER9 host (qemu-kvm))
+- Resolves: bz#1529676
+  (kvm_stat: option '--guest' doesn't work)
+
 * Mon Jan 08 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-16.el7
 - kvm-gicv3-Convert-to-DEFINE_PROP_LINK.patch [bz#1513323]
 - kvm-hw-intc-arm_gicv3_its-Fix-the-VM-termination-in-vm_c.patch [bz#1513323]
