@@ -401,6 +401,7 @@ typedef enum X86Seg {
 #define MSR_MTRRfix4K_F8000             0x26f
 
 #define MSR_PAT                         0x277
+#define MSR_PAT_DEFAULT                 0x0007040600070406ULL
 
 #define MSR_MTRRdefType                 0x2ff
 

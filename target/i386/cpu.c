@@ -3785,7 +3785,7 @@ static void x86_cpu_reset(CPUState *s)
     /* All units are in INIT state.  */
     env->xstate_bv = 0;
 
-    env->pat = 0x0007040600070406ULL;
+    env->pat = MSR_PAT_DEFAULT;
     env->msr_ia32_misc_enable = MSR_IA32_MISC_ENABLE_DEFAULT;
 
     memset(env->dr, 0, sizeof(env->dr));
