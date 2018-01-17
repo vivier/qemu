@@ -2992,6 +2992,7 @@ static const TypeInfo scsi_cd_info = {
 #ifdef __linux__
 static Property scsi_block_properties[] = {
     DEFINE_PROP_DRIVE("drive", SCSIDiskState, qdev.conf.blk),
+    DEFINE_PROP_BOOL("share-rw", SCSIDiskState, qdev.conf.share_rw, false),
     DEFINE_PROP_UINT16("rotation_rate", SCSIDiskState, rotation_rate, 0),
     DEFINE_PROP_END_OF_LIST(),
 };
