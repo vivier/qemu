@@ -827,6 +827,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Jan 18 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.14
+- kvm-fw_cfg-fix-memory-corruption-when-all-fw_cfg-slots-a.patch [bz#1534649]
+- kvm-mirror-Fix-inconsistent-backing-AioContext-for-after.patch [bz#1535125]
+- Resolves: bz#1534649
+  (Qemu crashes when all fw_cfg slots are used [rhel-7.4.z])
+- Resolves: bz#1535125
+  (Mirror jobs for drives with iothreads make QEMU to abort with "block.c:1895: bdrv_attach_child: Assertion `bdrv_get_aio_context(parent_bs) == bdrv_get_aio_context(child_bs)' failed." [rhel-7.4.z])
+
 * Thu Dec 14 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.13
 - Fix CVE-2017-5715
 
