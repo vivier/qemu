@@ -575,7 +575,7 @@ static void spapr_populate_cpu_dt(CPUState *cs, void *fdt, int offset,
     /* Advertise DFP (Decimal Floating Point) if available
      *   0 / no property == no DFP
      *   1               == DFP available */
-    if (env->insns_flags2 & PPC2_DFP) {
+    if (spapr_has_cap(spapr, SPAPR_CAP_DFP)) {
         _FDT((fdt_setprop_cell(fdt, offset, "ibm,dfp", 1)));
     }
 
@@ -3650,7 +3650,7 @@ static void spapr_machine_class_init(ObjectClass *oc, void *data)
     mc->numa_mem_align_shift = 28;
     smc->has_power9_support = true;
 
-    smc->default_caps = spapr_caps(SPAPR_CAP_VSX);
+    smc->default_caps = spapr_caps(SPAPR_CAP_VSX | SPAPR_CAP_DFP);
     spapr_caps_add_properties(smc, &error_abort);
 }
 
@@ -4056,7 +4056,8 @@ static void spapr_machine_rhel740_class_options(MachineClass *mc)
     smc->has_power9_support = false;
     smc->pre_2_10_has_unused_icps = true;
     smc->resize_hpt_default = SPAPR_RESIZE_HPT_DISABLED;
-    smc->default_caps = spapr_caps(SPAPR_CAP_HTM | SPAPR_CAP_VSX);
+    smc->default_caps = spapr_caps(SPAPR_CAP_HTM | SPAPR_CAP_VSX
+                                   | SPAPR_CAP_DFP);
 }
 
 DEFINE_SPAPR_MACHINE(rhel740, "rhel7.4.0", false);
