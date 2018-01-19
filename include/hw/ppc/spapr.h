@@ -54,6 +54,8 @@ typedef enum {
  * Capabilities
  */
 
+/* These bits go in the migration stream, so they can't be reassigned */
+
 /* Hardware Transactional Memory */
 #define SPAPR_CAP_HTM               0x0000000000000001ULL
 
@@ -144,6 +146,7 @@ struct sPAPRMachineState {
     const char *icp_type;
 
     sPAPRCapabilities forced_caps, forbidden_caps;
+    sPAPRCapabilities mig_forced_caps, mig_forbidden_caps;
     sPAPRCapabilities effective_caps;
 };
 
@@ -726,6 +729,8 @@ void spapr_do_system_reset_on_cpu(CPUState *cs, run_on_cpu_data arg);
 /*
  * Handling of optional capabilities
  */
+extern const VMStateDescription vmstate_spapr_caps;
+
 static inline sPAPRCapabilities spapr_caps(uint64_t mask)
 {
     sPAPRCapabilities caps = { mask };
@@ -740,5 +745,6 @@ static inline bool spapr_has_cap(sPAPRMachineState *spapr, uint64_t cap)
 void spapr_caps_reset(sPAPRMachineState *spapr);
 void spapr_caps_validate(sPAPRMachineState *spapr, Error **errp);
 void spapr_caps_add_properties(sPAPRMachineClass *smc, Error **errp);
+int spapr_caps_post_migration(sPAPRMachineState *spapr);
 
 #endif /* HW_SPAPR_H */
