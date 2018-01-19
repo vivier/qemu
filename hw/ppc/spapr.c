@@ -320,7 +320,7 @@ static void spapr_populate_pa_features(sPAPRMachineState *spapr,
          */
         pa_features[3] |= 0x20;
     }
-    if (spapr_has_cap(spapr, SPAPR_CAP_HTM) && pa_size > 24) {
+    if ((spapr_get_cap(spapr, SPAPR_CAP_HTM) != 0) && pa_size > 24) {
         pa_features[24] |= 0x80;    /* Transactional memory support */
     }
     if (legacy_guest && pa_size > 40) {
@@ -566,7 +566,7 @@ static void spapr_populate_cpu_dt(CPUState *cs, void *fdt, int offset,
      *
      * Only CPUs for which we create core types in spapr_cpu_core.c
      * are possible, and all of those have VMX */
-    if (spapr_has_cap(spapr, SPAPR_CAP_VSX)) {
+    if (spapr_get_cap(spapr, SPAPR_CAP_VSX) != 0) {
         _FDT((fdt_setprop_cell(fdt, offset, "ibm,vmx", 2)));
     } else {
         _FDT((fdt_setprop_cell(fdt, offset, "ibm,vmx", 1)));
@@ -575,7 +575,7 @@ static void spapr_populate_cpu_dt(CPUState *cs, void *fdt, int offset,
     /* Advertise DFP (Decimal Floating Point) if available
      *   0 / no property == no DFP
      *   1               == DFP available */
-    if (spapr_has_cap(spapr, SPAPR_CAP_DFP)) {
+    if (spapr_get_cap(spapr, SPAPR_CAP_DFP) != 0) {
         _FDT((fdt_setprop_cell(fdt, offset, "ibm,dfp", 1)));
     }
 
@@ -1544,6 +1544,18 @@ static bool spapr_vga_init(PCIBus *pci_bus, Error **errp)
     }
 }
 
+static int spapr_pre_load(void *opaque)
+{
+    int rc;
+
+    rc = spapr_caps_pre_load(opaque);
+    if (rc) {
+        return rc;
+    }
+
+    return 0;
+}
+
 static int spapr_post_load(void *opaque, int version_id)
 {
     sPAPRMachineState *spapr = (sPAPRMachineState *)opaque;
@@ -1583,6 +1595,11 @@ static int spapr_post_load(void *opaque, int version_id)
     }
 
     return err;
+}
+
+static void spapr_pre_save(void *opaque)
+{
+    spapr_caps_pre_save(opaque);
 }
 
 static bool version_before_3(void *opaque, int version_id)
@@ -1705,7 +1722,9 @@ static const VMStateDescription vmstate_spapr = {
     .name = "spapr",
     .version_id = 3,
     .minimum_version_id = 1,
+    .pre_load = spapr_pre_load,
     .post_load = spapr_post_load,
+    .pre_save = spapr_pre_save,
     .fields = (VMStateField[]) {
         /* used to be @next_irq */
         VMSTATE_UNUSED_BUFFER(version_before_3, 0, 4),
@@ -1720,7 +1739,9 @@ static const VMStateDescription vmstate_spapr = {
         &vmstate_spapr_ov5_cas,
         &vmstate_spapr_patb_entry,
         &vmstate_spapr_pending_events,
-        &vmstate_spapr_caps,
+        &vmstate_spapr_cap_htm,
+        &vmstate_spapr_cap_vsx,
+        &vmstate_spapr_cap_dfp,
         NULL
     }
 };
@@ -2278,8 +2299,6 @@ static void ppc_spapr_init(MachineState *machine)
     long load_limit, fw_size;
     char *filename;
     Error *resize_hpt_err = NULL;
-
-    spapr_caps_validate(spapr, &error_fatal);
 
     msi_nonbroken = true;
 
@@ -3650,7 +3669,9 @@ static void spapr_machine_class_init(ObjectClass *oc, void *data)
     mc->numa_mem_align_shift = 28;
     smc->has_power9_support = true;
 
-    smc->default_caps = spapr_caps(SPAPR_CAP_VSX | SPAPR_CAP_DFP);
+    smc->default_caps.caps[SPAPR_CAP_HTM] = SPAPR_CAP_OFF;
+    smc->default_caps.caps[SPAPR_CAP_VSX] = SPAPR_CAP_ON;
+    smc->default_caps.caps[SPAPR_CAP_DFP] = SPAPR_CAP_ON;
     spapr_caps_add_properties(smc, &error_abort);
 }
 
@@ -4056,8 +4077,7 @@ static void spapr_machine_rhel740_class_options(MachineClass *mc)
     smc->has_power9_support = false;
     smc->pre_2_10_has_unused_icps = true;
     smc->resize_hpt_default = SPAPR_RESIZE_HPT_DISABLED;
-    smc->default_caps = spapr_caps(SPAPR_CAP_HTM | SPAPR_CAP_VSX
-                                   | SPAPR_CAP_DFP);
+    smc->default_caps.caps[SPAPR_CAP_HTM] = SPAPR_CAP_ON;
 }
 
 DEFINE_SPAPR_MACHINE(rhel740, "rhel7.4.0", false);
