@@ -162,7 +162,6 @@ static void rtas_start_cpu(PowerPCCPU *cpu_, sPAPRMachineState *spapr,
     if (cpu != NULL) {
         CPUState *cs = CPU(cpu);
         CPUPPCState *env = &cpu->env;
-        Error *local_err = NULL;
 
         if (!cs->halted) {
             rtas_st(rets, 0, RTAS_OUT_HW_ERROR);
@@ -173,14 +172,6 @@ static void rtas_start_cpu(PowerPCCPU *cpu_, sPAPRMachineState *spapr,
          * mark it dirty so our changes get flushed back before the
          * new cpu enters */
         kvm_cpu_synchronize_state(cs);
-
-        /* Set compatibility mode to match existing cpus */
-        ppc_set_compat(cpu, POWERPC_CPU(first_cpu)->compat_pvr, &local_err);
-        if (local_err) {
-            error_report_err(local_err);
-            rtas_st(rets, 0, RTAS_OUT_HW_ERROR);
-            return;
-        }
 
         env->msr = (1ULL << MSR_SF) | (1ULL << MSR_ME);
         env->nip = start;
