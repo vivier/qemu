@@ -2532,7 +2532,7 @@ static int img_info(int argc, char **argv)
     const char *filename, *fmt, *output;
     ImageInfoList *list;
     bool image_opts = false;
-    bool force_share = false;
+    bool force_share = true;
 
     fmt = NULL;
     output = NULL;
