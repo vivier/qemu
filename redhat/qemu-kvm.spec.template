@@ -902,6 +902,51 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jan 23 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-18.el7
+- kvm-serial-always-transmit-send-receive-buffers-on-migra.patch [bz#1459945]
+- kvm-hw-acpi-Move-acpi_set_pci_info-to-pcihp.patch [bz#1507693]
+- kvm-scsi-block-Add-share-rw-option.patch [bz#1518482]
+- kvm-scsi-generic-Add-share-rw-option.patch [bz#1518482]
+- kvm-target-i386-sanitize-x86-MSR_PAT-loaded-from-another.patch [bz#1529461]
+- kvm-scsi-disk-release-AioContext-in-unaligned-WRITE-SAME.patch [bz#1526423]
+- kvm-hw-pci-bridge-fix-QEMU-crash-because-of-pcie-root-po.patch [bz#1520858]
+- kvm-spapr-Capabilities-infrastructure.patch [bz#1523414]
+- kvm-spapr-Treat-Hardware-Transactional-Memory-HTM-as-an-.patch [bz#1523414]
+- kvm-spapr-Validate-capabilities-on-migration.patch [bz#1523414]
+- kvm-spapr-Handle-VMX-VSX-presence-as-an-spapr-capability.patch [bz#1523414]
+- kvm-spapr-Handle-Decimal-Floating-Point-DFP-as-an-option.patch [bz#1523414]
+- kvm-hw-ppc-spapr_caps-Rework-spapr_caps-to-use-uint8-int.patch [bz#1523414]
+- kvm-spapr-Remove-unnecessary-options-field-from-sPAPRCap.patch [bz#1523414]
+- kvm-ppc-Change-Power9-compat-table-to-support-at-most-8-.patch [bz#1529243]
+- kvm-target-ppc-Clarify-compat-mode-max_threads-value.patch [bz#1529243]
+- kvm-spapr-Allow-some-cases-where-we-can-t-set-VSMT-mode-.patch [bz#1529243]
+- kvm-spapr-Adjust-default-VSMT-value-for-better-migration.patch [bz#1529243]
+- kvm-qemu-img-info-Force-U-downstream.patch [bz#1535992]
+- kvm-dump-guest-memory.py-fix-python-2-support.patch [bz#1398633]
+- kvm-spapr-fix-device-tree-properties-when-using-compatib.patch [bz#1535752]
+- Resolves: bz#1398633
+  ([RFE] Kernel address space layout randomization [KASLR] support (qemu-kvm-rhev))
+- Resolves: bz#1459945
+  (migration fails with hungup serial console reader on -M pc-i440fx-rhel7.0.0 and pc-i440fx-rhel7.1.0)
+- Resolves: bz#1507693
+  (Unable to hot plug device to VM reporting libvirt errors.)
+- Resolves: bz#1518482
+  ("share-rw" property is unavailable on scsi passthrough devices)
+- Resolves: bz#1520858
+  (qemu-kvm core dumped when booting guest with more pcie-root-ports than available slots and io-reserve=0)
+- Resolves: bz#1523414
+  ([POWER guests] Verify compatible CPU & hypervisor capabilities across migration)
+- Resolves: bz#1526423
+  (QEMU hang with data plane enabled after some sg_write_same operations in guest)
+- Resolves: bz#1529243
+  (Migration from P9 to P8, migration failed and qemu quit on dst end with "error while loading state for instance 0x0 of device 'ics'")
+- Resolves: bz#1529461
+  (On amd hosts, after migration from rhel6.9.z to rhel7.5, CPU utilization of qemu-kvm is always more than 100% on destination rhel7.5 host)
+- Resolves: bz#1535752
+  (Device tree incorrectly advertises compatibility modes for secondary CPUs)
+- Resolves: bz#1535992
+  (Set force shared option "-U" as default option for "qemu-img info")
+
 * Tue Jan 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-17.el7
 - kvm-tools-kvm_stat-fix-command-line-option-g.patch [bz#1529676]
 - kvm-redhat-globally-limit-the-maximum-number-of-CPUs.patch [bz#1527449]
