@@ -813,6 +813,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Jan 24 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-154.el7
+- kvm-virtio-net-validate-backend-queue-numbers-against-bu.patch [bz#1460872]
+- kvm-dump-guest-memory.py-fix-python-2-support.patch [bz#1411490]
+- kvm-qxl-add-migration-blocker-to-avoid-pre-save-assert.patch [bz#1536883]
+- Resolves: bz#1411490
+  ([RFE] Kernel address space layout randomization [KASLR] support (qemu-kvm))
+- Resolves: bz#1460872
+  (Aborted(core dumped) when booting guest with "-netdev tap....vhost=on,queues=32")
+- Resolves: bz#1536883
+  ([abrt] [faf] qemu-kvm: unknown function(): /usr/libexec/qemu-kvm killed by 6)
+
 * Fri Jan 12 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-153.el7
 - kvm-i386-update-ssdt-misc.hex.generated.patch [bz#1411490]
 - kvm-main-loop-Acquire-main_context-lock-around-os_host_m.patch [bz#1435432 bz#1473536]
