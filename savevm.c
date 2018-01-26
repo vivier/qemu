@@ -2207,7 +2207,7 @@ static int qemu_savevm_state(QEMUFile *f, Error **errp)
         .shared = 0
     };
 
-    if (qemu_savevm_state_blocked(errp)) {
+    if (migration_is_blocked(errp)) {
         return -EINVAL;
     }
 
