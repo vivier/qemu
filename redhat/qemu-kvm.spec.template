@@ -813,6 +813,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Jan 30 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-155.el7
+- kvm-qdev-Fix-assert-in-PCI-address-property-when-used-by.patch [bz#1538866]
+- kvm-vga-check-the-validation-of-memory-addr-when-draw-te.patch [bz#1534691]
+- kvm-savevm-Improve-error-message-for-blocked-migration.patch [bz#1536883]
+- kvm-savevm-fail-if-migration-blockers-are-present.patch [bz#1536883]
+- Resolves: bz#1534691
+  (CVE-2018-5683 qemu-kvm: Qemu: Out-of-bounds read in vga_draw_text routine [rhel-7.5])
+- Resolves: bz#1536883
+  ([abrt] [faf] qemu-kvm: unknown function(): /usr/libexec/qemu-kvm killed by 6)
+- Resolves: bz#1538866
+  (qemu will coredump after executing info qtree)
+
 * Wed Jan 24 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-154.el7
 - kvm-virtio-net-validate-backend-queue-numbers-against-bu.patch [bz#1460872]
 - kvm-dump-guest-memory.py-fix-python-2-support.patch [bz#1411490]
