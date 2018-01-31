@@ -3070,6 +3070,9 @@ out:
 static void spapr_memory_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
                                   Error **errp)
 {
+#if !defined(CONFIG_RHV)
+    error_setg(errp, "Memory hotplug not supported for this machine");
+#else
     PCDIMMDevice *dimm = PC_DIMM(dev);
     PCDIMMDeviceClass *ddc = PC_DIMM_GET_CLASS(dimm);
     MemoryRegion *mr;
@@ -3097,6 +3100,7 @@ static void spapr_memory_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
 
 out:
     g_free(mem_dev);
+#endif
 }
 
 struct sPAPRDIMMState {
@@ -3210,6 +3214,9 @@ void spapr_lmb_release(DeviceState *dev)
 static void spapr_memory_unplug_request(HotplugHandler *hotplug_dev,
                                         DeviceState *dev, Error **errp)
 {
+#if !defined(CONFIG_RHV)
+    error_setg(errp, "Memory hot unplug not supported for this machine");
+#else
     sPAPRMachineState *spapr = SPAPR_MACHINE(hotplug_dev);
     Error *local_err = NULL;
     PCDIMMDevice *dimm = PC_DIMM(dev);
@@ -3264,6 +3271,7 @@ static void spapr_memory_unplug_request(HotplugHandler *hotplug_dev,
                                               nr_lmbs, spapr_drc_index(drc));
 out:
     error_propagate(errp, local_err);
+#endif
 }
 
 static void *spapr_populate_hotplug_cpu_dt(CPUState *cs, int *fdt_offset,
