@@ -902,7 +902,29 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
-* Tue Jan 23 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-18.el7
+* Fri Feb 02 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-19.el7
+- kvm-Drop-105th-key-from-en-us-keymap.patch [bz#1513870]
+- kvm-linux-headers-update.patch [bz#1535606]
+- kvm-s390x-kvm-Handle-bpb-feature.patch [bz#1535606]
+- kvm-s390x-kvm-provide-stfle.81.patch [bz#1535606]
+- kvm-osdep-Retry-SETLK-upon-EINTR.patch [bz#1529053]
+- kvm-vga-check-the-validation-of-memory-addr-when-draw-te.patch [bz#1534682]
+- kvm-usb-storage-Fix-share-rw-option-parsing.patch [bz#1525324]
+- kvm-spapr-disable-memory-hotplug.patch [bz#1535952]
+- Resolves: bz#1513870
+  (For VNC connection, characters '|' and '<' are both recognized as '>' in linux guests, while '<' and '>' are both recognized as '|' in windows guest)
+- Resolves: bz#1525324
+  (2 VMs both with 'share-rw=on' appending on '-device usb-storage' for the same source image can not be started at the same time)
+- Resolves: bz#1529053
+  (Miss the handling of EINTR in the fcntl calls made by QEMU)
+- Resolves: bz#1534682
+  (CVE-2018-5683 qemu-kvm-rhev: Qemu: Out-of-bounds read in vga_draw_text routine [rhel-7.5])
+- Resolves: bz#1535606
+  (Spectre mitigation patches for qemu-kvm-ma on z Systems)
+- Resolves: bz#1535952
+  (qemu-kvm-ma differentiation - memory hotplug)
+
+* Tue Jan 23 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-18.el7
 - kvm-serial-always-transmit-send-receive-buffers-on-migra.patch [bz#1459945]
 - kvm-hw-acpi-Move-acpi_set_pci_info-to-pcihp.patch [bz#1507693]
 - kvm-scsi-block-Add-share-rw-option.patch [bz#1518482]
@@ -947,7 +969,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 - Resolves: bz#1535992
   (Set force shared option "-U" as default option for "qemu-img info")
 
-* Tue Jan 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-17.el7
+* Tue Jan 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-17.el7
 - kvm-tools-kvm_stat-fix-command-line-option-g.patch [bz#1529676]
 - kvm-redhat-globally-limit-the-maximum-number-of-CPUs.patch [bz#1527449]
 - kvm-redhat-remove-manual-max_cpus-limitations-for-ppc.patch [bz#1527449]
@@ -979,7 +1001,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 - Resolves: bz#1529676
   (kvm_stat: option '--guest' doesn't work)
 
-* Mon Jan 08 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-16.el7
+* Mon Jan 08 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-16.el7
 - kvm-gicv3-Convert-to-DEFINE_PROP_LINK.patch [bz#1513323]
 - kvm-hw-intc-arm_gicv3_its-Fix-the-VM-termination-in-vm_c.patch [bz#1513323]
 - kvm-hw-intc-arm_gicv3_its-Don-t-abort-on-table-save-fail.patch [bz#1513323]
