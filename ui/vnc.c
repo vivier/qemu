@@ -1118,6 +1118,7 @@ static void vnc_disconnect_start(VncState *vs)
     if (vs->disconnecting) {
         return;
     }
+    trace_vnc_client_disconnect_start(vs, vs->ioc);
     vnc_set_share_mode(vs, VNC_SHARE_MODE_DISCONNECTED);
     if (vs->ioc_tag) {
         g_source_remove(vs->ioc_tag);
@@ -1130,6 +1131,8 @@ static void vnc_disconnect_start(VncState *vs)
 void vnc_disconnect_finish(VncState *vs)
 {
     int i;
+
+    trace_vnc_client_disconnect_finish(vs, vs->ioc);
 
     vnc_jobs_join(vs); /* Wait encoding jobs */
 
@@ -1184,11 +1187,12 @@ ssize_t vnc_client_io_error(VncState *vs, ssize_t ret, Error **errp)
 {
     if (ret <= 0) {
         if (ret == 0) {
-            VNC_DEBUG("Closing down client sock: EOF\n");
+            trace_vnc_client_eof(vs, vs->ioc);
             vnc_disconnect_start(vs);
         } else if (ret != QIO_CHANNEL_ERR_BLOCK) {
-            VNC_DEBUG("Closing down client sock: ret %zd (%s)\n",
-                      ret, errp ? error_get_pretty(*errp) : "Unknown");
+            trace_vnc_client_io_error(vs, vs->ioc,
+                                      errp ? error_get_pretty(*errp) :
+                                      "Unknown");
             vnc_disconnect_start(vs);
         }
 
@@ -2885,6 +2889,7 @@ static void vnc_connect(VncDisplay *vd, QIOChannelSocket *sioc,
     bool first_client = QTAILQ_EMPTY(&vd->clients);
     int i;
 
+    trace_vnc_client_connect(vs, sioc);
     vs->sioc = sioc;
     object_ref(OBJECT(vs->sioc));
     vs->ioc = QIO_CHANNEL(sioc);
