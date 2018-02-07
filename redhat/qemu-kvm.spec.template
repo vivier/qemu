@@ -902,6 +902,36 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Feb 07 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-20.el7
+- kvm-console-fix-dpy_gfx_replace_surface-assert.patch [bz#1505696]
+- kvm-ui-add-tracing-of-VNC-operations-related-to-QIOChann.patch [bz#1527404]
+- kvm-ui-add-tracing-of-VNC-authentication-process.patch [bz#1527404]
+- kvm-ui-remove-sync-parameter-from-vnc_update_client.patch [bz#1527404]
+- kvm-ui-remove-unreachable-code-in-vnc_update_client.patch [bz#1527404]
+- kvm-ui-remove-redundant-indentation-in-vnc_client_update.patch [bz#1527404]
+- kvm-ui-avoid-pointless-VNC-updates-if-framebuffer-isn-t-.patch [bz#1527404]
+- kvm-ui-track-how-much-decoded-data-we-consumed-when-doin.patch [bz#1527404]
+- kvm-ui-introduce-enum-to-track-VNC-client-framebuffer-up.patch [bz#1527404]
+- kvm-ui-correctly-reset-framebuffer-update-state-after-pr.patch [bz#1527404]
+- kvm-ui-refactor-code-for-determining-if-an-update-should.patch [bz#1527404]
+- kvm-ui-fix-VNC-client-throttling-when-audio-capture-is-a.patch [bz#1527404]
+- kvm-ui-fix-VNC-client-throttling-when-forced-update-is-r.patch [bz#1527404]
+- kvm-ui-place-a-hard-cap-on-VNC-server-output-buffer-size.patch [bz#1527404]
+- kvm-ui-add-trace-events-related-to-VNC-client-throttling.patch [bz#1527404]
+- kvm-ui-mix-misleading-comments-return-types-of-VNC-I-O-h.patch [bz#1527404]
+- kvm-ui-avoid-sign-extension-using-client-width-height.patch [bz#1527404]
+- kvm-ui-correctly-advance-output-buffer-when-writing-SASL.patch [bz#1527404]
+- kvm-dump-guest-memory.py-skip-vmcoreinfo-section-if-not-.patch [bz#1398633]
+- kvm-virtio-gpu-disallow-vIOMMU.patch [bz#1540182]
+- Resolves: bz#1398633
+  ([RFE] Kernel address space layout randomization [KASLR] support (qemu-kvm-rhev))
+- Resolves: bz#1505696
+  (Qemu crashed when open the second display of virtio video)
+- Resolves: bz#1527404
+  (CVE-2017-15124 qemu-kvm-rhev: Qemu: memory exhaustion through framebuffer update request message in VNC server [rhel-7.5])
+- Resolves: bz#1540182
+  (QEMU: disallow virtio-gpu to boot with vIOMMU)
+
 * Fri Feb 02 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-19.el7
 - kvm-Drop-105th-key-from-en-us-keymap.patch [bz#1513870]
 - kvm-linux-headers-update.patch [bz#1535606]
