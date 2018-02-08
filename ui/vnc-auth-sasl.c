@@ -81,7 +81,7 @@ long vnc_client_write_sasl(VncState *vs)
         } else {
             vs->force_update_offset -= vs->sasl.encodedRawLength;
         }
-        vs->output.offset -= vs->sasl.encodedRawLength;
+        buffer_advance(&vs->output, vs->sasl.encodedRawLength);
         vs->sasl.encoded = NULL;
         vs->sasl.encodedOffset = vs->sasl.encodedLength = 0;
     }
