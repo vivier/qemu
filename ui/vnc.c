@@ -846,6 +846,25 @@ static int find_and_clear_dirty_height(struct VncState *vs,
     return h;
 }
 
+static bool vnc_should_update(VncState *vs)
+{
+    switch (vs->update) {
+    case VNC_STATE_UPDATE_NONE:
+        break;
+    case VNC_STATE_UPDATE_INCREMENTAL:
+        /* Only allow incremental updates if the output buffer
+         * is empty, or if audio capture is enabled.
+         */
+        if (!vs->output.offset || vs->audio_cap) {
+            return true;
+        }
+        break;
+    case VNC_STATE_UPDATE_FORCE:
+        return true;
+    }
+    return false;
+}
+
 static int vnc_update_client(VncState *vs, int has_dirty)
 {
     VncDisplay *vd = vs->vd;
@@ -860,13 +879,7 @@ static int vnc_update_client(VncState *vs, int has_dirty)
     }
 
     vs->has_dirty += has_dirty;
-    if (vs->update == VNC_STATE_UPDATE_NONE) {
-        return 0;
-    }
-
-    if (vs->output.offset && !vs->audio_cap &&
-        vs->update != VNC_STATE_UPDATE_FORCE) {
-        /* kernel send buffers are full -> drop frames to throttle */
+    if (!vnc_should_update(vs)) {
         return 0;
     }
 
