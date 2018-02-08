@@ -915,6 +915,9 @@ static bool vnc_should_update(VncState *vs)
          * is completely idle.
          */
         if (vs->output.offset < vs->throttle_output_offset &&
+#ifdef CONFIG_VNC_WS
+            vs->ws_output.offset  < vs->throttle_output_offset &&
+#endif
             vs->job_update == VNC_STATE_UPDATE_NONE) {
             return true;
         }

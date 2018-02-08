@@ -173,8 +173,13 @@ long vnc_client_write_ws(VncState *vs)
     long ret;
     VNC_DEBUG("Write WS: Pending output %p size %zd offset %zd\n",
               vs->output.buffer, vs->output.capacity, vs->output.offset);
-    vncws_encode_frame(&vs->ws_output, vs->output.buffer, vs->output.offset);
-    buffer_reset(&vs->output);
+    /* We don't consume more from 'output' unless we've finished
+     * sending the previous websockets frame. This ensures that
+     * we still correctly throttle forced framebuffer updates */
+    if (vs->ws_output.offset == 0) {
+        vncws_encode_frame(&vs->ws_output, vs->output.buffer, vs->output.offset);
+        buffer_reset(&vs->output);
+    }
     ret = vnc_client_write_buf(vs, vs->ws_output.buffer, vs->ws_output.offset);
     if (!ret) {
         return 0;
@@ -183,6 +188,7 @@ long vnc_client_write_ws(VncState *vs)
     buffer_advance(&vs->ws_output, ret);
 
     if (vs->ws_output.offset == 0) {
+        vs->force_update_offset = 0;
         qemu_set_fd_handler2(vs->csock, NULL, vnc_client_read, NULL, vs);
     }
 
