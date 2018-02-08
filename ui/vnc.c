@@ -480,7 +480,7 @@ void buffer_reserve(Buffer *buffer, size_t len)
     }
 }
 
-static int buffer_empty(Buffer *buffer)
+int buffer_empty(Buffer *buffer)
 {
     return buffer->offset == 0;
 }
