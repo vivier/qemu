@@ -516,6 +516,21 @@ void buffer_advance(Buffer *buf, size_t len)
     buf->offset -= len;
 }
 
+void buffer_move_empty(Buffer *to, Buffer *from)
+{
+    assert(to->offset == 0);
+
+    g_free(to->buffer);
+    to->offset = from->offset;
+    to->capacity = from->capacity;
+    to->buffer = from->buffer;
+
+    from->offset = 0;
+    from->capacity = 0;
+    from->buffer = NULL;
+}
+
+
 static void vnc_desktop_resize(VncState *vs)
 {
     if (vs->csock == -1 || !vnc_has_feature(vs, VNC_FEATURE_RESIZE)) {

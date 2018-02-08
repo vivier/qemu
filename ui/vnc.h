@@ -548,6 +548,7 @@ void buffer_free(Buffer *buffer);
 void buffer_append(Buffer *buffer, const void *data, size_t len);
 void buffer_advance(Buffer *buf, size_t len);
 uint8_t *buffer_end(Buffer *buffer);
+void buffer_move_empty(Buffer *to, Buffer *from);
 
 
 /* Misc helpers */
