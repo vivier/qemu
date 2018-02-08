@@ -794,6 +794,7 @@ static int find_and_clear_dirty_height(struct VncState *vs,
 
 static int vnc_update_client(VncState *vs, int has_dirty)
 {
+    vs->has_dirty += has_dirty;
     if (vs->need_update && vs->csock != -1) {
         VncDisplay *vd = vs->vd;
         VncJob *job;
@@ -805,7 +806,7 @@ static int vnc_update_client(VncState *vs, int has_dirty)
             /* kernel send buffers are full -> drop frames to throttle */
             return 0;
 
-        if (!has_dirty && !vs->audio_cap && !vs->force_update)
+        if (!vs->has_dirty && !vs->audio_cap && !vs->force_update)
             return 0;
 
         /*
@@ -845,6 +846,7 @@ static int vnc_update_client(VncState *vs, int has_dirty)
 
         vnc_job_push(job);
         vs->force_update = 0;
+        vs->has_dirty = 0;
         return n;
     }
 
