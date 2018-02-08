@@ -170,6 +170,11 @@ void vnc_jobs_consume_buffer(VncState *vs)
                                 vnc_client_write, vs);
         }
         buffer_move(&vs->output, &vs->jobs_buffer);
+
+        if (vs->job_update == VNC_STATE_UPDATE_FORCE) {
+            vs->force_update_offset = vs->output.offset;
+        }
+        vs->job_update = VNC_STATE_UPDATE_NONE;
     }
     flush = vs->csock != -1 && vs->abort != true;
     vnc_unlock_output(vs);
