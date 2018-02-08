@@ -848,8 +848,13 @@ static int find_and_clear_dirty_height(struct VncState *vs,
 
 static int vnc_update_client(VncState *vs, int has_dirty)
 {
+    if (vs->csock == -1) {
+        vnc_disconnect_finish(vs);
+        return 0;
+    }
+
     vs->has_dirty += has_dirty;
-    if (vs->need_update && vs->csock != -1) {
+    if (vs->need_update) {
         VncDisplay *vd = vs->vd;
         VncJob *job;
         int y;
@@ -903,9 +908,6 @@ static int vnc_update_client(VncState *vs, int has_dirty)
         vs->has_dirty = 0;
         return n;
     }
-
-    if (vs->csock == -1)
-        vnc_disconnect_finish(vs);
 
     return 0;
 }
