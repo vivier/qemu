@@ -902,6 +902,35 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Feb 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7
+- kvm-migration-Recover-block-devices-if-failure-in-device.patch [bz#1538494]
+- kvm-migration-savevm.c-set-MAX_VM_CMD_PACKAGED_SIZE-to-1.patch [bz#1540003]
+- kvm-pci-bus-let-it-has-higher-migration-priority.patch [bz#1538953]
+- kvm-spapr-set-vsmt-to-MAX-8-smp_threads.patch [bz#1542421]
+- kvm-target-ppc-spapr_caps-Add-macro-to-generate-spapr_ca.patch [bz#1532050]
+- kvm-target-ppc-kvm-Add-cap_ppc_safe_-cache-bounds_check-.patch [bz#1532050]
+- kvm-target-ppc-spapr_caps-Add-support-for-tristate-spapr.patch [bz#1532050]
+- kvm-target-ppc-spapr_caps-Add-new-tristate-cap-safe_cach.patch [bz#1532050]
+- kvm-target-ppc-spapr_caps-Add-new-tristate-cap-safe_boun.patch [bz#1532050]
+- kvm-target-ppc-spapr_caps-Add-new-tristate-cap-safe_indi.patch [bz#1532050]
+- kvm-target-ppc-introduce-the-PPC_BIT-macro.patch [bz#1532050]
+- kvm-target-ppc-spapr-Add-H-Call-H_GET_CPU_CHARACTERISTIC.patch [bz#1532050]
+- kvm-spapr-add-missing-break-in-h_get_cpu_characteristics.patch [bz#1532050]
+- kvm-vfio-pci-Add-option-to-disable-GeForce-quirks.patch [bz#1508330]
+- kvm-Disable-GeForce-quirks-in-vfio-pci-for-RHEL-machines.patch [bz#1508330]
+- Resolves: bz#1508330
+  (Interrupt latency issues with vGPU on KVM hypervisor.)
+- Resolves: bz#1532050
+  ([CVE-2017-5754] Variant3: POWER {qemu-kvm-rhev} (rhel 7.5))
+- Resolves: bz#1538494
+  (Guest crashed on the source host when cancel migration by virDomainMigrateBegin3Params sometimes)
+- Resolves: bz#1538953
+  (IOTLB entry size mismatch before/after migration during DPDK PVP testing)
+- Resolves: bz#1540003
+  (Postcopy migration failed with "Unreasonably large packaged state")
+- Resolves: bz#1542421
+  (Pegas1.1 Snapshot1 [4.14.0-35.el7a.ppc64le] [qemu-kvm-ma-2.10.0-18.el7.ppc64le] qemu-kvm behaves incorrectly for guest boot with invalid threads)
+
 * Wed Feb 07 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-20.el7
 - kvm-console-fix-dpy_gfx_replace_surface-assert.patch [bz#1505696]
 - kvm-ui-add-tracing-of-VNC-operations-related-to-QIOChann.patch [bz#1527404]
