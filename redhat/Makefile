@@ -2,12 +2,9 @@ include Makefile.common
 include Makefile.local
 
 
-rh-brew rh-local rh-srpm: RHEV=1
-rh-brew rh-local: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
-rh-brew: BUILD_TARGET=rhevh-rhel-7.5-candidate
-rh-brew-rhel rh-srpm-rhel: RHEV=0
-rh-brew-rhel: SRPM_NAME=$(NAME)-ma-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
-rh-brew-rhel: BUILD_TARGET=rhel-7.5-candidate
+rh-brew rh-local rh-srpm: RHEV=0
+rh-brew rh-local: SRPM_NAME=$(NAME)-ma-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST).$(ZRELEASE)
+rh-brew: BUILD_TARGET=rhel-7.5-z-candidate
 
 REDHAT:=$(shell pwd)
 SCRIPTS:=$(REDHAT)/scripts
@@ -66,12 +63,8 @@ rh-prep: rh-clean-sources
     fi
 
 
-rh-srpm rh-srpm-rhel: rh-prep
+rh-srpm: rh-prep
 	$(DS)rpmbuild --define "_sourcedir $(RPMBUILD)/SOURCES" --define "_builddir $(RPMBUILD)/BUILD" --define "_srcrpmdir $(RPMBUILD)/SRPMS" --define "_rpmdir $(RPMBUILD)/RPMS" --define "_specdir $(RPMBUILD)/SPECS" --define "dist $(DIST)" --nodeps -bs $(RPMBUILD)/SPECS/$(SPECFILE)
-
-rh-brew-rhel: rh-srpm-rhel
-	@echo "Build $(SRPM_NAME)$(LOCALVERSION).src.rpm as $(BUILD_TARGET)"
-	$(DS)brew build $(BREW_OPTIONS) $(BUILD_TARGET) $(RPMBUILD)/SRPMS/$(SRPM_NAME)$(LOCALVERSION).src.rpm
 
 rh-brew: rh-srpm
 	@echo "Build $(SRPM_NAME)$(LOCALVERSION).src.rpm as $(BUILD_TARGET)"
@@ -85,8 +78,7 @@ rh-local: rh-env-prep
 	make V=1 -j8 -C $(REDHAT)/..  VL_LDFLAGS=-Wl,--build-id
 
 rh-help:
-	@echo "rh-brew: Build RHEV package on brew"
-	@echo "rh-brew-rhel: Build RHEL package on brew"
+	@echo "rh-brew: Build RHEL package on brew"
 	@echo "rh-srpm: Prepare srpm package for RHEV package"
 	@echo "rh-srpm-rhel: Prepare srpm package for RHEL package"
 	@echo "rh-prep: Prepare sources and spec file in rpmbuild/"
