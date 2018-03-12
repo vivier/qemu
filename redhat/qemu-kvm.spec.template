@@ -89,7 +89,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 %define pkgrelease %%PKGRELEASE%%
 
 %define rpmversion %{sublevel}
-%define full_release %{pkgrelease}%{?dist}%{?buildid}
+%define full_release %{pkgrelease}%{?dist}.%%ZRELEASE%%%{?buildid}
 
 Summary: QEMU is a machine emulator and virtualizer
 Name: %{pkgname}%{?pkgsuffix}
