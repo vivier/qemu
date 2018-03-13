@@ -3756,6 +3756,59 @@ static const TypeInfo spapr_machine_info = {
 
 #if 0 /* Disabled for Red Hat Enterprise Linux */
 /*
+ * pseries-2.12
+ */
+static void spapr_machine_2_12_instance_options(MachineState *machine)
+{
+}
+
+static void spapr_machine_2_12_class_options(MachineClass *mc)
+{
+    /* Defaults for the latest behaviour inherited from the base class */
+}
+
+DEFINE_SPAPR_MACHINE(2_12, "2.12", true);
+
+static void spapr_machine_2_12_sxxm_instance_options(MachineState *machine)
+{
+    spapr_machine_2_12_instance_options(machine);
+}
+
+static void spapr_machine_2_12_sxxm_class_options(MachineClass *mc)
+{
+    sPAPRMachineClass *smc = SPAPR_MACHINE_CLASS(mc);
+
+    spapr_machine_2_12_class_options(mc);
+    smc->default_caps.caps[SPAPR_CAP_CFPC] = SPAPR_CAP_WORKAROUND;
+    smc->default_caps.caps[SPAPR_CAP_SBBC] = SPAPR_CAP_WORKAROUND;
+    smc->default_caps.caps[SPAPR_CAP_IBS] = SPAPR_CAP_FIXED_CCD;
+}
+
+DEFINE_SPAPR_MACHINE(2_12_sxxm, "2.12-sxxm", false);
+
+/*
+ * pseries-2.11
+ */
+#define SPAPR_COMPAT_2_11                                              \
+    HW_COMPAT_2_11
+
+static void spapr_machine_2_11_instance_options(MachineState *machine)
+{
+    spapr_machine_2_12_instance_options(machine);
+}
+
+static void spapr_machine_2_11_class_options(MachineClass *mc)
+{
+    sPAPRMachineClass *smc = SPAPR_MACHINE_CLASS(mc);
+
+    spapr_machine_2_12_class_options(mc);
+    smc->default_caps.caps[SPAPR_CAP_HTM] = SPAPR_CAP_ON;
+    SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_2_11);
+}
+
+DEFINE_SPAPR_MACHINE(2_11, "2.11", false);
+
+/*
  * pseries-2.10
  */
 static void spapr_machine_2_10_instance_options(MachineState *machine)
