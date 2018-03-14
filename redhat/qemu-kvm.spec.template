@@ -902,6 +902,28 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Mar 14 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7_5.1
+- kvm-memory-inline-some-performance-sensitive-accessors.patch [bz#1554930]
+- kvm-address_space_write-address_space_to_flatview-needs-.patch [bz#1554930]
+- kvm-address_space_read-address_space_to_flatview-needs-R.patch [bz#1554930]
+- kvm-address_space_access_valid-address_space_to_flatview.patch [bz#1554930]
+- kvm-address_space_map-address_space_to_flatview-needs-RC.patch [bz#1554930]
+- kvm-address_space_rw-address_space_to_flatview-needs-RCU.patch [bz#1554930]
+- kvm-ppc-spapr-caps-Change-migration-macro-to-take-full-s.patch [bz#1554957]
+- kvm-ppc-spapr-caps-Disallow-setting-workaround-for-spapr.patch [bz#1554957]
+- kvm-target-ppc-Check-mask-when-setting-cap_ppc_safe_indi.patch [bz#1554957]
+- kvm-ppc-spapr-caps-Add-support-for-custom-spapr_capabili.patch [bz#1554957]
+- kvm-ppc-spapr-caps-Convert-cap-cfpc-to-custom-spapr-cap.patch [bz#1554957]
+- kvm-ppc-spapr-caps-Convert-cap-sbbc-to-custom-spapr-cap.patch [bz#1554957]
+- kvm-ppc-spapr-caps-Convert-cap-ibs-to-custom-spapr-cap.patch [bz#1554957]
+- kvm-ppc-spapr-caps-Define-the-pseries-2.12-sxxm-machine-.patch [bz#1554957]
+- kvm-redhat-Define-the-pseries-rhel7.5-sxxm-machine-type.patch [bz#1554957]
+- kvm-redhat-Define-the-pseries-rhel7.4-sxxm-machine-type.patch [bz#1554957]
+- kvm-redhat-Define-the-pseries-rhel7.3-sxxm-machine-type.patch [bz#1554957]
+- Resolves: bz#1554930
+  (incorrect locking (possible use-after-free) with bug 1481593 fix [rhel-7.5.z])
+- Resolves: bz#1554957
+  ([CVE-2017-5754] Variant3: POWER {qemu-kvm-ma} Add machine type variants [rhel-7.5.z])
 * Tue Feb 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7
 - kvm-migration-Recover-block-devices-if-failure-in-device.patch [bz#1538494]
 - kvm-migration-savevm.c-set-MAX_VM_CMD_PACKAGED_SIZE-to-1.patch [bz#1540003]
