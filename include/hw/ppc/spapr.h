@@ -94,6 +94,7 @@ struct sPAPRMachineState {
     Object **cores;
 
     sPAPRCapabilities forced_caps, forbidden_caps;
+    sPAPRCapabilities mig_forced_caps, mig_forbidden_caps;
     sPAPRCapabilities effective_caps;
 };
 
@@ -661,6 +662,8 @@ int spapr_rng_populate_dt(void *fdt);
 /*
  * Handling of optional capabilities
  */
+extern const VMStateDescription vmstate_spapr_caps;
+
 static inline sPAPRCapabilities spapr_caps(uint64_t mask)
 {
     sPAPRCapabilities caps = { mask };
@@ -675,5 +678,6 @@ static inline bool spapr_has_cap(sPAPRMachineState *spapr, uint64_t cap)
 void spapr_caps_reset(sPAPRMachineState *spapr);
 void spapr_caps_validate(sPAPRMachineState *spapr, Error **errp);
 void spapr_caps_add_properties(sPAPRMachineClass *smc, Error **errp);
+int spapr_caps_post_migration(sPAPRMachineState *spapr);
 
 #endif /* !defined (__HW_SPAPR_H__) */
