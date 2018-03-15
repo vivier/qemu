@@ -258,11 +258,41 @@ static sPAPRCapabilities default_caps_with_cpu(sPAPRMachineState *spapr,
                                                CPUState *cs)
 {
     sPAPRMachineClass *smc = SPAPR_MACHINE_GET_CLASS(spapr);
+    PowerPCCPU *cpu = POWERPC_CPU(cs);
+    CPUPPCState *env = &cpu->env;
     sPAPRCapabilities caps;
 
     caps = smc->default_caps;
 
-    /* TODO: clamp according to cpu model */
+    switch (cpu->cpu_version) {
+    case 0:
+        /* No compat mode so determine based on mmu model */
+        switch (env->mmu_model) {
+        case POWERPC_MMU_2_06:
+        case POWERPC_MMU_2_06a:
+            caps.caps[SPAPR_CAP_SBBC] = SPAPR_CAP_BROKEN;
+        case POWERPC_MMU_2_07:
+        case POWERPC_MMU_2_07a:
+            caps.caps[SPAPR_CAP_CFPC] = SPAPR_CAP_BROKEN;
+            break;
+        default:
+            caps.caps[SPAPR_CAP_CFPC] = SPAPR_CAP_BROKEN;
+            caps.caps[SPAPR_CAP_SBBC] = SPAPR_CAP_BROKEN;
+            caps.caps[SPAPR_CAP_IBS] = SPAPR_CAP_BROKEN;
+            break;
+        }
+    case CPU_POWERPC_LOGICAL_2_06:
+        caps.caps[SPAPR_CAP_SBBC] = SPAPR_CAP_BROKEN;
+    case CPU_POWERPC_LOGICAL_2_06_PLUS:
+    case CPU_POWERPC_LOGICAL_2_07:
+        caps.caps[SPAPR_CAP_CFPC] = SPAPR_CAP_BROKEN;
+        break;
+    default:
+        caps.caps[SPAPR_CAP_CFPC] = SPAPR_CAP_BROKEN;
+        caps.caps[SPAPR_CAP_SBBC] = SPAPR_CAP_BROKEN;
+        caps.caps[SPAPR_CAP_IBS] = SPAPR_CAP_BROKEN;
+        break;
+    }
 
     return caps;
 }
