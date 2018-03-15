@@ -259,11 +259,25 @@ static sPAPRCapabilities default_caps_with_cpu(sPAPRMachineState *spapr,
                                                CPUState *cs)
 {
     sPAPRMachineClass *smc = SPAPR_MACHINE_GET_CLASS(spapr);
+    PowerPCCPU *cpu = POWERPC_CPU(cs);
     sPAPRCapabilities caps;
 
     caps = smc->default_caps;
 
-    /* TODO: clamp according to cpu model */
+    if (!ppc_check_compat(cpu, CPU_POWERPC_LOGICAL_3_00,
+                          0, cpu->max_compat)) {
+        caps.caps[SPAPR_CAP_CFPC] = SPAPR_CAP_BROKEN;
+    }
+
+    if (!ppc_check_compat(cpu, CPU_POWERPC_LOGICAL_2_06_PLUS,
+                          0, cpu->max_compat)) {
+        caps.caps[SPAPR_CAP_SBBC] = SPAPR_CAP_BROKEN;
+    }
+
+    if (!ppc_check_compat(cpu, CPU_POWERPC_LOGICAL_2_06,
+                          0, cpu->max_compat)) {
+        caps.caps[SPAPR_CAP_IBS] = SPAPR_CAP_BROKEN;
+    }
 
     return caps;
 }
