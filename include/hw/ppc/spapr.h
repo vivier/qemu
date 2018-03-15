@@ -38,8 +38,10 @@ typedef struct sPAPRMachineClass sPAPRMachineClass;
 
 /* Cache Flush on Privilege Change */
 #define SPAPR_CAP_CFPC                  0x00
+/* Speculation Barrier Bounds Checking */
+#define SPAPR_CAP_SBBC                  0x01
 /* Num Caps */
-#define SPAPR_CAP_NUM                   (SPAPR_CAP_CFPC + 1)
+#define SPAPR_CAP_NUM                   (SPAPR_CAP_SBBC + 1)
 
 /*
  * Capability Values
@@ -721,6 +723,7 @@ void spapr_caps_pre_save(void *opaque);
  * Handling of optional capabilities
  */
 extern const VMStateDescription vmstate_spapr_cap_cfpc;
+extern const VMStateDescription vmstate_spapr_cap_sbbc;
 
 static inline uint8_t spapr_get_cap(sPAPRMachineState *spapr, int cap)
 {
