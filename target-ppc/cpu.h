@@ -85,6 +85,13 @@
 #define PPC_ELF_MACHINE     EM_PPC
 #endif
 
+#define PPC_BIT(bit)            (0x8000000000000000UL >> (bit))
+#define PPC_BIT32(bit)          (0x80000000UL >> (bit))
+#define PPC_BIT8(bit)           (0x80UL >> (bit))
+#define PPC_BITMASK(bs, be)     ((PPC_BIT(bs) - PPC_BIT(be)) | PPC_BIT(bs))
+#define PPC_BITMASK32(bs, be)   ((PPC_BIT32(bs) - PPC_BIT32(be)) | \
+                                 PPC_BIT32(bs))
+
 /*****************************************************************************/
 /* MMU model                                                                 */
 typedef enum powerpc_mmu_t powerpc_mmu_t;
@@ -477,14 +484,14 @@ struct ppc_slb_t {
 #define MSR_LE   0  /* Little-endian mode                           1 hflags */
 
 /* LPCR bits */
-#define LPCR_VPM0         (1ull << (63 - 0))
-#define LPCR_VPM1         (1ull << (63 - 1))
-#define LPCR_ISL          (1ull << (63 - 2))
-#define LPCR_KBV          (1ull << (63 - 3))
-#define LPCR_ILE          (1ull << (63 - 38))
-#define LPCR_MER          (1ull << (63 - 52))
-#define LPCR_LPES0        (1ull << (63 - 60))
-#define LPCR_LPES1        (1ull << (63 - 61))
+#define LPCR_VPM0         PPC_BIT(0)
+#define LPCR_VPM1         PPC_BIT(1)
+#define LPCR_ISL          PPC_BIT(2)
+#define LPCR_KBV          PPC_BIT(3)
+#define LPCR_ILE          PPC_BIT(38)
+#define LPCR_MER          PPC_BIT(52)
+#define LPCR_LPES0        PPC_BIT(60)
+#define LPCR_LPES1        PPC_BIT(61)
 #define LPCR_AIL_SHIFT    (63 - 40)      /* Alternate interrupt location */
 #define LPCR_AIL          (3ull << LPCR_AIL_SHIFT)
 
@@ -557,22 +564,22 @@ struct ppc_slb_t {
 #define FSCR_IC_TAR         8
 
 /* Exception state register bits definition                                  */
-#define ESR_PIL   (1 << (63 - 36)) /* Illegal Instruction                    */
-#define ESR_PPR   (1 << (63 - 37)) /* Privileged Instruction                 */
-#define ESR_PTR   (1 << (63 - 38)) /* Trap                                   */
-#define ESR_FP    (1 << (63 - 39)) /* Floating-Point Operation               */
-#define ESR_ST    (1 << (63 - 40)) /* Store Operation                        */
-#define ESR_AP    (1 << (63 - 44)) /* Auxiliary Processor Operation          */
-#define ESR_PUO   (1 << (63 - 45)) /* Unimplemented Operation                */
-#define ESR_BO    (1 << (63 - 46)) /* Byte Ordering                          */
-#define ESR_PIE   (1 << (63 - 47)) /* Imprecise exception                    */
-#define ESR_DATA  (1 << (63 - 53)) /* Data Access (Embedded page table)      */
-#define ESR_TLBI  (1 << (63 - 54)) /* TLB Ineligible (Embedded page table)   */
-#define ESR_PT    (1 << (63 - 55)) /* Page Table (Embedded page table)       */
-#define ESR_SPV   (1 << (63 - 56)) /* SPE/VMX operation                      */
-#define ESR_EPID  (1 << (63 - 57)) /* External Process ID operation          */
-#define ESR_VLEMI (1 << (63 - 58)) /* VLE operation                          */
-#define ESR_MIF   (1 << (63 - 62)) /* Misaligned instruction (VLE)           */
+#define ESR_PIL   PPC_BIT(36) /* Illegal Instruction                    */
+#define ESR_PPR   PPC_BIT(37) /* Privileged Instruction                 */
+#define ESR_PTR   PPC_BIT(38) /* Trap                                   */
+#define ESR_FP    PPC_BIT(39) /* Floating-Point Operation               */
+#define ESR_ST    PPC_BIT(40) /* Store Operation                        */
+#define ESR_AP    PPC_BIT(44) /* Auxiliary Processor Operation          */
+#define ESR_PUO   PPC_BIT(45) /* Unimplemented Operation                */
+#define ESR_BO    PPC_BIT(46) /* Byte Ordering                          */
+#define ESR_PIE   PPC_BIT(47) /* Imprecise exception                    */
+#define ESR_DATA  PPC_BIT(53) /* Data Access (Embedded page table)      */
+#define ESR_TLBI  PPC_BIT(54) /* TLB Ineligible (Embedded page table)   */
+#define ESR_PT    PPC_BIT(55) /* Page Table (Embedded page table)       */
+#define ESR_SPV   PPC_BIT(56) /* SPE/VMX operation                      */
+#define ESR_EPID  PPC_BIT(57) /* External Process ID operation          */
+#define ESR_VLEMI PPC_BIT(58) /* VLE operation                          */
+#define ESR_MIF   PPC_BIT(62) /* Misaligned instruction (VLE)           */
 
 /* Transaction EXception And Summary Register bits                           */
 #define TEXASR_FAILURE_PERSISTENT                (63 - 7)
@@ -1912,7 +1919,7 @@ static inline int cpu_mmu_index (CPUPPCState *env, bool ifetch)
 #define HID0_DEEPNAP        (1 << 24)           /* pre-2.06 */
 #define HID0_DOZE           (1 << 23)           /* pre-2.06 */
 #define HID0_NAP            (1 << 22)           /* pre-2.06 */
-#define HID0_HILE           (1ull << (63 - 19)) /* POWER8 */
+#define HID0_HILE           PPC_BIT(19) /* POWER8 */
 
 /*****************************************************************************/
 /* PowerPC Instructions types definitions                                    */
