@@ -39,8 +39,10 @@ typedef struct sPAPRMachineState sPAPRMachineState;
 #define SPAPR_CAP_CFPC                  0x00
 /* Speculation Barrier Bounds Checking */
 #define SPAPR_CAP_SBBC                  0x01
+/* Indirect Branch Serialisation */
+#define SPAPR_CAP_IBS                   0x02
 /* Num Caps */
-#define SPAPR_CAP_NUM                   (SPAPR_CAP_SBBC + 1)
+#define SPAPR_CAP_NUM                   (SPAPR_CAP_IBS + 1)
 
 /*
  * Capability Values
@@ -698,6 +700,7 @@ void spapr_caps_pre_save(void *opaque);
  */
 extern const VMStateDescription vmstate_spapr_cap_cfpc;
 extern const VMStateDescription vmstate_spapr_cap_sbbc;
+extern const VMStateDescription vmstate_spapr_cap_ibs;
 
 static inline uint8_t spapr_get_cap(sPAPRMachineState *spapr, int cap)
 {
