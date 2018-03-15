@@ -30,6 +30,15 @@ typedef struct sPAPRMachineState sPAPRMachineState;
     OBJECT_CLASS_CHECK(sPAPRMachineClass, klass, TYPE_SPAPR_MACHINE)
 
 /**
+ * Capabilities
+ */
+
+typedef struct sPAPRCapabilities sPAPRCapabilities;
+struct sPAPRCapabilities {
+    uint64_t mask;
+};
+
+/**
  * sPAPRMachineClass:
  */
 struct sPAPRMachineClass {
@@ -39,6 +48,7 @@ struct sPAPRMachineClass {
     /*< public >*/
     bool dr_lmb_enabled;       /* enable dynamic-reconfig/hotplug of LMBs */
     bool use_ohci_by_default;  /* use USB-OHCI instead of XHCI */
+    sPAPRCapabilities default_caps;
 };
 
 /**
@@ -82,6 +92,9 @@ struct sPAPRMachineState {
     char *kvm_type;
     MemoryHotplugState hotplug_memory;
     Object **cores;
+
+    sPAPRCapabilities forced_caps, forbidden_caps;
+    sPAPRCapabilities effective_caps;
 };
 
 #define H_SUCCESS         0
@@ -644,5 +657,23 @@ int spapr_rng_populate_dt(void *fdt);
  * property under ibm,dynamic-reconfiguration-memory node.
  */
 #define SPAPR_LMB_FLAGS_ASSIGNED 0x00000008
+
+/*
+ * Handling of optional capabilities
+ */
+static inline sPAPRCapabilities spapr_caps(uint64_t mask)
+{
+    sPAPRCapabilities caps = { mask };
+    return caps;
+}
+
+static inline bool spapr_has_cap(sPAPRMachineState *spapr, uint64_t cap)
+{
+    return !!(spapr->effective_caps.mask & cap);
+}
+
+void spapr_caps_reset(sPAPRMachineState *spapr);
+void spapr_caps_validate(sPAPRMachineState *spapr, Error **errp);
+void spapr_caps_add_properties(sPAPRMachineClass *smc, Error **errp);
 
 #endif /* !defined (__HW_SPAPR_H__) */

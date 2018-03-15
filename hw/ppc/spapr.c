@@ -1163,6 +1163,8 @@ static void ppc_spapr_reset(void)
     /* Check for unknown sysbus devices */
     foreach_dynamic_sysbus_device(find_unknown_sysbus_device, NULL);
 
+    spapr_caps_reset(spapr);
+
     /* Allocate and/or reset the hash page table */
     spapr_reallocate_hpt(spapr,
                          spapr_hpt_shift_for_ramsize(machine->maxram_size),
@@ -1725,6 +1727,8 @@ static void ppc_spapr_init(MachineState *machine)
             exit(1);
         }
     }
+
+    spapr_caps_validate(spapr, &error_fatal);
 
     msi_nonbroken = true;
 
@@ -2393,6 +2397,9 @@ static void spapr_machine_class_init(ObjectClass *oc, void *data)
     mc->query_hotpluggable_cpus = spapr_query_hotpluggable_cpus;
     fwc->get_dev_path = spapr_get_fw_dev_path;
     nc->nmi_monitor_handler = spapr_nmi;
+
+    smc->default_caps = spapr_caps(0);
+    spapr_caps_add_properties(smc, &error_abort);
 }
 
 static const TypeInfo spapr_machine_info = {
