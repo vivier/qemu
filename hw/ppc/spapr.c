@@ -1310,6 +1310,7 @@ static const VMStateDescription vmstate_spapr = {
     },
     .subsections = (const VMStateDescription*[]) {
         &vmstate_spapr_cap_cfpc,
+        &vmstate_spapr_cap_sbbc,
         NULL
     }
 };
@@ -2425,6 +2426,7 @@ static void spapr_machine_class_init(ObjectClass *oc, void *data)
     nc->nmi_monitor_handler = spapr_nmi;
 
     smc->default_caps.caps[SPAPR_CAP_CFPC] = SPAPR_CAP_BROKEN;
+    smc->default_caps.caps[SPAPR_CAP_SBBC] = SPAPR_CAP_BROKEN;
     spapr_caps_add_properties(smc, &error_abort);
 }
 
