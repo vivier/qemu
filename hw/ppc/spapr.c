@@ -1334,6 +1334,8 @@ static void ppc_spapr_reset(void)
     /* Check for unknown sysbus devices */
     foreach_dynamic_sysbus_device(find_unknown_sysbus_device, NULL);
 
+    spapr_caps_reset(spapr);
+
     if (kvm_enabled() && kvmppc_has_cap_mmu_radix()) {
         /* If using KVM with radix mode available, VCPUs can be started
          * without a HPT because KVM will start them in radix mode.
@@ -2067,6 +2069,8 @@ static void ppc_spapr_init(MachineState *machine)
     long load_limit, fw_size;
     char *filename;
     int smt = kvmppc_smt_threads();
+
+    spapr_caps_validate(spapr, &error_fatal);
 
     msi_nonbroken = true;
 
@@ -3194,6 +3198,9 @@ static void spapr_machine_class_init(ObjectClass *oc, void *data)
      * in which LMBs are represented and hot-added
      */
     mc->numa_mem_align_shift = 28;
+
+    smc->default_caps = spapr_caps(0);
+    spapr_caps_add_properties(smc, &error_abort);
 }
 
 static const TypeInfo spapr_machine_info = {
