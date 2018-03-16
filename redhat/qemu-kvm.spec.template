@@ -827,6 +827,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Mar 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.15
+- kvm-coroutine-lock-do-not-touch-coroutine-after-another-.patch [bz#1544333]
+- kvm-block-avoid-recursive-AioContext-acquire-in-bdrv_ina.patch [bz#1544738]
+- Resolves: bz#1544333
+  (qemu-kvm-rhev seg-faults at  qemu_co_queue_run_restart (co=co)
+- Resolves: bz#1544738
+  (Migration with dataplane, qemu processor hang, vm hang and migration can't finish [rhel-7.4.z])
+
 * Thu Jan 18 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.14
 - kvm-fw_cfg-fix-memory-corruption-when-all-fw_cfg-slots-a.patch [bz#1534649]
 - kvm-mirror-Fix-inconsistent-backing-AioContext-for-after.patch [bz#1535125]
