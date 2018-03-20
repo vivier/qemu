@@ -827,6 +827,35 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Mar 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.16
+- kvm-spapr-Capabilities-infrastructure.patch [bz#1544741]
+- kvm-spapr-Validate-capabilities-on-migration.patch [bz#1544741]
+- kvm-hw-ppc-spapr_caps-Rework-spapr_caps-to-use-uint8-int.patch [bz#1544741]
+- kvm-target-ppc-kvm-Add-cap_ppc_safe_-cache-bounds_check-.patch [bz#1544741]
+- kvm-target-ppc-spapr_caps-Add-macro-to-generate-spapr_ca.patch [bz#1544741]
+- kvm-target-ppc-spapr_caps-Add-support-for-tristate-spapr.patch [bz#1544741]
+- kvm-target-ppc-spapr_caps-Add-new-tristate-cap-safe_cach.patch [bz#1544741]
+- kvm-target-ppc-spapr_caps-Add-new-tristate-cap-safe_boun.patch [bz#1544741]
+- kvm-target-ppc-spapr_caps-Add-new-tristate-cap-safe_indi.patch [bz#1544741]
+- kvm-target-ppc-introduce-the-PPC_BIT-macro.patch [bz#1544741]
+- kvm-linux-headers-update-2.patch [bz#1544741]
+- kvm-target-ppc-spapr-Add-H-Call-H_GET_CPU_CHARACTERISTIC.patch [bz#1544741]
+- kvm-spapr-add-missing-break-in-h_get_cpu_characteristics.patch [bz#1544741]
+- kvm-ppc-spapr-caps-Change-migration-macro-to-take-full-s.patch [bz#1544741]
+- kvm-ppc-spapr-caps-Disallow-setting-workaround-for-spapr.patch [bz#1544741]
+- kvm-target-ppc-Check-mask-when-setting-cap_ppc_safe_indi.patch [bz#1544741]
+- kvm-ppc-spapr-caps-Add-support-for-custom-spapr_capabili.patch [bz#1544741]
+- kvm-ppc-spapr-caps-Convert-cap-cfpc-to-custom-spapr-cap.patch [bz#1544741]
+- kvm-ppc-spapr-caps-Convert-cap-sbbc-to-custom-spapr-cap.patch [bz#1544741]
+- kvm-ppc-spapr-caps-Convert-cap-ibs-to-custom-spapr-cap.patch [bz#1544741]
+- kvm-ppc-spapr-caps-Define-the-pseries-2.12-sxxm-machine-.patch [bz#1554950]
+- kvm-redhat-Define-the-pseries-rhel7.4-sxxm-machine-type.patch [bz#1554950]
+- kvm-redhat-Define-the-pseries-rhel7.3-sxxm-machine-type.patch [bz#1554950]
+- Resolves: bz#1544741
+  ([CVE-2017-5754] Variant3: POWER {qemu-kvm-rhev} Add mitigation capability options [rhel-7.4.z])
+- Resolves: bz#1554950
+  ([CVE-2017-5754] Variant3: POWER {qemu-kvm-rhev} Add machine type variants [rhel-7.4.z])
+
 * Fri Mar 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.15
 - kvm-coroutine-lock-do-not-touch-coroutine-after-another-.patch [bz#1544333]
 - kvm-block-avoid-recursive-AioContext-acquire-in-bdrv_ina.patch [bz#1544738]
