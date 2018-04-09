@@ -121,8 +121,8 @@ fi
     --disable-xen \
     --disable-xfsctl \
     --enable-gnutls \
-    --disable-gcrypt \
-    --enable-nettle \
+    --enable-gcrypt \
+    --disable-nettle \
     --enable-attr \
     --disable-bsd-user \
     --disable-cocoa \
