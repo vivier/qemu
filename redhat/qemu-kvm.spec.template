@@ -416,11 +416,11 @@ extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
 # QEMU already knows how to set _FORTIFY_SOURCE
-%global optflags %(echo %{optflags} | sed 's/-Wp,-D_FORTIFY_SOURCE=2//')
+%global qemuoptflags %(echo %{optflags} | sed 's/-Wp,-D_FORTIFY_SOURCE=2//')
 
 %ifarch s390
     # drop -g flag to prevent memory exhaustion by linker
-    %global optflags %(echo %{optflags} | sed 's/-g//')
+    %global qemuoptflags %(echo %{qemuoptflags} | sed 's/-g//')
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
@@ -436,7 +436,7 @@ cp %{SOURCE24} build_configure.sh
   "%{pkgname}" \
   "%{kvm_target}" \
   "%{name}-%{version}-%{release}" \
-  "%{optflags}" \
+  "%{qemuoptflags}" \
 %if 0%{have_fdt}
   enable \
 %else
@@ -526,7 +526,7 @@ make V=1 %{?_smp_mflags} $buildldflags
 
 cp -a %{kvm_target}-softmmu/qemu-system-%{kvm_target} qemu-kvm
 
-gcc %{SOURCE6} -O2 -g -o ksmctl
+gcc %{SOURCE6} $RPM_OPT_FLAGS $RPM_LD_FLAGS -o ksmctl
 
 # build tscdeadline_latency.flat
 %ifarch x86_64
