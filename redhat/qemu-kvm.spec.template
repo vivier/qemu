@@ -902,6 +902,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Apr 13 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7_5.2
+- kvm-block-Fix-flags-in-reopen-queue.patch [bz#1557206]
+- kvm-iotests-Add-regression-test-for-commit-base-locking.patch [bz#1557206]
+- kvm-vga-add-ram_addr_t-cast.patch [bz#1566878]
+- kvm-vga-fix-region-calculation.patch [bz#1566878]
+- Resolves: bz#1557206
+  ([Regression] Cannot delete VM's snapshot [rhel-7.5.z])
+- Resolves: bz#1566878
+  (CVE-2018-7858 qemu-kvm-ma: Qemu: cirrus: OOB access when updating vga display [rhel-7] [rhel-7.5.z])
+
 * Wed Mar 14 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7_5.1
 - kvm-memory-inline-some-performance-sensitive-accessors.patch [bz#1554930]
 - kvm-address_space_write-address_space_to_flatview-needs-.patch [bz#1554930]
