@@ -902,6 +902,43 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Apr 13 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-21.el7_5.2
+- kvm-arm-postpone-device-listener-unregister.patch [bz#1555213]
+- kvm-vfio-listener-unregister-before-unset-container.patch [bz#1555213]
+- kvm-memory-do-explicit-cleanup-when-remove-listeners.patch [bz#1555213]
+- kvm-vl-pause-vcpus-before-stopping-iothreads.patch [bz#1566586]
+- kvm-aio-rename-aio_context_in_iothread-to-in_aio_context.patch [bz#1566586]
+- kvm-block-extract-AIO_WAIT_WHILE-from-BlockDriverState.patch [bz#1566586]
+- kvm-block-add-aio_wait_bh_oneshot.patch [bz#1566586]
+- kvm-virtio-blk-fix-race-between-.ioeventfd_stop-and-vq-h.patch [bz#1566586]
+- kvm-virtio-scsi-fix-race-between-.ioeventfd_stop-and-vq-.patch [bz#1566586]
+- kvm-vl-introduce-vm_shutdown.patch [bz#1566586]
+- kvm-vga-add-ram_addr_t-cast.patch [bz#1566874]
+- kvm-vga-fix-region-calculation.patch [bz#1566874]
+- kvm-block-file-posix-Fix-fully-preallocated-truncate.patch [bz#1566587]
+- kvm-iotests-Test-preallocated-truncate-of-2G-image.patch [bz#1566587]
+- kvm-block-handle-invalid-lseek-returns-gracefully.patch [bz#1566369]
+- kvm-multiboot-bss_end_addr-can-be-zero.patch [bz#1549821]
+- kvm-multiboot-Reject-kernels-exceeding-the-address-space.patch [bz#1549821]
+- kvm-multiboot-Check-validity-of-mh_header_addr.patch [bz#1549821]
+- kvm-queue-add-QSIMPLEQ_PREPEND.patch [bz#1566537]
+- kvm-coroutine-avoid-co_queue_wakeup-recursion.patch [bz#1566537]
+- kvm-coroutine-add-test-aio-coroutine-queue-chaining-test.patch [bz#1566537]
+- Resolves: bz#1549821
+  (CVE-2018-7550 qemu-kvm-rhev: Qemu: i386:  multiboot OOB access while loading kernel image [rhel-7.5.z])
+- Resolves: bz#1555213
+  ([Q35] "DEVICE_DELETED" event didn't return after delete the second passthrough vf device [rhel-7.5.z])
+- Resolves: bz#1566369
+  (qemu-img commit fails with "block/file-posix.c:1774: find_allocation: Assertion `offs >= start' failed" [rhel-7.5.z])
+- Resolves: bz#1566537
+  (qemu-img convert exceeds stack limit [rhel-7.5.z])
+- Resolves: bz#1566586
+  (Occurred core dump with multi-object when quitted qemu during doing IO [rhel-7.5.z])
+- Resolves: bz#1566587
+  (Unable to resize image with preallocation=full mode [rhel-7.5.z])
+- Resolves: bz#1566874
+  (CVE-2018-7858 qemu-kvm-rhev: Qemu: cirrus: OOB access when updating vga display [rhel-7] [rhel-7.5.z])
+
 * Wed Mar 14 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-21.el7_5.1
 - kvm-hw-ppc-spapr_hcall-set-htab_shift-after-kvmppc_resiz.patch [bz#1554956]
 - kvm-memory-inline-some-performance-sensitive-accessors.patch [bz#1554929]
