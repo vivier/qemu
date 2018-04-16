@@ -813,6 +813,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon Apr 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7_5.1
+- kvm-vga-add-ram_addr_t-cast.patch [bz#1567913]
+- kvm-vga-fix-region-calculation.patch [bz#1567913]
+- Resolves: bz#1567913
+  (CVE-2018-7858 qemu-kvm: Qemu: cirrus: OOB access when updating vga display [rhel-7] [rhel-7.5.z])
+
 * Tue Feb 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7
 - kvm-vnc-Fix-qemu-crashed-when-vnc-client-disconnect-sudd.patch [bz#1527405]
 - kvm-fix-full-frame-updates-for-VNC-clients.patch [bz#1527405]
