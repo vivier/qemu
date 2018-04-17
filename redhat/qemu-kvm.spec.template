@@ -377,11 +377,11 @@ extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
 # QEMU already knows how to set _FORTIFY_SOURCE
-%global optflags %(echo %{optflags} | sed 's/-Wp,-D_FORTIFY_SOURCE=2//')
+%global qemuoptflags %(echo %{optflags} | sed 's/-Wp,-D_FORTIFY_SOURCE=2//')
 
 %ifarch s390
     # drop -g flag to prevent memory exhaustion by linker
-    %global optflags %(echo %{optflags} | sed 's/-g//')
+    %global qemuoptflags %(echo %{qemuoptflags} | sed 's/-g//')
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
@@ -400,7 +400,7 @@ dobuild() {
         --disable-strip \
         --disable-qom-cast-debug \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
-        --extra-cflags="%{optflags} -fPIE -DPIE" \
+        --extra-cflags="%{qemuoptflags} -fPIE -DPIE" \
         --enable-trace-backend=dtrace \
         --enable-werror \
         --disable-xen \
@@ -496,7 +496,7 @@ dobuild --target-list="$buildarch"
         cp -a %{kvm_target}-softmmu/qemu-system-%{kvm_target} qemu-kvm
 
 
-    gcc %{SOURCE6} -O2 -g -o ksmctl
+    gcc %{SOURCE6} $RPM_OPT_FLAGS $RPM_LD_FLAGS -o ksmctl
 %endif
 
 %install
