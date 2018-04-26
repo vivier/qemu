@@ -903,6 +903,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Apr 26 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-1.el7
+- Rebase to QEMU 2.12.0 [bz#1562081 bz#1562219]
+- Resolves: bz#1562081
+  (Rebase qemu-kvm-rhev for RHEL-7.6)
+- Resolves: bz#1562219
+  (Rebase qemu-kvm-ma for RHEL-7.6)
+
 * Tue Feb 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-21.el7
 - kvm-migration-Recover-block-devices-if-failure-in-device.patch [bz#1538494]
 - kvm-migration-savevm.c-set-MAX_VM_CMD_PACKAGED_SIZE-to-1.patch [bz#1540003]
