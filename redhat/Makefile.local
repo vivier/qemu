@@ -4,7 +4,7 @@ TARGET_NAME-ppc64:=ppc64
 TARGET_NAME-ppc64le:=$(TARGET_NAME-ppc64)
 TARGET_NAME-x86_64:=x86_64
 TARGET_NAME-i386:=
-TARGET_NAME-s390x:=
+TARGET_NAME-s390x:=s390x
 TARGET_NAME=$(TARGET_NAME-$(ARCH))
 
 COMPILE_OPTIONS-COMMON:=-O2 -g -pipe -Wall  -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches
@@ -13,21 +13,42 @@ COMPILE_OPTIONS-pcc64:=-m64 -mcpu=power7 -mtune=power7
 COMPILE_OPTIONS-ppc64le:=-m64 -mcpu=power8 -mtune=power8
 COMPILE_OPTIONS-x86_64:=-m64 -mtune=generic
 COMPILE_OPTIONS-i386:=
-COMPILE_OPTIONS-s390x:=
+COMPILE_OPTIONS-s390x:=-O2 -g -pipe -Wall  -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -march=z196 -mtune=zEC12
 COMPILE_OPTIONS=$(COMPILE_OPTIONS-COMMON) $(COMPILE_OPTIONS-$(ARCH))
 
 GUEST_AGENT_OPTION:=disable
-NUMA_OPTION:=enable
-RDMA_OPTION:=enable
 SECCOMP_OPTION:=enable
-TMALLOC_OPTION:=enable
+
+NUMA_OPTION-aarch64:=enable
+NUMA_OPTION-ppc64:=enable
+NUMA_OPTION-ppc64le:=enable
+NUMA_OPTION-x86_64:=enable
+NUMA_OPTION-i386:=
+NUMA_OPTION-s390x:=disable
+NUMA_OPTION:=$(NUMA_OPTION-$(ARCH))
+
+RDMA_OPTION-aarch64:=enable
+RDMA_OPTION-ppc64:=enable
+RDMA_OPTION-ppc64le:=enable
+RDMA_OPTION-x86_64:=enable
+RDMA_OPTION-i386:=
+RDMA_OPTION-s390x:=disable
+RDMA_OPTION:=$(RDMA_OPTION-$(ARCH))
+
+TMALLOC_OPTION-aarch64:=enable
+TMALLOC_OPTION-ppc64:=enable
+TMALLOC_OPTION-ppc64le:=enable
+TMALLOC_OPTION-x86_64:=enable
+TMALLOC_OPTION-i386:=
+TMALLOC_OPTION-s390x:=disable
+TMALLOC_OPTION:=$(TMALLOC_OPTION-$(ARCH))
 
 FDT_OPTION-aarch64:=enable
 FDT_OPTION-ppc64:=enable
 FDT_OPTION-ppc64le:=enable
 FDT_OPTION-x86_64:=disable
 FDT_OPTION-i386:=
-FDT_OPTION-s390x:=
+FDT_OPTION-s390x:=disable
 FDT_OPTION=$(FDT_OPTION-$(ARCH))
 
 GLUSTER_OPTION-aarch64:=disable
@@ -35,7 +56,7 @@ GLUSTER_OPTION-ppc64:=disable
 GLUSTER_OPTION-ppc64le:=disable
 GLUSTER_OPTION-x86_64:=enable
 GLUSTER_OPTION-i386:=
-GLUSTER_OPTION-s390x:=
+GLUSTER_OPTION-s390x:=disable
 GLUSTER_OPTION=$(GLUSTER_OPTION-$(ARCH))
 
 RBD_OPTION-aarch64:=disable
@@ -43,7 +64,7 @@ RBD_OPTION-ppc64:=disable
 RBD_OPTION-ppc64le:=disable
 RBD_OPTION-x86_64:=enable
 RBD_OPTION-i386:=
-RBD_OPTION-s390x:=
+RBD_OPTION-s390x:=disable
 RBD_OPTION=$(RBD_OPTION-$(ARCH))
 
 SPICE_OPTION-aarch64:=disable
@@ -51,7 +72,7 @@ SPICE_OPTION-ppc64:=disable
 SPICE_OPTION-ppc64le:=disable
 SPICE_OPTION-x86_64:=enable
 SPICE_OPTION-i386:=
-SPICE_OPTION-s390x:=
+SPICE_OPTION-s390x:=disable
 SPICE_OPTION=$(SPICE_OPTION-$(ARCH))
 
 USBREDIR_OPTION-aarch64:=disable
@@ -59,7 +80,7 @@ USBREDIR_OPTION-ppc64:=disable
 USBREDIR_OPTION-ppc64le:=disable
 USBREDIR_OPTION-x86_64:=enable
 USBREDIR_OPTION-i386:=
-USBREDIR_OPTION-s390x:=
+USBREDIR_OPTION-s390x:=disable
 USBREDIR_OPTION=$(USBREDIR_OPTION-$(ARCH))
 
 VXHS_OPTION-aarch64:=disable
@@ -67,7 +88,7 @@ VXHS_OPTION-ppc64:=disable
 VXHS_OPTION-ppc64le:=disable
 VXHS_OPTION-x86_64:=enable
 VXHS_OPTION-i386:=
-VXHS_OPTION-s390x:=
+VXHS_OPTION-s390x:=disable
 VXHS_OPTION=$(VXHS_OPTION-$(ARCH))
 
 VTD_OPTION=enable
