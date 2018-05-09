@@ -173,7 +173,7 @@ static const char *cpuid_7_0_edx_feature_name[] = {
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, "spec-ctrl", "stibp",
-    NULL, "arch-facilities", NULL, NULL,
+    NULL, "arch-facilities", NULL, "ssbd",
 };
 
 static const char *cpuid_80000008_ebx_feature_name[] = {
