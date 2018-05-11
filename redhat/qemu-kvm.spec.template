@@ -902,6 +902,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri May 11 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-21.el7_5.3
+- kvm-i386-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch [bz#1574214]
+- Resolves: bz#1574214
+  (EMBARGOED CVE-2018-3639 qemu-kvm: Kernel: omega-4 [rhel-7.5.z])
+
 * Fri Apr 13 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-21.el7_5.2
 - kvm-arm-postpone-device-listener-unregister.patch [bz#1555213]
 - kvm-vfio-listener-unregister-before-unset-container.patch [bz#1555213]
