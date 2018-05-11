@@ -860,6 +860,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri May 11 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.17
+- kvm-i386-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch [bz#1574069]
+- Resolves: bz#1574069
+  (EMBARGOED CVE-2018-3639 qemu-kvm: Kernel: omega-4 [rhel-7.2.z])
+
 * Wed Dec 27 2017 Wainer dos Santos Moschetta <wainersm@redhat.com> - 1.5.3-105.el7_2.16
 - kvm-target-i386-cpu-add-new-CPUID-bits-for-indirect-bran.patch [bz#1526984]
 - kvm-target-i386-add-support-for-SPEC_CTRL-MSR.patch [bz#1526984]
