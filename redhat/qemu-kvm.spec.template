@@ -903,6 +903,35 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed May 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-2.el7
+- kvm-AArch64-Add-virt-rhel7.6-machine-type.patch [bz#1558723]
+- kvm-configuration-Use-gcrypt-instead-of-nettle.patch [bz#1549543]
+- kvm-spec-Change-License-line.patch [bz#1549106]
+- kvm-spapr-Add-ibm-max-associativity-domains-property.patch [bz#1570525]
+- kvm-Revert-spapr-Don-t-allow-memory-hotplug-to-memory-le.patch [bz#1570525]
+- kvm-tcg-workaround-branch-instruction-overflow-in-tcg_ou.patch [bz#1574577]
+- kvm-s390-ccw-force-diag-308-subcode-to-unsigned-long.patch [bz#1523857]
+- kvm-pc-bios-s390-ccw-size_t-should-be-unsigned.patch [bz#1523857]
+- kvm-pc-bios-s390-ccw-rename-MAX_TABLE_ENTRIES-to-MAX_BOO.patch [bz#1523857]
+- kvm-pc-bios-s390-ccw-fix-loadparm-initialization-and-int.patch [bz#1523857]
+- kvm-pc-bios-s390-ccw-fix-non-sequential-boot-entries-eck.patch [bz#1523857]
+- kvm-pc-bios-s390-ccw-fix-non-sequential-boot-entries-enu.patch [bz#1523857]
+- kvm-cpus-Fix-event-order-on-resume-of-stopped-guest.patch [bz#1566153]
+- Resolves: bz#1523857
+  ([Pegas1.2 FEAT] KVM: Interactive Bootloader - qemu part)
+- Resolves: bz#1549106
+  (Incorrect License information in RPM specfile)
+- Resolves: bz#1549543
+  (Use of Nettle crypto library prevents FIPS compliance, need to go back to libgcrypt)
+- Resolves: bz#1558723
+  (Create RHEL-7.6 QEMU machine type for AArch64)
+- Resolves: bz#1566153
+  (IOERROR pause code lost after resuming a VM while I/O error is still present)
+- Resolves: bz#1570525
+  ([POWER][QEMU-KVM] Can't hotplug memory to initially memory-less NUMA node)
+- Resolves: bz#1574577
+  (qemu-kvm segfaults when run guestfsd under TCG)
+
 * Thu Apr 26 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-1.el7
 - Rebase to QEMU 2.12.0 [bz#1562081 bz#1562219]
 - Resolves: bz#1562081
