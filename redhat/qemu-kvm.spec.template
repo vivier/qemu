@@ -827,6 +827,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed May 16 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-16.el7_4.17
+- kvm-i386-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch [bz#1574213]
+- Resolves: bz#1574213
+  (EMBARGOED CVE-2018-3639 qemu-kvm-rhev: Kernel: omega-4 [rhel-7.4.z])
+
 * Tue Mar 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.16
 - kvm-spapr-Capabilities-infrastructure.patch [bz#1544741]
 - kvm-spapr-Validate-capabilities-on-migration.patch [bz#1544741]
