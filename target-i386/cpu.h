@@ -305,6 +305,7 @@
 #define MSR_IA32_APICBASE_BASE          (0xfffff<<12)
 #define MSR_TSC_ADJUST                  0x0000003b
 #define MSR_IA32_SPEC_CTRL              0x48
+#define MSR_VIRT_SSBD                   0xc001011f
 #define MSR_IA32_TSCDEADLINE            0x6e0
 
 #define MSR_P6_PERFCTR0                 0xc1
@@ -1012,6 +1013,7 @@ typedef struct CPUX86State {
     uint64_t xcr0;
 
     uint64_t spec_ctrl;
+    uint64_t virt_ssbd;
 
     TPRAccess tpr_access_type;
 } CPUX86State;
