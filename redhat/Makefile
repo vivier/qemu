@@ -4,8 +4,8 @@ include Makefile.test
 
 LOCVERFILE:=../localversion
 LANG=C
-BUILD_DEFAULT_TARGET = rhel-7.5-candidate
-BUILD_SCRATCH_TARGET = rhel-7.5-candidate
+BUILD_DEFAULT_TARGET = rhel-7.6-candidate
+BUILD_SCRATCH_TARGET = rhel-7.6-candidate
 
 #ifeq ($(shell git diff --quiet HEAD && git describe --exact-match 2>/dev/null && echo ok),)
 BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
