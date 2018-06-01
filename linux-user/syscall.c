@@ -11870,7 +11870,7 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
           return 0;
       }
 #else
-      goto unimplemented_nowarn;
+      return -TARGET_ENOSYS;
 #endif
 #endif
 #ifdef TARGET_NR_get_thread_area
@@ -11883,12 +11883,12 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
             return ts->tp_value;
         }
 #else
-        goto unimplemented_nowarn;
+        return -TARGET_ENOSYS;
 #endif
 #endif
 #ifdef TARGET_NR_getdomainname
     case TARGET_NR_getdomainname:
-        goto unimplemented_nowarn;
+        return -TARGET_ENOSYS;
 #endif
 
 #ifdef TARGET_NR_clock_settime
@@ -11973,7 +11973,7 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
          * holding a mutex that is shared with another process via
          * shared memory).
          */
-        goto unimplemented_nowarn;
+        return -TARGET_ENOSYS;
 #endif
 
 #if defined(TARGET_NR_utimensat)
@@ -12633,9 +12633,6 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
     default:
     unimplemented:
         qemu_log_mask(LOG_UNIMP, "Unsupported syscall: %d\n", num);
-#if defined(TARGET_NR_setxattr) || defined(TARGET_NR_get_thread_area) || defined(TARGET_NR_getdomainname) || defined(TARGET_NR_set_robust_list)
-    unimplemented_nowarn:
-#endif
         return -TARGET_ENOSYS;
     }
 fail:
