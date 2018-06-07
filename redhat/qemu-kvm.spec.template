@@ -813,6 +813,28 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Thu Jun 07 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-157.el7
+- kvm-vga-add-ram_addr_t-cast.patch [bz#1553670]
+- kvm-vga-fix-region-calculation.patch [bz#1553670]
+- kvm-i386-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch [bz#1574082]
+- kvm-target-i386-introduce-kvm_put_one_msr.patch [bz#1577680]
+- kvm-apic-fix-2.2-2.1-migration.patch [bz#1577680]
+- kvm-x86-lapic-Load-LAPIC-state-at-post_load.patch [bz#1577680]
+- kvm-apic-drop-debugging.patch [bz#1577680]
+- kvm-apic-set-APIC-base-as-part-of-kvm_apic_put.patch [bz#1577680]
+- kvm-spec-Change-License-line.patch [bz#1549108]
+- kvm-spec-Use-hardening-flags-for-ksmctl-build.patch [bz#1558895]
+- Resolves: bz#1549108
+  (Incorrect License information in RPM specfile)
+- Resolves: bz#1553670
+  (CVE-2018-7858 qemu-kvm: Qemu: cirrus: OOB access when updating vga display [rhel-7])
+- Resolves: bz#1558895
+  (ksmctl is built without any hardening flags set [rhel-7.6])
+- Resolves: bz#1574082
+  (CVE-2018-3639 qemu-kvm: hw: cpu: speculative store bypass [rhel-7.6])
+- Resolves: bz#1577680
+  (Windows 2012 Guest hangs after live migration with RTC clock stopped.)
+
 * Tue Feb 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7
 - kvm-vnc-Fix-qemu-crashed-when-vnc-client-disconnect-sudd.patch [bz#1527405]
 - kvm-fix-full-frame-updates-for-VNC-clients.patch [bz#1527405]
