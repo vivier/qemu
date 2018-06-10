@@ -36,6 +36,7 @@
 #include "qemu/osdep.h"
 
 #include "qemu.h"
+#include "syscall.h"
 #include "flat.h"
 #include "target_flat.h"
 

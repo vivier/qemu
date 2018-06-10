@@ -621,11 +621,6 @@ static inline void *lock_user_string(abi_ulong guest_addr)
 
 #include <pthread.h>
 
-static inline int is_error(abi_long ret)
-{
-    return (abi_ulong)ret >= (abi_ulong)(-4096);
-}
-
 /**
  * preexit_cleanup: housekeeping before the guest exits
  *
