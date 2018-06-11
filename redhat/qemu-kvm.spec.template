@@ -896,6 +896,22 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Sat Jun 09 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.10.0-21.el7_5.4
+- kvm-scsi-disk-allow-customizing-the-SCSI-version.patch [bz#1571370]
+- kvm-hw-scsi-support-SCSI-2-passthrough-without-PI.patch [bz#1571370]
+- kvm-i386-Define-the-Virt-SSBD-MSR-and-handling-of-it-CVE.patch [bz#1584370]
+- kvm-i386-define-the-AMD-virt-ssbd-CPUID-feature-bit-CVE-.patch [bz#1584370]
+- kvm-cpus-Fix-event-order-on-resume-of-stopped-guest.patch [bz#1582122]
+- kvm-spec-Enable-Native-Ceph-support-on-all-architectures.patch [bz#1588001]
+- Resolves: bz#1571370
+  (Pegas1.1 Alpha: SCSI pass-thru of aacraid RAID1 is inaccessible (qemu-kvm-rhev) [rhel-7.5.z])
+- Resolves: bz#1582122
+  (IOERROR pause code lost after resuming a VM while I/O error is still present [rhel-7.5.z])
+- Resolves: bz#1584370
+  (CVE-2018-3639 qemu-kvm-rhev: hw: cpu: AMD: speculative store bypass [rhel-7.5.z])
+- Resolves: bz#1588001
+  (Enable Native Ceph support on non x86_64 CPUs [rhel-7.5.z])
+
 * Fri May 11 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.10.0-21.el7_5.3
 - kvm-i386-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch [bz#1574214]
 - Resolves: bz#1574214
