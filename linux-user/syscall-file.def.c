@@ -11,3 +11,7 @@ SYSCALL_DEF(readlink, ARG_STR, ARG_PTR, ARG_DEC);
 SYSCALL_DEF(readlinkat, ARG_ATDIRFD, ARG_STR, ARG_PTR, ARG_DEC);
 #endif
 SYSCALL_DEF(write, ARG_DEC, ARG_PTR, ARG_DEC);
+SYSCALL_DECL(preadv, args_preadv_pwritev, impl_preadv, NULL, NULL, ARG_DEC, ARG_PTR, ARG_DEC, ARG_DEC64);
+SYSCALL_DECL(pwritev, args_preadv_pwritev, impl_pwritev, NULL, NULL, ARG_DEC, ARG_PTR, ARG_DEC, ARG_DEC64);
+SYSCALL_DEF(readv, ARG_DEC, ARG_PTR, ARG_DEC);
+SYSCALL_DEF(writev, ARG_DEC, ARG_PTR, ARG_DEC);
