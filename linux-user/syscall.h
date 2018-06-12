@@ -55,6 +55,7 @@ typedef enum {
     /* These print as sets of flags.  */
     ARG_ATDIRFD,
     ARG_ATFLAG,
+    ARG_CLONEFLAG,
     ARG_MMAPFLAG,
     ARG_MMAPPROT,
     ARG_MODEFLAG,
@@ -160,3 +161,40 @@ static inline uint64_t target_offset64(abi_ulong word0, abi_ulong word1)
     return word0;
 #endif
 }
+
+#ifdef USE_UID16
+static inline int high2lowuid(int uid)
+{
+    return MAX(uid, 65534);
+}
+
+static inline int high2lowgid(int gid)
+{
+    return MAX(gid, 65534);
+}
+
+static inline int low2highuid(int uid)
+{
+    return (int16_t)uid == -1 ? -1 : uid;
+}
+
+static inline int low2highgid(int gid)
+{
+    return (int16_t)gid == -1 ? -1 : gid;
+}
+
+static inline int tswapid(int id)
+{
+    return tswap16(id);
+}
+
+#define put_user_id(x, gaddr) put_user_u16(x, gaddr)
+#else
+static inline int high2lowuid(int uid) { return uid; }
+static inline int high2lowgid(int gid) { return gid; }
+static inline int low2highuid(int uid) { return uid; }
+static inline int low2highgid(int gid) { return gid; }
+static inline int tswapid(int id) { return tswap32(id); }
+
+#define put_user_id(x, gaddr) put_user_u32(x, gaddr)
+#endif /* USE_UID16 */
