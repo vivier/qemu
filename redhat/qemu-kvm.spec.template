@@ -298,6 +298,9 @@ BuildRequires: diffutils
 BuildRequires: binutils >= 2.27-16
 %endif
 
+# qemu-keymap
+BuildRequires: pkgconfig(xkbcommon)
+
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 
 # RHEV-specific changes:
@@ -874,6 +877,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %files -n qemu-kvm-tools%{?pkgsuffix}
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
+%{_bindir}/qemu-keymap
 %{_mandir}/man1/kvm_stat.1*
 %ifarch x86_64
 %{_datadir}/%{pkgname}/tscdeadline_latency.flat
