@@ -1,7 +1,13 @@
-#! /bin/bash
+#!/bin/bash
 
 kvm_setup_powerpc () {
-    if grep '^platform[[:space:]]*:[[:space:]]*PowerNV' /proc/cpuinfo > /dev/null; then
+    isPowerNV=no
+    isPOWER8=no
+
+    grep -q '^platform[[:space:]]*:[[:space:]]*PowerNV' /proc/cpuinfo && isPowerNV=yes
+    grep -q '^cpu[[:space:]]*:[[:space:]]*POWER8' /proc/cpuinfo && isPOWER8=yes
+
+    if [ "$isPowerNV" = "yes" ] ; then
 	# PowerNV platform, which is KVM HV capable
 
 	if [ -z "$SUBCORES" ]; then
@@ -21,7 +27,7 @@ kvm_setup_powerpc () {
 	# POWER9 doesn't have this limitation (though it will for hash
 	# guests on radix host when that's implemented).  So, only set
 	# up subcores and disable SMT for POWER*.
-	if grep '^cpu[[:space:]]*:[[:space:]]*POWER8' /proc/cpuinfo > /dev/null; then
+	if [ "$isPOWER8" = "yes" ] ; then
 	    # Step 2. Configure subcore mode
 	    /usr/sbin/ppc64_cpu --subcores-per-core=$SUBCORES
 
