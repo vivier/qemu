@@ -1,0 +1,3 @@
+# POWER8 parameter
+# Set the number of subcores per core
+#SUBCORES=1

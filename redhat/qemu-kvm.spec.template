@@ -189,6 +189,7 @@ Source30: kvm-s390x.conf
 Source31: kvm-x86.conf
 Source32: qemu-pr-helper.service
 Source33: qemu-pr-helper.socket
+Source34: kvm-setup-ppc64.sysconfig
 
 
 
@@ -705,6 +706,9 @@ rom_link() {
     install -D -p -m 755 %{SOURCE21} $RPM_BUILD_ROOT%{_prefix}/lib/systemd/kvm-setup
 	install -D -p -m 644 %{SOURCE22} $RPM_BUILD_ROOT%{_unitdir}/kvm-setup.service
 	install -D -p -m 644 %{SOURCE23} $RPM_BUILD_ROOT%{_presetdir}/85-kvm.preset
+    %ifarch %{power64}
+	install -D -p -m 0644 %{SOURCE34} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/kvm
+    %endif
 %endif
 
 %if 0%{have_memlock_limits}
@@ -859,6 +863,9 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     %{_prefix}/lib/systemd/kvm-setup
     %{_unitdir}/kvm-setup.service
     %{_presetdir}/85-kvm.preset
+    %ifarch %{power64}
+	%config(noreplace) %{_sysconfdir}/sysconfig/kvm
+    %endif
 %endif
 %if 0%{have_memlock_limits}
     %{_sysconfdir}/security/limits.d/95-kvm-memlock.conf

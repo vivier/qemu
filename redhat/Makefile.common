@@ -54,4 +54,5 @@ SOURCES_FILELIST:=                     \
        rhel6-e1000.rom                 \
        pxe-e1000e.rom                  \
        qemu-pr-helper.service          \
-       qemu-pr-helper.socket
+       qemu-pr-helper.socket           \
+       kvm-setup-ppc64.sysconfig
