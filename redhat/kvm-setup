@@ -3,9 +3,15 @@
 kvm_setup_powerpc () {
     isPowerNV=no
     isPOWER8=no
+    isPOWER9=no
 
     grep -q '^platform[[:space:]]*:[[:space:]]*PowerNV' /proc/cpuinfo && isPowerNV=yes
     grep -q '^cpu[[:space:]]*:[[:space:]]*POWER8' /proc/cpuinfo && isPOWER8=yes
+    grep -q '^cpu[[:space:]]*:[[:space:]]*POWER9' /proc/cpuinfo && isPOWER9=yes
+
+    if [ "$isPOWER9" = "no" ] ; then
+	POWER8_GUESTS_ON_POWER9DD21=no
+    fi
 
     if [ "$isPowerNV" = "yes" ] ; then
 	# PowerNV platform, which is KVM HV capable
@@ -23,16 +29,25 @@ kvm_setup_powerpc () {
 	# guest, meaning that SMT must be disabled on the host in
 	# order to run KVM guests. (Also applieds to POWER7, but we
 	# don't support that).
-	#
-	# POWER9 doesn't have this limitation (though it will for hash
-	# guests on radix host when that's implemented).  So, only set
-	# up subcores and disable SMT for POWER*.
-	if [ "$isPOWER8" = "yes" ] ; then
-	    # Step 2. Configure subcore mode
-	    /usr/sbin/ppc64_cpu --subcores-per-core=$SUBCORES
+	# So, only set up subcores and disable SMT for POWER8
+	# POWER9 doesn't have this limitation, except if we want
+	# to run hash guests on POWER9 DD2.1.
 
-	    # Step 3. Disable SMT (multithreading)
+	# Step 2. Configure subcore mode (POWER8 only)
+	if [ "$isPOWER8" = "yes" ] ; then
+	    /usr/sbin/ppc64_cpu --subcores-per-core=$SUBCORES
+	fi
+
+	# Step 3. Disable SMT (multithreading)
+	if [ "$isPOWER8" = "yes" -o \
+	     "$POWER8_GUESTS_ON_POWER9DD21" = "yes" ] ; then
 	    /usr/sbin/ppc64_cpu --smt=off
+	fi
+
+	# Step 4. Disable independent threads mode (POWER8 guests on POWER9DD21)
+	if [ "$POWER8_GUESTS_ON_POWER9DD21" = "yes" ] ; then
+	    echo "Independent threads mode disabled"
+	    echo N >/sys/module/kvm_hv/parameters/indep_threads_mode
 	fi
     fi
 }
