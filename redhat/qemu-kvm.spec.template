@@ -824,6 +824,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 19 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.18
+- kvm-i386-Define-the-Virt-SSBD-MSR-and-handling-of-it-CVE.patch [bz#1584372]
+- kvm-i386-define-the-AMD-virt-ssbd-CPUID-feature-bit-CVE-.patch [bz#1584372]
+- Resolves: bz#1584372
+  (CVE-2018-3639 qemu-kvm-rhev: hw: cpu: AMD: speculative store bypass [rhel-7.3.z])
+
 * Tue Mar 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.16
 - kvm-spapr-Capabilities-infrastructure.patch [bz#1547868]
 - kvm-spapr-Validate-capabilities-on-migration.patch [bz#1547868]
