@@ -817,6 +817,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Jun 19 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.15
+- kvm-i386-Define-the-Virt-SSBD-MSR-and-handling-of-it-CVE.patch [bz#1584366]
+- kvm-i386-define-the-AMD-virt-ssbd-CPUID-feature-bit-CVE-.patch [bz#1584366]
+- Resolves: bz#1584366
+  (CVE-2018-3639 qemu-kvm: hw: cpu: AMD: speculative store bypass [rhel-7.3.z])
+
 * Fri May 11 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.14
 - kvm-i386-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch [bz#1574073]
 - Resolves: bz#1574073
