@@ -904,6 +904,29 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 19 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-4.el7
+- kvm-Fix-x-hv-max-vps-compat-value-for-7.4-machine-type.patch [bz#1583959]
+- kvm-ccid-card-passthru-fix-regression-in-realize.patch [bz#1584984]
+- kvm-remove-duplicate-HW_COMPAT_RHEL7_5.patch [bz#1542080]
+- kvm-Use-4-MB-vram-for-cirrus.patch [bz#1542080]
+- kvm-spapr_pci-Remove-unhelpful-pagesize-warning.patch [bz#1505664]
+- kvm-redhat-cleanup-redhat-kvm-setup.patch [bz#1580297]
+- kvm-redhat-add-a-configuration-file-for-kvm-setup.patch [bz#1580297]
+- kvm-redhat-support-POWER8-on-POWER9-settings-in-kvm-setu.patch [bz#1580297]
+- kvm-rpm-Add-nvme-VFIO-driver-to-rw-whitelist.patch [bz#1416180]
+- Resolves: bz#1416180
+  (QEMU VFIO based block driver for NVMe devices)
+- Resolves: bz#1505664
+  ("qemu-kvm: System page size 0x1000000 is not enabled in page_size_mask (0x11000). Performance may be slow" show up while using hugepage as guest's memory)
+- Resolves: bz#1542080
+  (Qemu core dump at cirrus_invalidate_region)
+- Resolves: bz#1580297
+  (qemu-kvm-rhev: Support POWER8-on-POWER9 settings in kvm-setup)
+- Resolves: bz#1583959
+  (Incorrect vcpu count limit for 7.4 machine types for windows guests)
+- Resolves: bz#1584984
+  (Vm starts failed with 'passthrough' smartcard)
+
 * Fri Jun 01 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-3.el7
 - kvm-qemu-img-Check-post-truncation-size.patch [bz#1523065]
 - kvm-s390x-add-RHEL-7.6-machine-type-for-ccw.patch [bz#1562138]
