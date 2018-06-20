@@ -211,6 +211,14 @@ struct VFIODeviceOps {
     void (*vfio_eoi)(VFIODevice *vdev);
 };
 
+typedef struct VFIODisplay {
+    QemuConsole *con;
+    struct {
+        VFIORegion buffer;
+        DisplaySurface *surface;
+    } region;
+} VFIODisplay;
+
 typedef struct VFIOPCIDevice {
     PCIDevice pdev;
     VFIODevice vbasedev;
@@ -245,6 +253,7 @@ typedef struct VFIOPCIDevice {
     bool has_flr;
     bool has_pm_reset;
     bool rom_read_failed;
+    VFIODisplay *dpy;
 } VFIOPCIDevice;
 
 typedef struct VFIOGroup {
@@ -2762,6 +2771,114 @@ static int vfio_region_mmap(VFIORegion *region)
     return 0;
 }
 
+/* ---------------------------------------------------------------------- */
+
+static void vfio_display_region_update(void *opaque)
+{
+    VFIOPCIDevice *vdev = opaque;
+    VFIODisplay *dpy = vdev->dpy;
+    struct vfio_device_gfx_plane_info plane = {
+        .argsz = sizeof(plane),
+        .flags = VFIO_GFX_PLANE_TYPE_REGION
+    };
+    pixman_format_code_t format;
+    int ret;
+
+    ret = ioctl(vdev->vbasedev.fd, VFIO_DEVICE_QUERY_GFX_PLANE, &plane);
+    if (ret < 0) {
+        error_report("ioctl VFIO_DEVICE_QUERY_GFX_PLANE: %s",
+                     strerror(errno));
+        return;
+    }
+    if (!plane.drm_format || !plane.size) {
+        return;
+    }
+    format = qemu_drm_format_to_pixman(plane.drm_format);
+    if (!format) {
+        return;
+    }
+
+    if (dpy->region.buffer.size &&
+        dpy->region.buffer.nr != plane.region_index) {
+        /* region changed */
+        vfio_region_exit(&dpy->region.buffer);
+        vfio_region_finalize(&dpy->region.buffer);
+        dpy->region.surface = NULL;
+    }
+
+    if (dpy->region.surface &&
+        (surface_width(dpy->region.surface) != plane.width ||
+         surface_height(dpy->region.surface) != plane.height ||
+         dpy->region.surface->format != format)) {
+        /* size changed */
+        dpy->region.surface = NULL;
+    }
+
+    if (!dpy->region.buffer.size) {
+        /* mmap region */
+        ret = vfio_region_setup(OBJECT(vdev), &vdev->vbasedev,
+                                &dpy->region.buffer,
+                                plane.region_index,
+                                "display");
+        if (ret != 0) {
+            error_report("%s: vfio_region_setup(%d): %s",
+                         __func__, plane.region_index, strerror(-ret));
+            goto err;
+        }
+        ret = vfio_region_mmap(&dpy->region.buffer);
+        if (ret != 0) {
+            error_report("%s: vfio_region_mmap(%d): %s", __func__,
+                         plane.region_index, strerror(-ret));
+            goto err;
+        }
+        assert(dpy->region.buffer.mmaps[0].mmap != NULL);
+    }
+
+    if (dpy->region.surface == NULL) {
+        int bpp = PIXMAN_FORMAT_BPP(format);
+        /* create surface */
+        dpy->region.surface = qemu_create_displaysurface_from
+            (plane.width, plane.height, bpp,
+             plane.stride, dpy->region.buffer.mmaps[0].mmap, false);
+        dpy_gfx_replace_surface(dpy->con, dpy->region.surface);
+    }
+
+    /* full screen update */
+    dpy_gfx_update(dpy->con, 0, 0,
+                   surface_width(dpy->region.surface),
+                   surface_height(dpy->region.surface));
+    return;
+
+err:
+    vfio_region_exit(&dpy->region.buffer);
+    vfio_region_finalize(&dpy->region.buffer);
+}
+
+static const GraphicHwOps vfio_display_region_ops = {
+    .gfx_update = vfio_display_region_update,
+};
+
+static int vfio_display_region_init(VFIOPCIDevice *vdev)
+{
+    vdev->dpy = g_new0(VFIODisplay, 1);
+    vdev->dpy->con = graphic_console_init(DEVICE(vdev),
+                                          &vfio_display_region_ops,
+                                          vdev);
+    return 0;
+}
+
+static void vfio_display_region_exit(VFIODisplay *dpy)
+{
+    if (!dpy->region.buffer.size) {
+        return;
+    }
+
+    vfio_region_exit(&dpy->region.buffer);
+    vfio_region_finalize(&dpy->region.buffer);
+}
+
+/* ---------------------------------------------------------------------- */
+
 static int vfio_display_probe(VFIOPCIDevice *vdev)
 {
     struct vfio_device_gfx_plane_info probe;
@@ -2772,8 +2889,7 @@ static int vfio_display_probe(VFIOPCIDevice *vdev)
     probe.flags = VFIO_GFX_PLANE_TYPE_PROBE | VFIO_GFX_PLANE_TYPE_REGION;
     ret = ioctl(vdev->vbasedev.fd, VFIO_DEVICE_QUERY_GFX_PLANE, &probe);
     if (ret == 0) {
-        error_report("vfio-display: region support not implemented yet");
-        return -1;
+        return vfio_display_region_init(vdev);
     }
 
     if (vdev->display == ON_OFF_AUTO_AUTO) {
@@ -2787,6 +2903,13 @@ static int vfio_display_probe(VFIOPCIDevice *vdev)
 
 static void vfio_display_finalize(VFIOPCIDevice *vdev)
 {
+    if (!vdev->dpy) {
+        return;
+    }
+
+    graphic_console_close(vdev->dpy->con);
+    vfio_display_region_exit(vdev->dpy);
+    g_free(vdev->dpy);
 }
 
 static void vfio_region_exit(VFIORegion *region)
