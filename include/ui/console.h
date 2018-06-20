@@ -275,13 +275,14 @@ typedef struct GraphicHwOps {
 QemuConsole *graphic_console_init(DeviceState *dev,
                                   const GraphicHwOps *ops,
                                   void *opaque);
-
+void graphic_console_close(QemuConsole *con);
 void graphic_hw_update(QemuConsole *con);
 void graphic_hw_invalidate(QemuConsole *con);
 void graphic_hw_text_update(QemuConsole *con, console_ch_t *chardata);
 
 QemuConsole *qemu_console_lookup_by_index(unsigned int index);
 QemuConsole *qemu_console_lookup_by_device(DeviceState *dev);
+QemuConsole *qemu_console_lookup_unused(void);
 bool qemu_console_is_visible(QemuConsole *con);
 bool qemu_console_is_graphic(QemuConsole *con);
 bool qemu_console_is_fixedsize(QemuConsole *con);

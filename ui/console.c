@@ -1246,11 +1246,16 @@ static QemuConsole *new_console(DisplayState *ds, console_type_t console_type)
     }
     s->ds = ds;
     s->console_type = console_type;
-    if (console_type != GRAPHIC_CONSOLE) {
+    if (console_type != GRAPHIC_CONSOLE || qdev_hotplug) {
         s->index = nb_consoles;
         consoles[nb_consoles++] = s;
     } else {
-        /* HACK: Put graphical consoles before text consoles.  */
+        /*
+         * HACK: Put graphical consoles before text consoles.
+         *
+         * Only do that for coldplugged devices.  After initial device
+         * initialization we will not renumber the consoles any more.
+         */
         for (i = nb_consoles; i > 0; i--) {
             if (consoles[i - 1]->console_type == GRAPHIC_CONSOLE)
                 break;
@@ -1610,19 +1615,57 @@ QemuConsole *graphic_console_init(DeviceState *dev,
     int height = 480;
     QemuConsole *s;
     DisplayState *ds;
+    DisplaySurface *surface;
 
     ds = get_alloc_displaystate();
-    trace_console_gfx_new();
-    s = new_console(ds, GRAPHIC_CONSOLE);
+    s = qemu_console_lookup_unused();
+    if (s) {
+        trace_console_gfx_reuse(s->index);
+        if (s->surface) {
+            width = surface_width(s->surface);
+            height = surface_height(s->surface);
+        }
+    } else {
+        trace_console_gfx_new();
+        s = new_console(ds, GRAPHIC_CONSOLE);
+    }
+
     s->hw_ops = hw_ops;
     s->hw = opaque;
+
     if (dev) {
         object_property_set_link(OBJECT(s), OBJECT(dev),
                                  "device", &local_err);
     }
 
-    s->surface = qemu_create_message_surface(width, height, noinit);
+    surface = qemu_create_message_surface(width, height, noinit);
+    dpy_gfx_replace_surface(s, surface);
     return s;
+}
+
+static const GraphicHwOps unused_ops = {
+    /* no callbacks */
+};
+
+void graphic_console_close(QemuConsole *con)
+{
+    DisplaySurface *surface;
+    int width = 640;
+    int height = 480;
+
+    if (con->surface) {
+        width = surface_width(con->surface);
+        height = surface_height(con->surface);
+    }
+
+    trace_console_gfx_close(con->index);
+    object_property_set_link(OBJECT(con), NULL, "device", &error_abort);
+
+    con->hw_ops = &unused_ops;
+    con->hw = NULL;
+
+    surface = qemu_create_displaysurface(width, height);
+    dpy_gfx_replace_surface(con, surface);
 }
 
 QemuConsole *qemu_console_lookup_by_index(unsigned int index)
@@ -1648,6 +1691,28 @@ QemuConsole *qemu_console_lookup_by_device(DeviceState *dev)
         if (DEVICE(obj) == dev) {
             return consoles[i];
         }
+    }
+    return NULL;
+}
+
+QemuConsole *qemu_console_lookup_unused(void)
+{
+    Object *obj;
+    int i;
+
+    for (i = 0; i < nb_consoles; i++) {
+        if (!consoles[i]) {
+            continue;
+        }
+        if (consoles[i]->hw_ops != &unused_ops) {
+            continue;
+        }
+        obj = object_property_get_link(OBJECT(consoles[i]),
+                                       "device", &error_abort);
+        if (obj != NULL) {
+            continue;
+        }
+        return consoles[i];
     }
     return NULL;
 }
