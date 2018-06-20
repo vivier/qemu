@@ -258,6 +258,13 @@ typedef int (*DMA_transfer_handler) (void *opaque, int nchan, int pos, int size)
 
 typedef uint64_t pcibus_t;
 
+typedef enum OnOffAuto {
+    ON_OFF_AUTO_AUTO,
+    ON_OFF_AUTO_ON,
+    ON_OFF_AUTO_OFF,
+    ON_OFF_AUTO_MAX,
+} OnOffAuto;
+
 typedef enum LostTickPolicy {
     LOST_TICK_DISCARD,
     LOST_TICK_DELAY,
