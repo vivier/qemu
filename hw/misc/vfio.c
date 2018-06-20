@@ -40,6 +40,7 @@
 #include "sysemu/kvm.h"
 #include "sysemu/sysemu.h"
 #include "trace.h"
+#include "ui/console.h"
 
 /* #define DEBUG_VFIO */
 #ifdef DEBUG_VFIO
@@ -235,6 +236,7 @@ typedef struct VFIOPCIDevice {
 #define VFIO_FEATURE_ENABLE_VGA (1 << VFIO_FEATURE_ENABLE_VGA_BIT)
 #define VFIO_FEATURE_ENABLE_REQ_BIT 1
 #define VFIO_FEATURE_ENABLE_REQ (1 << VFIO_FEATURE_ENABLE_REQ_BIT)
+    OnOffAuto display;
     int32_t bootindex;
     uint8_t pm_cap;
     bool has_vga;
@@ -2760,6 +2762,33 @@ static int vfio_region_mmap(VFIORegion *region)
     return 0;
 }
 
+static int vfio_display_probe(VFIOPCIDevice *vdev)
+{
+    struct vfio_device_gfx_plane_info probe;
+    int ret;
+
+    memset(&probe, 0, sizeof(probe));
+    probe.argsz = sizeof(probe);
+    probe.flags = VFIO_GFX_PLANE_TYPE_PROBE | VFIO_GFX_PLANE_TYPE_REGION;
+    ret = ioctl(vdev->vbasedev.fd, VFIO_DEVICE_QUERY_GFX_PLANE, &probe);
+    if (ret == 0) {
+        error_report("vfio-display: region support not implemented yet");
+        return -1;
+    }
+
+    if (vdev->display == ON_OFF_AUTO_AUTO) {
+        /* not an error in automatic mode */
+        return 0;
+    }
+
+    error_report("vfio: device doesn't support any (known) display method");
+    return -1;
+}
+
+static void vfio_display_finalize(VFIOPCIDevice *vdev)
+{
+}
+
 static void vfio_region_exit(VFIORegion *region)
 {
     int i;
@@ -4232,6 +4261,14 @@ static int vfio_initfn(PCIDevice *pdev)
     }
 
     add_boot_device_path(vdev->bootindex, &pdev->qdev, NULL);
+
+    if (vdev->display != ON_OFF_AUTO_OFF) {
+        ret = vfio_display_probe(vdev);
+        if (ret) {
+            goto out_teardown;
+        }
+    }
+
     vfio_register_err_notifier(vdev);
     vfio_register_req_notifier(vdev);
 
@@ -4261,6 +4298,7 @@ static void vfio_exitfn(PCIDevice *pdev)
         qemu_free_timer(vdev->intx.mmap_timer);
     }
     vfio_teardown_msi(vdev);
+    vfio_display_finalize(vdev);
     vfio_unmap_bars(vdev);
     g_free(vdev->emulated_config_bits);
     g_free(vdev->rom);
@@ -4313,6 +4351,8 @@ static void vfio_instance_init(Object *obj)
 static Property vfio_pci_dev_properties[] = {
     DEFINE_PROP_PCI_HOST_DEVADDR("host", VFIOPCIDevice, host),
     DEFINE_PROP_STRING("sysfsdev", VFIOPCIDevice, vbasedev.sysfsdev),
+    DEFINE_PROP_ON_OFF_AUTO("display", VFIOPCIDevice,
+                            display, ON_OFF_AUTO_AUTO),
     DEFINE_PROP_UINT32("x-intx-mmap-timeout-ms", VFIOPCIDevice,
                        intx.mmap_timeout, 1100),
     DEFINE_PROP_BIT("x-vga", VFIOPCIDevice, features,
