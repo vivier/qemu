@@ -27,9 +27,13 @@
 
 #ifdef HOST_WORDS_BIGENDIAN
 # define PIXMAN_BE_r8g8b8     PIXMAN_r8g8b8
+# define PIXMAN_LE_r8g8b8     PIXMAN_b8g8r8
+# define PIXMAN_LE_a8r8g8b8   PIXMAN_b8g8r8a8
 # define PIXMAN_LE_x8r8g8b8   PIXMAN_b8g8r8x8
 #else
 # define PIXMAN_BE_r8g8b8     PIXMAN_b8g8r8
+# define PIXMAN_LE_r8g8b8     PIXMAN_r8g8b8
+# define PIXMAN_LE_a8r8g8b8   PIXMAN_a8r8g8b8
 # define PIXMAN_LE_x8r8g8b8   PIXMAN_x8r8g8b8
 #endif
 
@@ -45,6 +49,8 @@ void qemu_pixman_linebuf_fill(pixman_image_t *linebuf, pixman_image_t *fb,
 pixman_image_t *qemu_pixman_mirror_create(pixman_format_code_t format,
                                           pixman_image_t *image);
 void qemu_pixman_image_unref(pixman_image_t *image);
+
+pixman_format_code_t qemu_drm_format_to_pixman(uint32_t drm_format);
 
 pixman_color_t qemu_pixman_color(PixelFormat *pf, uint32_t color);
 pixman_image_t *qemu_pixman_glyph_from_vgafont(int height, const uint8_t *font,
