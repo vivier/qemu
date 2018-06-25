@@ -904,6 +904,82 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Jun 25 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-5.el7
+- kvm-qobject-Use-qobject_to-instead-of-type-cast.patch [bz#1557995]
+- kvm-qobject-Ensure-base-is-at-offset-0.patch [bz#1557995]
+- kvm-qobject-use-a-QObjectBase_-struct.patch [bz#1557995]
+- kvm-qobject-Replace-qobject_incref-QINCREF-qobject_decre.patch [bz#1557995]
+- kvm-qobject-Modify-qobject_ref-to-return-obj.patch [bz#1557995]
+- kvm-rbd-Drop-deprecated-drive-parameter-filename.patch [bz#1557995]
+- kvm-iscsi-Drop-deprecated-drive-parameter-filename.patch [bz#1557995]
+- kvm-block-Add-block-specific-QDict-header.patch [bz#1557995]
+- kvm-qobject-Move-block-specific-qdict-code-to-block-qdic.patch [bz#1557995]
+- kvm-block-Fix-blockdev-for-certain-non-string-scalars.patch [bz#1557995]
+- kvm-block-Fix-drive-for-certain-non-string-scalars.patch [bz#1557995]
+- kvm-block-Clean-up-a-misuse-of-qobject_to-in-.bdrv_co_cr.patch [bz#1557995]
+- kvm-block-Factor-out-qobject_input_visitor_new_flat_conf.patch [bz#1557995]
+- kvm-block-Make-remaining-uses-of-qobject-input-visitor-m.patch [bz#1557995]
+- kvm-block-qdict-Simplify-qdict_flatten_qdict.patch [bz#1557995]
+- kvm-block-qdict-Tweak-qdict_flatten_qdict-qdict_flatten_.patch [bz#1557995]
+- kvm-block-qdict-Clean-up-qdict_crumple-a-bit.patch [bz#1557995]
+- kvm-block-qdict-Simplify-qdict_is_list-some.patch [bz#1557995]
+- kvm-check-block-qdict-Rename-qdict_flatten-s-variables-f.patch [bz#1557995]
+- kvm-check-block-qdict-Cover-flattening-of-empty-lists-an.patch [bz#1557995]
+- kvm-block-Fix-blockdev-blockdev-add-for-empty-objects-an.patch [bz#1557995]
+- kvm-rbd-New-parameter-auth-client-required.patch [bz#1557995]
+- kvm-rbd-New-parameter-key-secret.patch [bz#1557995]
+- kvm-block-mirror-honor-ratelimit-again.patch [bz#1572856]
+- kvm-block-mirror-Make-cancel-always-cancel-pre-READY.patch [bz#1572856]
+- kvm-iotests-Add-test-for-cancelling-a-mirror-job.patch [bz#1572856]
+- kvm-iotests-Split-214-off-of-122.patch [bz#1518738]
+- kvm-block-Add-COR-filter-driver.patch [bz#1518738]
+- kvm-block-BLK_PERM_WRITE-includes-._UNCHANGED.patch [bz#1518738]
+- kvm-block-Add-BDRV_REQ_WRITE_UNCHANGED-flag.patch [bz#1518738]
+- kvm-block-Set-BDRV_REQ_WRITE_UNCHANGED-for-COR-writes.patch [bz#1518738]
+- kvm-block-quorum-Support-BDRV_REQ_WRITE_UNCHANGED.patch [bz#1518738]
+- kvm-block-Support-BDRV_REQ_WRITE_UNCHANGED-in-filters.patch [bz#1518738]
+- kvm-iotests-Clean-up-wrap-image-in-197.patch [bz#1518738]
+- kvm-iotests-Copy-197-for-COR-filter-driver.patch [bz#1518738]
+- kvm-iotests-Add-test-for-COR-across-nodes.patch [bz#1518738]
+- kvm-qemu-io-Use-purely-string-blockdev-options.patch [bz#1576598]
+- kvm-qemu-img-Use-only-string-options-in-img_open_opts.patch [bz#1576598]
+- kvm-iotests-Add-test-for-U-force-share-conflicts.patch [bz#1576598]
+- kvm-qemu-io-Drop-command-functions-return-values.patch [bz#1519617]
+- kvm-qemu-io-Let-command-functions-return-error-code.patch [bz#1519617]
+- kvm-qemu-io-Exit-with-error-when-a-command-failed.patch [bz#1519617]
+- kvm-iotests.py-Add-qemu_io_silent.patch [bz#1519617]
+- kvm-iotests-Let-216-make-use-of-qemu-io-s-exit-code.patch [bz#1519617]
+- kvm-qcow2-Repair-OFLAG_COPIED-when-fixing-leaks.patch [bz#1527085]
+- kvm-iotests-Repairing-error-during-snapshot-deletion.patch [bz#1527085]
+- kvm-block-Make-bdrv_is_writable-public.patch [bz#1588039]
+- kvm-qcow2-Do-not-mark-inactive-images-corrupt.patch [bz#1588039]
+- kvm-iotests-Add-case-for-a-corrupted-inactive-image.patch [bz#1588039]
+- kvm-s390x-cpumodels-add-z14-Model-ZR1.patch [bz#1592327]
+- kvm-main-loop-drop-spin_counter.patch [bz#1168213]
+- kvm-target-ppc-Factor-out-the-parsing-in-kvmppc_get_cpu_.patch [bz#1560847]
+- kvm-target-ppc-Don-t-require-private-l1d-cache-on-POWER8.patch [bz#1560847]
+- kvm-ppc-spapr_caps-Don-t-disable-cap_cfpc-on-POWER8-by-d.patch [bz#1560847]
+- Resolves: bz#1168213
+  (main-loop: WARNING: I/O thread spun for 1000 iterations while doing stream block device.)
+- Resolves: bz#1518738
+  (Add 'copy-on-read' filter driver for use with blockdev-add)
+- Resolves: bz#1519617
+  (The exit code should be non-zero when qemu-io reports an error)
+- Resolves: bz#1527085
+  (The copied flag should be updated during  '-r leaks')
+- Resolves: bz#1557995
+  (QAPI schema for RBD storage misses the 'password-secret' option)
+- Resolves: bz#1560847
+  ([Power8][FW b0320a_1812.861][rhel7.5rc2 3.10.0-861.el7.ppc64le][qemu-kvm-{ma,rhev}-2.10.0-21.el7_5.1.ppc64le] KVM guest does not default to ori type flush even with pseries-rhel7.5.0-sxxm)
+- Resolves: bz#1572856
+  ('block-job-cancel' can not cancel a "drive-mirror" job)
+- Resolves: bz#1576598
+  (Segfault in qemu-io and qemu-img with -U --image-opts force-share=off)
+- Resolves: bz#1588039
+  (Possible assertion failure in qemu when a corrupted image is used during an incoming migration)
+- Resolves: bz#1592327
+  ([RHEL-Alt-7.6 FEAT] KVM: CPU Model z14 ZR1 (qemu-kvm-ma))
+
 * Tue Jun 19 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-4.el7
 - kvm-Fix-x-hv-max-vps-compat-value-for-7.4-machine-type.patch [bz#1583959]
 - kvm-ccid-card-passthru-fix-regression-in-realize.patch [bz#1584984]
