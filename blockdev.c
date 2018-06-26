@@ -1488,7 +1488,7 @@ typedef struct BlkActionOps {
 struct BlkActionState {
     TransactionAction *action;
     const BlkActionOps *ops;
-    BlockJobTxn *block_job_txn;
+    JobTxn *block_job_txn;
     TransactionProperties *txn_props;
     QSIMPLEQ_ENTRY(BlkActionState) entry;
 };
@@ -1906,7 +1906,7 @@ typedef struct DriveBackupState {
     BlockJob *job;
 } DriveBackupState;
 
-static BlockJob *do_drive_backup(DriveBackup *backup, BlockJobTxn *txn,
+static BlockJob *do_drive_backup(DriveBackup *backup, JobTxn *txn,
                             Error **errp);
 
 static void drive_backup_prepare(BlkActionState *common, Error **errp)
@@ -1996,7 +1996,7 @@ typedef struct BlockdevBackupState {
     BlockJob *job;
 } BlockdevBackupState;
 
-static BlockJob *do_blockdev_backup(BlockdevBackup *backup, BlockJobTxn *txn,
+static BlockJob *do_blockdev_backup(BlockdevBackup *backup, JobTxn *txn,
                                     Error **errp);
 
 static void blockdev_backup_prepare(BlkActionState *common, Error **errp)
@@ -2285,7 +2285,7 @@ void qmp_transaction(TransactionActionList *dev_list,
                      Error **errp)
 {
     TransactionActionList *dev_entry = dev_list;
-    BlockJobTxn *block_job_txn = NULL;
+    JobTxn *block_job_txn = NULL;
     BlkActionState *state, *next;
     Error *local_err = NULL;
 
@@ -2293,7 +2293,7 @@ void qmp_transaction(TransactionActionList *dev_list,
     QSIMPLEQ_INIT(&snap_bdrv_states);
 
     /* Does this transaction get canceled as a group on failure?
-     * If not, we don't really need to make a BlockJobTxn.
+     * If not, we don't really need to make a JobTxn.
      */
     props = get_transaction_properties(props);
     if (props->completion_mode != ACTION_COMPLETION_MODE_INDIVIDUAL) {
@@ -3311,7 +3311,7 @@ out:
     aio_context_release(aio_context);
 }
 
-static BlockJob *do_drive_backup(DriveBackup *backup, BlockJobTxn *txn,
+static BlockJob *do_drive_backup(DriveBackup *backup, JobTxn *txn,
                                  Error **errp)
 {
     BlockDriverState *bs;
@@ -3481,7 +3481,7 @@ BlockDeviceInfoList *qmp_query_named_block_nodes(Error **errp)
     return bdrv_named_nodes_list(errp);
 }
 
-BlockJob *do_blockdev_backup(BlockdevBackup *backup, BlockJobTxn *txn,
+BlockJob *do_blockdev_backup(BlockdevBackup *backup, JobTxn *txn,
                              Error **errp)
 {
     BlockDriverState *bs;
