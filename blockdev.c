@@ -1952,7 +1952,7 @@ static void drive_backup_commit(BlkActionState *common)
     aio_context_acquire(aio_context);
 
     assert(state->job);
-    block_job_start(state->job);
+    job_start(&state->job->job);
 
     aio_context_release(aio_context);
 }
@@ -2050,7 +2050,7 @@ static void blockdev_backup_commit(BlkActionState *common)
     aio_context_acquire(aio_context);
 
     assert(state->job);
-    block_job_start(state->job);
+    job_start(&state->job->job);
 
     aio_context_release(aio_context);
 }
@@ -3472,7 +3472,7 @@ void qmp_drive_backup(DriveBackup *arg, Error **errp)
     BlockJob *job;
     job = do_drive_backup(arg, NULL, errp);
     if (job) {
-        block_job_start(job);
+        job_start(&job->job);
     }
 }
 
@@ -3560,7 +3560,7 @@ void qmp_blockdev_backup(BlockdevBackup *arg, Error **errp)
     BlockJob *job;
     job = do_blockdev_backup(arg, NULL, errp);
     if (job) {
-        block_job_start(job);
+        job_start(&job->job);
     }
 }
 
