@@ -813,6 +813,35 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Jun 27 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-158.el7
+- kvm-x86-cpu-Enable-new-SSE-AVX-AVX512-cpu-features.patch [bz#1513686]
+- kvm-target-i386-Add-support-for-UMIP-and-RDPID-CPUID-bit.patch [bz#1526638]
+- kvm-i386-Define-the-Virt-SSBD-MSR-and-handling-of-it-CVE.patch [bz#1584583]
+- kvm-i386-define-the-AMD-virt-ssbd-CPUID-feature-bit-CVE-.patch [bz#1584583]
+- kvm-qcow2-Repair-OFLAG_COPIED-when-fixing-leaks.patch [bz#1527122]
+- kvm-iotests-Repairing-error-during-snapshot-deletion.patch [bz#1527122]
+- kvm-headers-add-drm_fourcc.h.patch [bz#1555246]
+- kvm-spice-fix-simple-display-on-bigendian-hosts.patch [bz#1555246]
+- kvm-ui-pixman-add-qemu_drm_format_to_pixman.patch [bz#1555246]
+- kvm-console-nicer-initial-screen.patch [bz#1555246]
+- kvm-console-minimal-hotplug-suport.patch [bz#1555246]
+- kvm-vfio-common-cleanup-in-vfio_region_finalize.patch [bz#1555246]
+- kvm-linux-headers-Update-to-include-region-based-display.patch [bz#1555246]
+- kvm-qdev-New-DEFINE_PROP_ON_OFF_AUTO.patch [bz#1555246]
+- kvm-vfio-display-core-wireup.patch [bz#1555246]
+- kvm-vfio-display-adding-region-support.patch [bz#1555246]
+- kvm-vfio-pci-Default-display-option-to-off.patch [bz#1555246]
+- Resolves: bz#1513686
+  ([Intel 7.6 Feat] qemu-kvm Enabling Icelake new NIs)
+- Resolves: bz#1526638
+  ([Intel 7.6 FEAT] KVM User Mode Instruction Prevention (UMIP) - qemu-kvm)
+- Resolves: bz#1527122
+  (The copied flag should be updated during  '-r leaks')
+- Resolves: bz#1555246
+  ([RFE] Support console VNC on Nvidia vGPU - qemu)
+- Resolves: bz#1584583
+  (CVE-2018-3639 qemu-kvm: hw: cpu: speculative store bypass [rhel-7.6])
+
 * Thu Jun 07 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-157.el7
 - kvm-vga-add-ram_addr_t-cast.patch [bz#1553670]
 - kvm-vga-fix-region-calculation.patch [bz#1553670]
