@@ -155,12 +155,12 @@ static const char *cpuid_7_0_ebx_feature_name[] = {
 };
 
 static const char *cpuid_7_0_ecx_feature_name[] = {
-    NULL, "avx512vbmi", NULL, "pku",
+    NULL, "avx512vbmi", "umip", "pku",
     "ospke", NULL, "avx512vbmi2", NULL,
     "gfni", "vaes", "vpclmulqdq", "avx512vnni",
     "avx512bitalg", NULL, "avx512-vpopcntdq", NULL,
     NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
+    NULL, NULL, "rdpid", NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
 };
