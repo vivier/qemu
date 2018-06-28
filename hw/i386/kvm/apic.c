@@ -25,9 +25,8 @@ static inline uint32_t kvm_apic_get_reg(struct kvm_lapic_state *kapic,
     return *((uint32_t *)(kapic->regs + (reg_id << 4)));
 }
 
-void kvm_put_apic_state(DeviceState *d, struct kvm_lapic_state *kapic)
+static void kvm_put_apic_state(APICCommonState *s, struct kvm_lapic_state *kapic)
 {
-    APICCommonState *s = DO_UPCAST(APICCommonState, busdev.qdev, d);
     int i;
 
     memset(kapic, 0, sizeof(*kapic));
@@ -122,6 +121,27 @@ static void kvm_apic_vapic_base_update(APICCommonState *s)
     }
 }
 
+static void kvm_apic_put(void *data)
+{
+    APICCommonState *s = data;
+    struct kvm_lapic_state kapic;
+    int ret;
+
+    kvm_put_apic_state(s, &kapic);
+
+    ret = kvm_vcpu_ioctl(CPU(s->cpu), KVM_SET_LAPIC, &kapic);
+    if (ret < 0) {
+        fprintf(stderr, "KVM_SET_LAPIC failed: %s\n", strerror(ret));
+        abort();
+    }
+}
+
+static void kvm_apic_post_load(APICCommonState *s)
+{
+    fprintf(stderr, "%s: Yeh\n", __func__);
+    run_on_cpu(CPU(s->cpu), kvm_apic_put, s);
+}
+
 static void do_inject_external_nmi(void *data)
 {
     APICCommonState *s = data;
@@ -173,7 +193,7 @@ static const MemoryRegionOps kvm_apic_io_ops = {
 
 static void kvm_apic_reset(APICCommonState *s)
 {
-    /* This function intentionally left blank, for now */
+    run_on_cpu(CPU(s->cpu), kvm_apic_put, s);
 }
 
 static void kvm_apic_init(APICCommonState *s)
@@ -195,6 +215,7 @@ static void kvm_apic_class_init(ObjectClass *klass, void *data)
     k->set_base = kvm_apic_set_base;
     k->set_tpr = kvm_apic_set_tpr;
     k->get_tpr = kvm_apic_get_tpr;
+    k->post_load = kvm_apic_post_load;
     k->enable_tpr_reporting = kvm_apic_enable_tpr_reporting;
     k->vapic_base_update = kvm_apic_vapic_base_update;
     k->external_nmi = kvm_apic_external_nmi;
