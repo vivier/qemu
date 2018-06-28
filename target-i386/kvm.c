@@ -1141,24 +1141,38 @@ static void kvm_msr_entry_set(struct kvm_msr_entry *entry,
     entry->data = value;
 }
 
-static int kvm_put_tscdeadline_msr(X86CPU *cpu)
+static int kvm_put_one_msr(X86CPU *cpu, int index, uint64_t value)
 {
-    CPUX86State *env = &cpu->env;
     struct {
         struct kvm_msrs info;
         struct kvm_msr_entry entries[1];
     } msr_data;
-    struct kvm_msr_entry *msrs = msr_data.entries;
+
+    kvm_msr_entry_set(&msr_data.entries[0], index, value);
+
+    msr_data.info = (struct kvm_msrs) {
+        .nmsrs = 1,
+    };
+
+    return kvm_vcpu_ioctl(CPU(cpu), KVM_SET_MSRS, &msr_data);
+}
+
+static int kvm_put_tscdeadline_msr(X86CPU *cpu)
+{
+    CPUX86State *env = &cpu->env;
+    int ret;
 
     if (!has_msr_tsc_deadline) {
         return 0;
     }
 
-    kvm_msr_entry_set(&msrs[0], MSR_IA32_TSCDEADLINE, env->tsc_deadline);
+    ret = kvm_put_one_msr(cpu, MSR_IA32_TSCDEADLINE, env->tsc_deadline);
+    if (ret < 0) {
+        return ret;
+    }
 
-    msr_data.info.nmsrs = 1;
-
-    return kvm_vcpu_ioctl(CPU(cpu), KVM_SET_MSRS, &msr_data);
+    assert(ret == 1);
+    return 0;
 }
 
 static int kvm_put_msrs(X86CPU *cpu, int level)
