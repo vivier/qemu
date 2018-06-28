@@ -171,6 +171,11 @@ static const MemoryRegionOps kvm_apic_io_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
+static void kvm_apic_reset(APICCommonState *s)
+{
+    /* This function intentionally left blank, for now */
+}
+
 static void kvm_apic_init(APICCommonState *s)
 {
     memory_region_init_io(&s->io_memory, &kvm_apic_io_ops, s, "kvm-apic-msi",
@@ -186,6 +191,7 @@ static void kvm_apic_class_init(ObjectClass *klass, void *data)
     APICCommonClass *k = APIC_COMMON_CLASS(klass);
 
     k->init = kvm_apic_init;
+    k->reset = kvm_apic_reset;
     k->set_base = kvm_apic_set_base;
     k->set_tpr = kvm_apic_set_tpr;
     k->get_tpr = kvm_apic_get_tpr;

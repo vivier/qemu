@@ -173,6 +173,7 @@ bool apic_next_timer(APICCommonState *s, int64_t current_time)
 void apic_init_reset(DeviceState *d)
 {
     APICCommonState *s = DO_UPCAST(APICCommonState, busdev.qdev, d);
+    APICCommonClass *info = APIC_COMMON_GET_CLASS(s);
     int i;
 
     if (!s) {
@@ -201,6 +202,10 @@ void apic_init_reset(DeviceState *d)
         qemu_del_timer(s->timer);
     }
     s->timer_expiry = -1;
+
+    if (info->reset) {
+        info->reset(s);
+    }
 }
 
 void apic_designate_bsp(DeviceState *d)
