@@ -1155,6 +1155,14 @@ static int kvm_put_one_msr(X86CPU *cpu, int index, uint64_t value)
     return kvm_vcpu_ioctl(CPU(cpu), KVM_SET_MSRS, &msr_data);
 }
 
+void kvm_put_apicbase(X86CPU *cpu, uint64_t value)
+{
+    int ret;
+
+    ret = kvm_put_one_msr(cpu, MSR_IA32_APICBASE, value);
+    assert(ret == 1);
+}
+
 static int kvm_put_tscdeadline_msr(X86CPU *cpu)
 {
     CPUX86State *env = &cpu->env;
