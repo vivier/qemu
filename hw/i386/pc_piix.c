@@ -1157,6 +1157,21 @@ static void pc_machine_rhel7_options(MachineClass *m)
     m->is_default = 1;
 }
 
+static void pc_init_rhel760(MachineState *machine)
+{
+    pc_init1(machine, TYPE_I440FX_PCI_HOST_BRIDGE, \
+             TYPE_I440FX_PCI_DEVICE);
+}
+
+static void pc_machine_rhel760_options(MachineClass *m)
+{
+    pc_machine_rhel7_options(m);
+    m->desc = "RHEL 7.6.0 PC (i440FX + PIIX, 1996)";
+}
+
+DEFINE_PC_MACHINE(rhel760, "pc-i440fx-rhel7.6.0", pc_init_rhel760,
+                  pc_machine_rhel760_options);
+
 static void pc_init_rhel750(MachineState *machine)
 {
     pc_init1(machine, TYPE_I440FX_PCI_HOST_BRIDGE, \
@@ -1165,7 +1180,9 @@ static void pc_init_rhel750(MachineState *machine)
 
 static void pc_machine_rhel750_options(MachineClass *m)
 {
-    pc_machine_rhel7_options(m);
+    pc_machine_rhel760_options(m);
+    m->alias = NULL;
+    m->is_default = 0;
     m->desc = "RHEL 7.5.0 PC (i440FX + PIIX, 1996)";
     m->auto_enable_numa_with_memhp = false;
     SET_MACHINE_COMPAT(m, PC_RHEL7_5_COMPAT);
@@ -1184,8 +1201,6 @@ static void pc_machine_rhel740_options(MachineClass *m)
 {
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pc_machine_rhel750_options(m);
-    m->alias = NULL;
-    m->is_default = 0;
     m->desc = "RHEL 7.4.0 PC (i440FX + PIIX, 1996)";
     m->numa_auto_assign_ram = numa_legacy_auto_assign_ram;
     pcmc->pc_rom_ro = false;
