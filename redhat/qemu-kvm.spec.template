@@ -904,6 +904,113 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Sat Jun 30 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-6.el7
+- kvm-Fix-permissions-for-iotest-218.patch []
+- kvm-qxl-fix-local-renderer-crash.patch [bz#1567733]
+- kvm-qemu-img-Amendment-support-implies-create_opts.patch [bz#1537956]
+- kvm-block-Add-Error-parameter-to-bdrv_amend_options.patch [bz#1537956]
+- kvm-qemu-option-Pull-out-Supported-options-print.patch [bz#1537956]
+- kvm-qemu-img-Add-print_amend_option_help.patch [bz#1537956]
+- kvm-qemu-img-Recognize-no-creation-support-in-o-help.patch [bz#1537956]
+- kvm-iotests-Test-help-option-for-unsupporting-formats.patch [bz#1537956]
+- kvm-iotests-Rework-113.patch [bz#1537956]
+- kvm-qemu-img-Resolve-relative-backing-paths-in-rebase.patch [bz#1569835]
+- kvm-iotests-Add-test-for-rebasing-with-relative-paths.patch [bz#1569835]
+- kvm-qemu-img-Special-post-backing-convert-handling.patch [bz#1527898]
+- kvm-iotests-Test-post-backing-convert-target-behavior.patch [bz#1527898]
+- kvm-migration-calculate-expected_downtime-with-ram_bytes.patch [bz#1564576]
+- kvm-sheepdog-Fix-sd_co_create_opts-memory-leaks.patch [bz#1513543]
+- kvm-qemu-iotests-reduce-chance-of-races-in-185.patch [bz#1513543]
+- kvm-blockjob-do-not-cancel-timer-in-resume.patch [bz#1513543]
+- kvm-nfs-Fix-error-path-in-nfs_options_qdict_to_qapi.patch [bz#1513543]
+- kvm-nfs-Remove-processed-options-from-QDict.patch [bz#1513543]
+- kvm-blockjob-drop-block_job_pause-resume_all.patch [bz#1513543]
+- kvm-blockjob-expose-error-string-via-query.patch [bz#1513543]
+- kvm-blockjob-Fix-assertion-in-block_job_finalize.patch [bz#1513543]
+- kvm-blockjob-Wrappers-for-progress-counter-access.patch [bz#1513543]
+- kvm-blockjob-Move-RateLimit-to-BlockJob.patch [bz#1513543]
+- kvm-blockjob-Implement-block_job_set_speed-centrally.patch [bz#1513543]
+- kvm-blockjob-Introduce-block_job_ratelimit_get_delay.patch [bz#1513543]
+- kvm-blockjob-Add-block_job_driver.patch [bz#1513543]
+- kvm-blockjob-Update-block-job-pause-resume-documentation.patch [bz#1513543]
+- kvm-blockjob-Improve-BlockJobInfo.offset-len-documentati.patch [bz#1513543]
+- kvm-job-Create-Job-JobDriver-and-job_create.patch [bz#1513543]
+- kvm-job-Rename-BlockJobType-into-JobType.patch [bz#1513543]
+- kvm-job-Add-JobDriver.job_type.patch [bz#1513543]
+- kvm-job-Add-job_delete.patch [bz#1513543]
+- kvm-job-Maintain-a-list-of-all-jobs.patch [bz#1513543]
+- kvm-job-Move-state-transitions-to-Job.patch [bz#1513543]
+- kvm-job-Add-reference-counting.patch [bz#1513543]
+- kvm-job-Move-cancelled-to-Job.patch [bz#1513543]
+- kvm-job-Add-Job.aio_context.patch [bz#1513543]
+- kvm-job-Move-defer_to_main_loop-to-Job.patch [bz#1513543]
+- kvm-job-Move-coroutine-and-related-code-to-Job.patch [bz#1513543]
+- kvm-job-Add-job_sleep_ns.patch [bz#1513543]
+- kvm-job-Move-pause-resume-functions-to-Job.patch [bz#1513543]
+- kvm-job-Replace-BlockJob.completed-with-job_is_completed.patch [bz#1513543]
+- kvm-job-Move-BlockJobCreateFlags-to-Job.patch [bz#1513543]
+- kvm-blockjob-Split-block_job_event_pending.patch [bz#1513543]
+- kvm-job-Add-job_event_.patch [bz#1513543]
+- kvm-job-Move-single-job-finalisation-to-Job.patch [bz#1513543]
+- kvm-job-Convert-block_job_cancel_async-to-Job.patch [bz#1513543]
+- kvm-job-Add-job_drain.patch [bz#1513543]
+- kvm-job-Move-.complete-callback-to-Job.patch [bz#1513543]
+- kvm-job-Move-job_finish_sync-to-Job.patch [bz#1513543]
+- kvm-job-Switch-transactions-to-JobTxn.patch [bz#1513543]
+- kvm-job-Move-transactions-to-Job.patch [bz#1513543]
+- kvm-job-Move-completion-and-cancellation-to-Job.patch [bz#1513543]
+- kvm-block-Cancel-job-in-bdrv_close_all-callers.patch [bz#1513543]
+- kvm-job-Add-job_yield.patch [bz#1513543]
+- kvm-job-Add-job_dismiss.patch [bz#1513543]
+- kvm-job-Add-job_is_ready.patch [bz#1513543]
+- kvm-job-Add-job_transition_to_ready.patch [bz#1513543]
+- kvm-job-Move-progress-fields-to-Job.patch [bz#1513543]
+- kvm-job-Introduce-qapi-job.json.patch [bz#1513543]
+- kvm-job-Add-JOB_STATUS_CHANGE-QMP-event.patch [bz#1513543]
+- kvm-job-Add-lifecycle-QMP-commands.patch [bz#1513543]
+- kvm-job-Add-query-jobs-QMP-command.patch [bz#1513543]
+- kvm-blockjob-Remove-BlockJob.driver.patch [bz#1513543]
+- kvm-iotests-Move-qmp_to_opts-to-VM.patch [bz#1513543]
+- kvm-qemu-iotests-Test-job-with-block-jobs.patch [bz#1513543]
+- kvm-vdi-Fix-vdi_co_do_create-return-value.patch [bz#1513543]
+- kvm-vhdx-Fix-vhdx_co_create-return-value.patch [bz#1513543]
+- kvm-job-Add-error-message-for-failing-jobs.patch [bz#1513543]
+- kvm-block-create-Make-x-blockdev-create-a-job.patch [bz#1513543]
+- kvm-qemu-iotests-Add-VM.get_qmp_events_filtered.patch [bz#1513543]
+- kvm-qemu-iotests-Add-VM.qmp_log.patch [bz#1513543]
+- kvm-qemu-iotests-Add-iotests.img_info_log.patch [bz#1513543]
+- kvm-qemu-iotests-Add-VM.run_job.patch [bz#1513543]
+- kvm-qemu-iotests-iotests.py-helper-for-non-file-protocol.patch [bz#1513543]
+- kvm-qemu-iotests-Rewrite-206-for-blockdev-create-job.patch [bz#1513543]
+- kvm-qemu-iotests-Rewrite-207-for-blockdev-create-job.patch [bz#1513543]
+- kvm-qemu-iotests-Rewrite-210-for-blockdev-create-job.patch [bz#1513543]
+- kvm-qemu-iotests-Rewrite-211-for-blockdev-create-job.patch [bz#1513543]
+- kvm-qemu-iotests-Rewrite-212-for-blockdev-create-job.patch [bz#1513543]
+- kvm-qemu-iotests-Rewrite-213-for-blockdev-create-job.patch [bz#1513543]
+- kvm-block-create-Mark-blockdev-create-stable.patch [bz#1513543]
+- kvm-jobs-fix-stale-wording.patch [bz#1513543]
+- kvm-jobs-fix-verb-references-in-docs.patch [bz#1513543]
+- kvm-iotests-Fix-219-s-timing.patch [bz#1513543]
+- kvm-iotests-improve-pause_job.patch [bz#1513543]
+- kvm-rpm-Whitelist-copy-on-read-block-driver.patch [bz#1518738]
+- kvm-rpm-add-throttle-driver-to-rw-whitelist.patch [bz#1591076]
+- Resolves: bz#1513543
+  ([RFE] Add block job to create format on a storage device)
+- Resolves: bz#1518738
+  (Add 'copy-on-read' filter driver for use with blockdev-add)
+- Resolves: bz#1527898
+  ([RFE] qemu-img should leave cluster unallocated if it's read as zero throughout the backing chain)
+- Resolves: bz#1537956
+  (RFE: qemu-img amend should list the true supported options)
+- Resolves: bz#1564576
+  (Pegas 1.1 - Require to backport qemu-kvm patch that fixes expected_downtime calculation during migration)
+- Resolves: bz#1567733
+  (qemu abort when migrate during guest reboot)
+- Resolves: bz#1569835
+  (qemu-img get wrong backing file path after rebasing image with relative path)
+- Resolves: bz#1591076
+  (The driver of 'throttle' is not whitelisted)
+
 * Mon Jun 25 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-5.el7
 - kvm-qobject-Use-qobject_to-instead-of-type-cast.patch [bz#1557995]
 - kvm-qobject-Ensure-base-is-at-offset-0.patch [bz#1557995]
