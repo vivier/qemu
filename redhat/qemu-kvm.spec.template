@@ -902,6 +902,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Jul 02 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7_5.3
+- kvm-scsi-disk-allow-customizing-the-SCSI-version.patch [bz#1593193]
+- kvm-hw-scsi-support-SCSI-2-passthrough-without-PI.patch [bz#1593193]
+- kvm-s390x-fix-storage-attributes-migration-for-non-small.patch [bz#1596553]
+- Resolves: bz#1593193
+  (Pegas1.1 - SCSI pass-thru of aacraid RAID1 is inaccessible (qemu-kvm-ma) [rhel-7.5.z])
+- Resolves: bz#1596553
+  (RHEL-Alt-7.5 - qemu has error during migration of larger guests [rhel-7.5.z])
+
 * Fri Apr 13 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7_5.2
 - kvm-block-Fix-flags-in-reopen-queue.patch [bz#1557206]
 - kvm-iotests-Add-regression-test-for-commit-base-locking.patch [bz#1557206]
