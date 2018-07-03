@@ -778,6 +778,9 @@ libqgraph-pci-obj-y += tests/libqos/sdhci.o
 check-unit-y += tests/test-qgraph$(EXESUF)
 tests/test-qgraph$(EXESUF): tests/test-qgraph.o $(libqgraph-obj-y)
 
+check-qtest-pci-y += tests/qos-test$(EXESUF)
+tests/qos-test$(EXESUF): tests/qos-test.o $(libqgraph-pci-obj-y)
+
 tests/qmp-test$(EXESUF): tests/qmp-test.o
 tests/device-introspect-test$(EXESUF): tests/device-introspect-test.o
 tests/rtc-test$(EXESUF): tests/rtc-test.o
