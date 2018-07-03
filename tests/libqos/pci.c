@@ -15,6 +15,7 @@
 
 #include "hw/pci/pci_regs.h"
 #include "qemu/host-utils.h"
+#include "qgraph.h"
 
 void qpci_device_foreach(QPCIBus *bus, int vendor_id, int device_id,
                          void (*func)(QPCIDevice *dev, int devfn, void *data),
@@ -64,6 +65,29 @@ QPCIDevice *qpci_device_find(QPCIBus *bus, int devfn)
     }
 
     return dev;
+}
+
+static void qpci_device_set_find(QPCIDevice *dev, QPCIBus *bus, int devfn)
+{
+    dev->bus = bus;
+    dev->devfn = devfn;
+
+    if (qpci_config_readw(dev, PCI_VENDOR_ID) == 0xFFFF) {
+        printf("PCI Device not found\n");
+        abort();
+    }
+}
+
+void qpci_device_init(QPCIDevice *dev, QPCIBus *bus, QPCIAddress *addr)
+{
+    uint16_t vendor_id, device_id;
+
+    qpci_device_set_find(dev, bus, addr->devfn);
+    vendor_id = qpci_config_readw(dev, PCI_VENDOR_ID);
+    device_id = qpci_config_readw(dev, PCI_DEVICE_ID);
+    g_assert(vendor_id == addr->vendor_id);
+    g_assert(device_id == addr->device_id);
+    qpci_device_enable(dev);
 }
 
 void qpci_device_enable(QPCIDevice *dev)
@@ -402,3 +426,10 @@ void qpci_plug_device_test(const char *driver, const char *id,
     qtest_qmp_device_add(driver, id, "'addr': '%d'%s%s", slot,
                          opts ? ", " : "", opts ? opts : "");
 }
+
+static void qpci(void)
+{
+    qos_node_create_interface("pci-bus");
+}
+
+libqos_init(qpci);
