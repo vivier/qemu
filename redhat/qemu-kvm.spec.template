@@ -908,6 +908,95 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Jul 04 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-7.el7
+- kvm-vfio-pci-Default-display-option-to-off.patch [bz#1583050]
+- kvm-Add-qemu-keymap-to-qemu-kvm-tools.patch [bz#1590756]
+- kvm-usb-host-skip-open-on-pending-postload-bh.patch [bz#1572851]
+- kvm-i386-Define-the-Virt-SSBD-MSR-and-handling-of-it-CVE.patch [bz#1574216]
+- kvm-i386-define-the-AMD-virt-ssbd-CPUID-feature-bit-CVE-.patch [bz#1574216]
+- kvm-block-file-posix-Pass-FD-to-locking-helpers.patch [bz#1519144]
+- kvm-block-file-posix-File-locking-during-creation.patch [bz#1519144]
+- kvm-iotests-Add-creation-test-to-153.patch [bz#1519144]
+- kvm-migration-stop-compressing-page-in-migration-thread.patch [bz#1584139]
+- kvm-migration-stop-compression-to-allocate-and-free-memo.patch [bz#1584139]
+- kvm-migration-stop-decompression-to-allocate-and-free-me.patch [bz#1584139]
+- kvm-migration-detect-compression-and-decompression-error.patch [bz#1584139]
+- kvm-migration-introduce-control_save_page.patch [bz#1584139]
+- kvm-migration-move-some-code-to-ram_save_host_page.patch [bz#1584139]
+- kvm-migration-move-calling-control_save_page-to-the-comm.patch [bz#1584139]
+- kvm-migration-move-calling-save_zero_page-to-the-common-.patch [bz#1584139]
+- kvm-migration-introduce-save_normal_page.patch [bz#1584139]
+- kvm-migration-remove-ram_save_compressed_page.patch [bz#1584139]
+- kvm-migration-block-dirty-bitmap-fix-memory-leak-in-dirt.patch [bz#1584139]
+- kvm-migration-fix-saving-normal-page-even-if-it-s-been-c.patch [bz#1584139]
+- kvm-migration-update-index-field-when-delete-or-qsort-RD.patch [bz#1584139]
+- kvm-Migration-TLS-Fix-crash-due-to-double-cleanup.patch [bz#1584139]
+- kvm-migration-introduce-decompress-error-check.patch [bz#1584139]
+- kvm-migration-Don-t-activate-block-devices-if-using-S.patch [bz#1560854]
+- kvm-migration-not-wait-RDMA_CM_EVENT_DISCONNECTED-event-.patch [bz#1584139]
+- kvm-migration-block-dirty-bitmap-fix-dirty_bitmap_load.patch [bz#1584139]
+- kvm-vhost-user-add-Net-prefix-to-internal-state-structur.patch [bz#1526645]
+- kvm-virtio-support-setting-memory-region-based-host-noti.patch [bz#1526645]
+- kvm-vhost-user-support-receiving-file-descriptors-in-sla.patch [bz#1526645]
+- kvm-osdep-add-wait.h-compat-macros.patch [bz#1526645]
+- kvm-vhost-user-bridge-support-host-notifier.patch [bz#1526645]
+- kvm-vhost-allow-backends-to-filter-memory-sections.patch [bz#1526645]
+- kvm-vhost-user-allow-slave-to-send-fds-via-slave-channel.patch [bz#1526645]
+- kvm-vhost-user-introduce-shared-vhost-user-state.patch [bz#1526645]
+- kvm-vhost-user-support-registering-external-host-notifie.patch [bz#1526645]
+- kvm-libvhost-user-support-host-notifier.patch [bz#1526645]
+- kvm-block-Introduce-API-for-copy-offloading.patch [bz#1482537]
+- kvm-raw-Check-byte-range-uniformly.patch [bz#1482537]
+- kvm-raw-Implement-copy-offloading.patch [bz#1482537]
+- kvm-qcow2-Implement-copy-offloading.patch [bz#1482537]
+- kvm-file-posix-Implement-bdrv_co_copy_range.patch [bz#1482537]
+- kvm-iscsi-Query-and-save-device-designator-when-opening.patch [bz#1482537]
+- kvm-iscsi-Create-and-use-iscsi_co_wait_for_task.patch [bz#1482537]
+- kvm-iscsi-Implement-copy-offloading.patch [bz#1482537]
+- kvm-block-backend-Add-blk_co_copy_range.patch [bz#1482537]
+- kvm-qemu-img-Convert-with-copy-offloading.patch [bz#1482537]
+- kvm-qcow2-Fix-src_offset-in-copy-offloading.patch [bz#1482537]
+- kvm-iscsi-Don-t-blindly-use-designator-length-in-respons.patch [bz#1482537]
+- kvm-file-posix-Fix-EINTR-handling.patch [bz#1482537]
+- kvm-pc-Add-rhel7.6.0-machine-types.patch [bz#1557051]
+- kvm-usb-storage-Add-rerror-werror-properties.patch [bz#1595180]
+- kvm-numa-clarify-error-message-when-node-index-is-out-of.patch [bz#1578381]
+- kvm-qemu-iotests-Update-026.out.nocache-reference-output.patch [bz#1528541]
+- kvm-qcow2-Free-allocated-clusters-on-write-error.patch [bz#1528541]
+- kvm-qemu-iotests-Test-qcow2-not-leaking-clusters-on-writ.patch [bz#1528541]
+- kvm-s390x-cpumodel-default-enable-bpb-and-ppa15-for-z196.patch [bz#1595715]
+- kvm-qemu-options-Add-missing-newline-to-accel-help-text.patch [bz#1586313]
+- Resolves: bz#1482537
+  ([RFE] qemu-img copy-offloading (convert command))
+- Resolves: bz#1519144
+  (qemu-img: image locking doesn't cover image creation)
+- Resolves: bz#1526645
+  ([Intel 7.6 FEAT] vHost Data Plane Acceleration (vDPA) - vhost user client - qemu-kvm-rhev)
+- Resolves: bz#1528541
+  (qemu-img check reports tons of leaked clusters after re-start nfs service to resume writing data in guest)
+- Resolves: bz#1557051
+  (pc-i440fx-rhel7.6.0 and pc-q35-rhel7.6.0 machine types (x86))
+- Resolves: bz#1560854
+  (Guest is left paused on source host sometimes if kill source libvirtd during live migration due to QEMU image locking)
+- Resolves: bz#1572851
+  (Core dumped after migration when with usb-host)
+- Resolves: bz#1574216
+  (CVE-2018-3639 qemu-kvm-rhev: hw: cpu: speculative store bypass [rhel-7.6])
+- Resolves: bz#1578381
+  (Error message need update when specify numa distance with node index >=128)
+- Resolves: bz#1583050
+  (Fails to start guest with Intel vGPU device)
+- Resolves: bz#1584139
+  (2.12 migration fixes)
+- Resolves: bz#1586313
+  (-smp option is not easily found in the output of qemu help)
+- Resolves: bz#1590756
+  (add qemu-keymap utility)
+- Resolves: bz#1595180
+  (Can't set rerror/werror with usb-storage)
+- Resolves: bz#1595715
+  (Add ppa15/bpb to the default cpu model for z196 and higher in the 7.6 s390-ccw-virtio machine)
+
 * Sat Jun 30 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-6.el7
 - kvm-Fix-permissions-for-iotest-218.patch []
 - kvm-qxl-fix-local-renderer-crash.patch [bz#1567733]
