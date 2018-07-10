@@ -9,32 +9,12 @@
 #include "libqtest.h"
 #include "libqos/pci-spapr.h"
 #include "libqos/rtas.h"
+#include "qgraph.h"
 
 #include "hw/pci/pci_regs.h"
 
 #include "qemu-common.h"
 #include "qemu/host-utils.h"
-
-
-/* From include/hw/pci-host/spapr.h */
-
-typedef struct QPCIWindow {
-    uint64_t pci_base;    /* window address in PCI space */
-    uint64_t size;        /* window size */
-} QPCIWindow;
-
-typedef struct QPCIBusSPAPR {
-    QPCIBus bus;
-    QGuestAllocator *alloc;
-
-    uint64_t buid;
-
-    uint64_t pio_cpu_base;
-    QPCIWindow pio;
-
-    uint64_t mmio32_cpu_base;
-    QPCIWindow mmio32;
-} QPCIBusSPAPR;
 
 /*
  * PCI devices are always little-endian
@@ -160,10 +140,18 @@ static void qpci_spapr_config_writel(QPCIBus *bus, int devfn, uint8_t offset,
 #define SPAPR_PCI_MMIO32_WIN_SIZE    0x80000000 /* 2 GiB */
 #define SPAPR_PCI_IO_WIN_SIZE        0x10000
 
-QPCIBus *qpci_init_spapr(QTestState *qts, QGuestAllocator *alloc)
+static void *qspapr_get_driver(void *obj, const char *interface)
 {
-    QPCIBusSPAPR *ret = g_new0(QPCIBusSPAPR, 1);
+    QPCIBusSPAPR *qpci = obj;
+    if (!g_strcmp0(interface, "pci-bus")) {
+        return &qpci->bus;
+    }
+    printf("%s not present in pci-bus-spapr", interface);
+    abort();
+}
 
+void qpci_set_spapr(QPCIBusSPAPR *ret, QTestState *qts, QGuestAllocator *alloc)
+{
     assert(qts);
 
     ret->alloc = alloc;
@@ -208,12 +196,32 @@ QPCIBus *qpci_init_spapr(QTestState *qts, QGuestAllocator *alloc)
     ret->bus.mmio_alloc_ptr = ret->mmio32.pci_base;
     ret->bus.mmio_limit = ret->mmio32.pci_base + ret->mmio32.size;
 
+    ret->obj.get_driver = qspapr_get_driver;
+}
+
+QPCIBus *qpci_init_spapr(QTestState *qts, QGuestAllocator *alloc)
+{
+    QPCIBusSPAPR *ret = g_new0(QPCIBusSPAPR, 1);
+    qpci_set_spapr(ret, qts, alloc);
+    
     return &ret->bus;
 }
 
 void qpci_free_spapr(QPCIBus *bus)
 {
+    if (!bus) {
+        return;
+    }
+
     QPCIBusSPAPR *s = container_of(bus, QPCIBusSPAPR, bus);
 
     g_free(s);
 }
+
+static void qpci_spapr(void)
+{
+    qos_node_create_driver("pci-bus-spapr", NULL);
+    qos_node_produces("pci-bus-spapr", "pci-bus");
+}
+
+libqos_init(qpci_spapr);
