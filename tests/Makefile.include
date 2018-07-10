@@ -768,7 +768,7 @@ libqos-imx-obj-y = $(libqos-obj-y) tests/libqos/i2c-imx.o
 libqos-usb-obj-y = $(libqos-spapr-obj-y) $(libqos-pc-obj-y) tests/libqos/usb.o
 libqos-virtio-obj-y = $(libqos-spapr-obj-y) $(libqos-pc-obj-y) tests/libqos/virtio.o tests/libqos/virtio-pci.o tests/libqos/virtio-mmio.o tests/libqos/malloc-generic.o
 
-libqgraph-pci-obj-y = $(libqos-pc-obj-y)
+libqgraph-pci-obj-y = $(libqos-pc-obj-y) $(libqos-spapr-obj-y) 
 libqgraph-pci-obj-y += tests/libqos/raspi2-machine.o tests/libqos/x86_64_pc-machine.o
 libqgraph-pci-obj-y += tests/libqos/sdhci.o
 

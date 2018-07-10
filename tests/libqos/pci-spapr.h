@@ -10,7 +10,30 @@
 
 #include "libqos/malloc.h"
 #include "libqos/pci.h"
+#include "qgraph.h"
 
+/* From include/hw/pci-host/spapr.h */
+
+typedef struct QPCIWindow {
+    uint64_t pci_base;    /* window address in PCI space */
+    uint64_t size;        /* window size */
+} QPCIWindow;
+
+typedef struct QPCIBusSPAPR {
+    QOSGraphObject obj;
+    QPCIBus bus;
+    QGuestAllocator *alloc;
+
+    uint64_t buid;
+
+    uint64_t pio_cpu_base;
+    QPCIWindow pio;
+
+    uint64_t mmio32_cpu_base;
+    QPCIWindow mmio32;
+} QPCIBusSPAPR;
+
+void qpci_set_spapr(QPCIBusSPAPR *ret, QTestState *qts, QGuestAllocator *alloc);
 QPCIBus *qpci_init_spapr(QTestState *qts, QGuestAllocator *alloc);
 void     qpci_free_spapr(QPCIBus *bus);
 
