@@ -771,9 +771,9 @@ libqos-virtio-obj-y = $(libqos-spapr-obj-y) $(libqos-pc-obj-y) tests/libqos/virt
 libqgraph-pci-obj-y = $(libqos-pc-obj-y) $(libqos-spapr-obj-y) 
 libqgraph-pci-obj-y += tests/libqos/raspi2-machine.o tests/libqos/x86_64_pc-machine.o
 libqgraph-pci-obj-y += tests/libqos/ppc64_pseries-machine.o
-libqgraph-pci-obj-y += tests/libqos/sdhci.o
+libqgraph-pci-obj-y += tests/libqos/sdhci.o tests/libqos/e1000e.o
 
-libqgraph-tests-obj-y = $(libqgraph-pci-obj-y) tests/sdhci-test.o
+libqgraph-tests-obj-y = $(libqgraph-pci-obj-y) tests/sdhci-test.o tests/e1000e-test-custom.o
 
 check-unit-y += tests/test-qgraph$(EXESUF)
 tests/test-qgraph$(EXESUF): tests/test-qgraph.o $(libqgraph-obj-y)
