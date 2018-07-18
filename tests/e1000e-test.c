@@ -32,6 +32,7 @@
 #include "qemu/iov.h"
 #include "qemu/bitops.h"
 #include "libqos/libqos-pc.h"
+#include "libqos/libqos-spapr.h"
 
 #define E1000E_IMS      (0x00d0)
 
@@ -386,8 +387,10 @@ static QOSState *data_test_init(e1000e_device *d)
 
     if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
         qs = qtest_pc_boot(cmd, test_sockets[1]);
+    } else if (strcmp(arch, "ppc64") == 0) {
+        qs = qtest_spapr_boot(cmd, test_sockets[1]);
     } else {
-        g_printerr("e1000e tests are only available on x86\n");
+        g_printerr("e1000e tests are only available on x86 or ppc64\n");
         exit(EXIT_FAILURE);
     }
     global_qtest = qs->qts;
