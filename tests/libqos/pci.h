@@ -49,6 +49,12 @@ struct QPCIBus {
     void (*config_writel)(QPCIBus *bus, int devfn,
                           uint8_t offset, uint32_t value);
 
+    void (*msix_enable)(QPCIDevice *dev);
+    void (*msix_disable)(QPCIDevice *dev);
+    bool (*msix_pending)(QPCIDevice *dev, uint16_t entry);
+    bool (*msix_masked)(QPCIDevice *dev, uint16_t entry);
+    uint16_t (*msix_table_size)(QPCIDevice *dev);
+
     QTestState *qts;
     uint16_t pio_alloc_ptr;
     uint64_t mmio_alloc_ptr, mmio_limit;

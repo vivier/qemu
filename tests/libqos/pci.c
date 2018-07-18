@@ -123,100 +123,32 @@ uint8_t qpci_find_capability(QPCIDevice *dev, uint8_t id)
 
 void qpci_msix_enable(QPCIDevice *dev)
 {
-    uint8_t addr;
-    uint16_t val;
-    uint32_t table;
-    uint8_t bir_table;
-    uint8_t bir_pba;
-
-    addr = qpci_find_capability(dev, PCI_CAP_ID_MSIX);
-    g_assert_cmphex(addr, !=, 0);
-
-    val = qpci_config_readw(dev, addr + PCI_MSIX_FLAGS);
-    qpci_config_writew(dev, addr + PCI_MSIX_FLAGS, val | PCI_MSIX_FLAGS_ENABLE);
-
-    table = qpci_config_readl(dev, addr + PCI_MSIX_TABLE);
-    bir_table = table & PCI_MSIX_FLAGS_BIRMASK;
-    dev->msix_table_bar = qpci_iomap(dev, bir_table, NULL);
-    dev->msix_table_off = table & ~PCI_MSIX_FLAGS_BIRMASK;
-
-    table = qpci_config_readl(dev, addr + PCI_MSIX_PBA);
-    bir_pba = table & PCI_MSIX_FLAGS_BIRMASK;
-    if (bir_pba != bir_table) {
-        dev->msix_pba_bar = qpci_iomap(dev, bir_pba, NULL);
-    } else {
-        dev->msix_pba_bar = dev->msix_table_bar;
-    }
-    dev->msix_pba_off = table & ~PCI_MSIX_FLAGS_BIRMASK;
-
-    dev->msix_enabled = true;
+    g_assert(dev->bus->msix_enable);
+    dev->bus->msix_enable(dev);
 }
 
 void qpci_msix_disable(QPCIDevice *dev)
 {
-    uint8_t addr;
-    uint16_t val;
-
-    g_assert(dev->msix_enabled);
-    addr = qpci_find_capability(dev, PCI_CAP_ID_MSIX);
-    g_assert_cmphex(addr, !=, 0);
-    val = qpci_config_readw(dev, addr + PCI_MSIX_FLAGS);
-    qpci_config_writew(dev, addr + PCI_MSIX_FLAGS,
-                                                val & ~PCI_MSIX_FLAGS_ENABLE);
-
-    if (dev->msix_pba_bar.addr != dev->msix_table_bar.addr) {
-        qpci_iounmap(dev, dev->msix_pba_bar);
-    }
-    qpci_iounmap(dev, dev->msix_table_bar);
-
-    dev->msix_enabled = 0;
-    dev->msix_table_off = 0;
-    dev->msix_pba_off = 0;
+    g_assert(dev->bus->msix_disable);
+    dev->bus->msix_disable(dev);
 }
 
 bool qpci_msix_pending(QPCIDevice *dev, uint16_t entry)
 {
-    uint32_t pba_entry;
-    uint8_t bit_n = entry % 32;
-    uint64_t  off = (entry / 32) * PCI_MSIX_ENTRY_SIZE / 4;
-
-    g_assert(dev->msix_enabled);
-    pba_entry = qpci_io_readl(dev, dev->msix_pba_bar, dev->msix_pba_off + off);
-    qpci_io_writel(dev, dev->msix_pba_bar, dev->msix_pba_off + off,
-                   pba_entry & ~(1 << bit_n));
-    return (pba_entry & (1 << bit_n)) != 0;
+    g_assert(dev->bus->msix_pending);
+    return dev->bus->msix_pending(dev, entry);
 }
 
 bool qpci_msix_masked(QPCIDevice *dev, uint16_t entry)
 {
-    uint8_t addr;
-    uint16_t val;
-    uint64_t vector_off = dev->msix_table_off + entry * PCI_MSIX_ENTRY_SIZE;
-
-    g_assert(dev->msix_enabled);
-    addr = qpci_find_capability(dev, PCI_CAP_ID_MSIX);
-    g_assert_cmphex(addr, !=, 0);
-    val = qpci_config_readw(dev, addr + PCI_MSIX_FLAGS);
-
-    if (val & PCI_MSIX_FLAGS_MASKALL) {
-        return true;
-    } else {
-        return (qpci_io_readl(dev, dev->msix_table_bar,
-                              vector_off + PCI_MSIX_ENTRY_VECTOR_CTRL)
-                & PCI_MSIX_ENTRY_CTRL_MASKBIT) != 0;
-    }
+    g_assert(dev->bus->msix_masked);
+    return dev->bus->msix_masked(dev, entry);
 }
 
 uint16_t qpci_msix_table_size(QPCIDevice *dev)
 {
-    uint8_t addr;
-    uint16_t control;
-
-    addr = qpci_find_capability(dev, PCI_CAP_ID_MSIX);
-    g_assert_cmphex(addr, !=, 0);
-
-    control = qpci_config_readw(dev, addr + PCI_MSIX_FLAGS);
-    return (control & PCI_MSIX_FLAGS_QSIZE) + 1;
+    g_assert(dev->bus->msix_table_size);
+    return dev->bus->msix_table_size(dev);
 }
 
 uint8_t qpci_config_readb(QPCIDevice *dev, uint8_t offset)
