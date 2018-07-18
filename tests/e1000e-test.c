@@ -31,9 +31,7 @@
 #include "qemu/sockets.h"
 #include "qemu/iov.h"
 #include "qemu/bitops.h"
-#include "libqos/malloc.h"
-#include "libqos/malloc-pc.h"
-#include "libqos/malloc-generic.h"
+#include "libqos/libqos-pc.h"
 
 #define E1000E_IMS      (0x00d0)
 
@@ -94,8 +92,6 @@ typedef struct e1000e_device {
 } e1000e_device;
 
 static int test_sockets[2];
-static QGuestAllocator *test_alloc;
-static QPCIBus *test_bus;
 
 static void e1000e_pci_foreach_callback(QPCIDevice *dev, int devfn, void *data)
 {
@@ -130,11 +126,11 @@ static uint32_t e1000e_macreg_read(e1000e_device *d, uint32_t reg)
     return qpci_io_readl(d->pci_dev, d->mac_regs, reg);
 }
 
-static void e1000e_device_init(QPCIBus *bus, e1000e_device *d)
+static void e1000e_device_init(QOSState *qs, e1000e_device *d)
 {
     uint32_t val;
 
-    d->pci_dev = e1000e_device_find(bus);
+    d->pci_dev = e1000e_device_find(qs->pcibus);
 
     /* Enable the device */
     qpci_device_enable(d->pci_dev);
@@ -165,7 +161,7 @@ static void e1000e_device_init(QPCIBus *bus, e1000e_device *d)
         val | E1000E_CTRL_EXT_DRV_LOAD | E1000E_CTRL_EXT_TXLSFLOW);
 
     /* Allocate and setup TX ring */
-    d->tx_ring = guest_alloc(test_alloc, E1000E_RING_LEN);
+    d->tx_ring = guest_alloc(qs->alloc, E1000E_RING_LEN);
     g_assert(d->tx_ring != 0);
 
     e1000e_macreg_write(d, E1000E_TDBAL, (uint32_t) d->tx_ring);
@@ -178,7 +174,7 @@ static void e1000e_device_init(QPCIBus *bus, e1000e_device *d)
     e1000e_macreg_write(d, E1000E_TCTL, E1000E_TCTL_EN);
 
     /* Allocate and setup RX ring */
-    d->rx_ring = guest_alloc(test_alloc, E1000E_RING_LEN);
+    d->rx_ring = guest_alloc(qs->alloc, E1000E_RING_LEN);
     g_assert(d->rx_ring != 0);
 
     e1000e_macreg_write(d, E1000E_RDBAL, (uint32_t)d->rx_ring);
@@ -235,7 +231,7 @@ static void e1000e_wait_isr(e1000e_device *d, uint16_t msg_id)
     g_error("Timeout expired");
 }
 
-static void e1000e_send_verify(e1000e_device *d)
+static void e1000e_send_verify(QOSState *qs, e1000e_device *d)
 {
     struct {
         uint64_t buffer_addr;
@@ -268,7 +264,7 @@ static void e1000e_send_verify(e1000e_device *d)
     uint32_t recv_len;
 
     /* Prepare test data buffer */
-    uint64_t data = guest_alloc(test_alloc, data_len);
+    uint64_t data = guest_alloc(qs->alloc, data_len);
     memwrite(data, "TEST", 5);
 
     /* Prepare TX descriptor */
@@ -296,10 +292,10 @@ static void e1000e_send_verify(e1000e_device *d)
     g_assert_cmpstr(buffer, == , "TEST");
 
     /* Free test data buffer */
-    guest_free(test_alloc, data);
+    guest_free(qs->alloc, data);
 }
 
-static void e1000e_receive_verify(e1000e_device *d)
+static void e1000e_receive_verify(QOSState *qs, e1000e_device *d)
 {
     union {
         struct {
@@ -348,7 +344,7 @@ static void e1000e_receive_verify(e1000e_device *d)
     g_assert_cmpint(ret, == , sizeof(test) + sizeof(len));
 
     /* Prepare test data buffer */
-    uint64_t data = guest_alloc(test_alloc, data_len);
+    uint64_t data = guest_alloc(qs->alloc, data_len);
 
     /* Prepare RX descriptor */
     memset(&descr, 0, sizeof(descr));
@@ -369,89 +365,91 @@ static void e1000e_receive_verify(e1000e_device *d)
     g_assert_cmpstr(buffer, == , "TEST");
 
     /* Free test data buffer */
-    guest_free(test_alloc, data);
+    guest_free(qs->alloc, data);
 }
 
-static void e1000e_device_clear(QPCIBus *bus, e1000e_device *d)
+static void e1000e_device_clear(e1000e_device *d)
 {
     qpci_iounmap(d->pci_dev, d->mac_regs);
     qpci_msix_disable(d->pci_dev);
 }
 
-static void data_test_init(e1000e_device *d)
+static QOSState *data_test_init(e1000e_device *d)
 {
-    char *cmdline;
+    QOSState *qs;
+    const char *arch = qtest_get_arch();
+    const char *cmd = "-netdev socket,fd=%d,id=hs0 -device e1000e,netdev=hs0";
+    int ret;
 
-    int ret = socketpair(PF_UNIX, SOCK_STREAM, 0, test_sockets);
+    ret  = socketpair(PF_UNIX, SOCK_STREAM, 0, test_sockets);
     g_assert_cmpint(ret, != , -1);
 
-    cmdline = g_strdup_printf("-netdev socket,fd=%d,id=hs0 "
-                              "-device e1000e,netdev=hs0", test_sockets[1]);
-    g_assert_nonnull(cmdline);
+    if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
+        qs = qtest_pc_boot(cmd, test_sockets[1]);
+    } else {
+        g_printerr("e1000e tests are only available on x86\n");
+        exit(EXIT_FAILURE);
+    }
+    global_qtest = qs->qts;
 
-    qtest_start(cmdline);
-    g_free(cmdline);
+    e1000e_device_init(qs, d);
 
-    test_alloc = pc_alloc_init(global_qtest);
-    g_assert_nonnull(test_alloc);
-
-    test_bus = qpci_init_pc(global_qtest, test_alloc);
-    g_assert_nonnull(test_bus);
-
-    e1000e_device_init(test_bus, d);
+    return qs;
 }
 
-static void data_test_clear(e1000e_device *d)
+static void data_test_clear(QOSState *qs, e1000e_device *d)
 {
-    e1000e_device_clear(test_bus, d);
+    e1000e_device_clear(d);
     close(test_sockets[0]);
-    pc_alloc_uninit(test_alloc);
     g_free(d->pci_dev);
-    qpci_free_pc(test_bus);
-    qtest_end();
+    qtest_shutdown(qs);
 }
 
 static void test_e1000e_init(gconstpointer data)
 {
+    QOSState *qs;
     e1000e_device d;
 
-    data_test_init(&d);
-    data_test_clear(&d);
+    qs = data_test_init(&d);
+    data_test_clear(qs, &d);
 }
 
 static void test_e1000e_tx(gconstpointer data)
 {
+    QOSState *qs;
     e1000e_device d;
 
-    data_test_init(&d);
-    e1000e_send_verify(&d);
-    data_test_clear(&d);
+    qs = data_test_init(&d);
+    e1000e_send_verify(qs, &d);
+    data_test_clear(qs, &d);
 }
 
 static void test_e1000e_rx(gconstpointer data)
 {
+    QOSState *qs;
     e1000e_device d;
 
-    data_test_init(&d);
-    e1000e_receive_verify(&d);
-    data_test_clear(&d);
+    qs = data_test_init(&d);
+    e1000e_receive_verify(qs, &d);
+    data_test_clear(qs, &d);
 }
 
 static void test_e1000e_multiple_transfers(gconstpointer data)
 {
+    QOSState *qs;
     static const long iterations = 4 * 1024;
     long i;
 
     e1000e_device d;
 
-    data_test_init(&d);
+    qs = data_test_init(&d);
 
     for (i = 0; i < iterations; i++) {
-        e1000e_send_verify(&d);
-        e1000e_receive_verify(&d);
+        e1000e_send_verify(qs, &d);
+        e1000e_receive_verify(qs, &d);
     }
 
-    data_test_clear(&d);
+    data_test_clear(qs, &d);
 }
 
 static void test_e1000e_hotplug(gconstpointer data)
