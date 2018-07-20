@@ -135,6 +135,124 @@ static void qpci_spapr_config_writel(QPCIBus *bus, int devfn, uint8_t offset,
                                config_addr, 4, value);
 }
 
+static void qpci_spapr_msix_enable(QPCIDevice *dev)
+{
+    QPCIBusSPAPR *s = container_of(dev->bus, QPCIBusSPAPR, bus);
+    uint32_t config_addr = dev->devfn << 8;
+    uint8_t addr;
+    uint16_t val;
+    uint32_t table, irq;
+    uint8_t bir_table;
+    uint8_t bir_pba;
+    int ret;
+
+    addr = qpci_find_capability(dev, PCI_CAP_ID_MSIX);
+    g_assert_cmphex(addr, !=, 0);
+
+    val = qpci_config_readw(dev, addr + PCI_MSIX_FLAGS); 
+    qpci_config_writew(dev, addr + PCI_MSIX_FLAGS, val | PCI_MSIX_FLAGS_ENABLE);
+
+    table = qpci_config_readl(dev, addr + PCI_MSIX_TABLE);
+    bir_table = table & PCI_MSIX_FLAGS_BIRMASK;
+    dev->msix_table_bar = qpci_iomap(dev, bir_table, NULL);
+    dev->msix_table_off = table & ~PCI_MSIX_FLAGS_BIRMASK;
+
+    table = qpci_config_readl(dev, addr + PCI_MSIX_PBA);
+    bir_pba = table & PCI_MSIX_FLAGS_BIRMASK;
+    if (bir_pba != bir_table) {
+        dev->msix_pba_bar = qpci_iomap(dev, bir_pba, NULL);
+    } else {
+        dev->msix_pba_bar = dev->msix_table_bar;
+    }
+    dev->msix_pba_off = table & ~PCI_MSIX_FLAGS_BIRMASK;
+
+    ret = qrtas_change_msi(dev->bus->qts, s->alloc, s->buid, config_addr,
+                                 RTAS_CHANGE_MSIX_FN, 1);
+    g_assert_cmpint(ret, ==, 1);
+
+    irq = qrtas_query_irq_number(dev->bus->qts, s->alloc, s->buid,
+                                 config_addr, 0);
+    ret = qrtas_ibm_int_on(dev->bus->qts, s->alloc, irq);
+    g_assert_cmpint(ret, ==, 0);
+
+    dev->msix_enabled = true;
+}
+
+static void qpci_spapr_msix_disable(QPCIDevice *dev)
+{
+    QPCIBusSPAPR *s = container_of(dev->bus, QPCIBusSPAPR, bus);
+    uint32_t config_addr = dev->devfn << 8;
+    uint8_t addr;
+    uint16_t val;
+
+    g_assert(dev->msix_enabled);
+    addr = qpci_find_capability(dev, PCI_CAP_ID_MSIX);
+    g_assert_cmphex(addr, !=, 0);
+    val = qpci_config_readw(dev, addr + PCI_MSIX_FLAGS);
+    qpci_config_writew(dev, addr + PCI_MSIX_FLAGS,
+                                                val & ~PCI_MSIX_FLAGS_ENABLE);
+
+    if (dev->msix_pba_bar.addr != dev->msix_table_bar.addr) {
+        qpci_iounmap(dev, dev->msix_pba_bar);
+    }
+    qpci_iounmap(dev, dev->msix_table_bar);
+
+    dev->msix_enabled = 0;
+    dev->msix_table_off = 0;
+    dev->msix_pba_off = 0;
+
+    if (qrtas_change_msi(dev->bus->qts, s->alloc, s->buid, config_addr,
+                        RTAS_CHANGE_MSI_FN, 0) != 0) {
+        qrtas_change_msi(dev->bus->qts, s->alloc, s->buid, config_addr, RTAS_CHANGE_FN, 0);
+    }
+}
+
+static bool qpci_spapr_msix_pending(QPCIDevice *dev, uint16_t entry)
+{
+    uint32_t pba_entry;
+    uint8_t bit_n = entry % 32;
+    uint64_t  off = (entry / 32) * PCI_MSIX_ENTRY_SIZE / 4;
+
+    g_assert(dev->msix_enabled);
+    pba_entry = qpci_io_readl(dev, dev->msix_pba_bar, dev->msix_pba_off + off);
+    qpci_io_writel(dev, dev->msix_pba_bar, dev->msix_pba_off + off,
+                   pba_entry & ~(1 << bit_n));
+    return (pba_entry & (1 << bit_n)) != 0;
+}
+
+static bool qpci_spapr_msix_masked(QPCIDevice *dev, uint16_t entry)
+{
+    uint8_t addr;
+    uint16_t val;
+    uint64_t vector_off = dev->msix_table_off + entry * PCI_MSIX_ENTRY_SIZE;
+
+fprintf(stderr, "qpci_spapr_msix_masked\n");
+    g_assert(dev->msix_enabled);
+    addr = qpci_find_capability(dev, PCI_CAP_ID_MSIX);
+    g_assert_cmphex(addr, !=, 0);
+    val = qpci_config_readw(dev, addr + PCI_MSIX_FLAGS);
+
+    if (val & PCI_MSIX_FLAGS_MASKALL) {
+        return true;
+    } else {
+        return (qpci_io_readl(dev, dev->msix_table_bar,
+                              vector_off + PCI_MSIX_ENTRY_VECTOR_CTRL)
+                & PCI_MSIX_ENTRY_CTRL_MASKBIT) != 0;
+    }
+}
+
+static uint16_t qpci_spapr_msix_table_size(QPCIDevice *dev)
+{
+    uint8_t addr;
+    uint16_t control;
+
+    addr = qpci_find_capability(dev, PCI_CAP_ID_MSIX);
+    g_assert_cmphex(addr, !=, 0);
+
+    control = qpci_config_readw(dev, addr + PCI_MSIX_FLAGS);
+    return (control & PCI_MSIX_FLAGS_QSIZE) + 1;
+}
+
 #define SPAPR_PCI_BASE               (1ULL << 45)
 
 #define SPAPR_PCI_MMIO32_WIN_SIZE    0x80000000 /* 2 GiB */
@@ -190,6 +308,12 @@ void qpci_set_spapr(QPCIBusSPAPR *ret, QTestState *qts, QGuestAllocator *alloc)
     ret->mmio32_cpu_base = SPAPR_PCI_BASE;
     ret->mmio32.pci_base = SPAPR_PCI_MMIO32_WIN_SIZE;
     ret->mmio32.size = SPAPR_PCI_MMIO32_WIN_SIZE;
+
+    ret->bus.msix_enable = qpci_spapr_msix_enable;
+    ret->bus.msix_disable = qpci_spapr_msix_disable;
+    ret->bus.msix_pending = qpci_spapr_msix_pending;
+    ret->bus.msix_masked = qpci_spapr_msix_masked;
+    ret->bus.msix_table_size = qpci_spapr_msix_table_size;
 
     ret->bus.qts = qts;
     ret->bus.pio_alloc_ptr = 0xc000;
