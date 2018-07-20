@@ -22,6 +22,8 @@ uint32_t qrtas_ibm_read_pci_config(QTestState *qts, QGuestAllocator *alloc,
 int qrtas_ibm_write_pci_config(QTestState *qts, QGuestAllocator *alloc,
                                uint64_t buid, uint32_t addr, uint32_t size,
                                uint32_t val);
+int qrtas_ibm_int_on(QTestState *qts, QGuestAllocator *alloc, uint32_t irq);
+int qrtas_ibm_int_off(QTestState *qts, QGuestAllocator *alloc, uint32_t irq);
 int qrtas_change_msi(QTestState *qts, QGuestAllocator *alloc, uint64_t buid,
                      uint32_t addr, uint32_t func, uint32_t num_irqs);
 int qrtas_query_irq_number(QTestState *qts, QGuestAllocator *alloc,

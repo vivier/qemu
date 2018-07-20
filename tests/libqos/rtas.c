@@ -154,6 +154,42 @@ int qrtas_ibm_write_pci_config(QTestState *qts, QGuestAllocator *alloc,
     return 0;
 }
 
+int qrtas_ibm_int_on(QTestState *qts, QGuestAllocator *alloc, uint32_t irq)
+{
+    int res;
+    uint32_t args[1], ret[1];
+
+    args[0] = irq;
+    res = qrtas_call(qts, alloc, "ibm,int-on", 1, args, 1, ret);
+    if (res != 0) {
+        return -1;
+    }
+
+    if (ret[0] != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int qrtas_ibm_int_off(QTestState *qts, QGuestAllocator *alloc, uint32_t irq)
+{
+    int res;
+    uint32_t args[1], ret[1];
+
+    args[0] = irq;
+    res = qrtas_call(qts, alloc, "ibm,int-off", 1, args, 1, ret);
+    if (res != 0) {
+        return -1;
+    }
+
+    if (ret[0] != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
 int qrtas_change_msi(QTestState *qts, QGuestAllocator *alloc, uint64_t buid,
                      uint32_t addr, uint32_t func, uint32_t num_irqs)
 {
