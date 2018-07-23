@@ -813,6 +813,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon Jul 23 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7_5.4
+- kvm-target-i386-introduce-kvm_put_one_msr.patch [bz#1596302]
+- kvm-apic-fix-2.2-2.1-migration.patch [bz#1596302]
+- kvm-x86-lapic-Load-LAPIC-state-at-post_load.patch [bz#1596302]
+- kvm-apic-drop-debugging.patch [bz#1596302]
+- kvm-apic-set-APIC-base-as-part-of-kvm_apic_put.patch [bz#1596302]
+- Resolves: bz#1596302
+  (Windows 2012 Guest hangs after live migration with RTC clock stopped. [rhel-7.5.z])
+
 * Fri Jun 08 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7_5.3
 - kvm-i386-Define-the-Virt-SSBD-MSR-and-handling-of-it-CVE.patch [bz#1584363]
 - kvm-i386-define-the-AMD-virt-ssbd-CPUID-feature-bit-CVE-.patch [bz#1584363]
