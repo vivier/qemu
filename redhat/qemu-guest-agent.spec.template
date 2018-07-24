@@ -255,6 +255,12 @@ install -m 0644  qemu-ga.8 ${RPM_BUILD_ROOT}%{_mandir}/man8/
 
 
 %changelog
+* Tue Jul 24 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-2.el7
+- qemuga-qemu-ga-make-get-fsinfo-work-over-pci-bridges.patch [bz#1567041]
+- qemuga-qga-fix-driver-leak-in-guest-get-fsinfo.patch [bz#1567041]
+- Resolves: bz#1567041
+  (qemu-guest-agent does not parse PCI bridge links in "build_guest_fsinfo_for_real_device" (q35))
+
 * Wed May 02 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-1.el7
 - Rebase to 2.12.0 base [bz#1562218]
 - Resolves: bz#1562218
