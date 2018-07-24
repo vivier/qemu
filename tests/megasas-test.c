@@ -25,9 +25,13 @@ static QOSState *qmegasas_start(const char *extra_opts)
         qs = qtest_pc_boot(cmd, extra_opts ? : "");
         global_qtest = qs->qts;
         return qs;
+    } else if (strcmp(arch, "ppc64") == 0) {
+        qs = qtest_spapr_boot(cmd, extra_opts ? : "");
+        global_qtest = qs->qts;
+        return qs;
     }
 
-    g_printerr("virtio-scsi tests are only available on x86 or ppc64\n");
+    g_printerr("megasas tests are only available on x86 or ppc64\n");
     exit(EXIT_FAILURE);
 }
 
