@@ -908,6 +908,130 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jul 24 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-8.el7
+- kvm-RHEL-7.6-Add-pseries-rhel7.6.0-sxxm-machine-type.patch [bz#1592648]
+- kvm-i386-Helpers-to-encode-cache-information-consistentl.patch [bz#1481253]
+- kvm-i386-Add-cache-information-in-X86CPUDefinition.patch [bz#1481253]
+- kvm-i386-Initialize-cache-information-for-EPYC-family-pr.patch [bz#1481253]
+- kvm-i386-Add-new-property-to-control-cache-info.patch [bz#1481253]
+- kvm-i386-Clean-up-cache-CPUID-code.patch [bz#1481253]
+- kvm-i386-Populate-AMD-Processor-Cache-Information-for-cp.patch [bz#1481253]
+- kvm-i386-Add-support-for-CPUID_8000_001E-for-AMD.patch [bz#1481253]
+- kvm-i386-Fix-up-the-Node-id-for-CPUID_8000_001E.patch [bz#1481253]
+- kvm-i386-Enable-TOPOEXT-feature-on-AMD-EPYC-CPU.patch [bz#1481253]
+- kvm-i386-Remove-generic-SMT-thread-check.patch [bz#1481253]
+- kvm-xhci-fix-guest-triggerable-assert.patch [bz#1594135]
+- kvm-virtio-gpu-tweak-scanout-disable.patch [bz#1589634]
+- kvm-virtio-gpu-update-old-resource-too.patch [bz#1589634]
+- kvm-virtio-gpu-disable-scanout-when-backing-resource-is-.patch [bz#1589634]
+- kvm-block-Don-t-silently-truncate-node-names.patch [bz#1549654]
+- kvm-pr-helper-fix-socket-path-default-in-help.patch [bz#1533158]
+- kvm-pr-helper-fix-assertion-failure-on-failed-multipath-.patch [bz#1533158]
+- kvm-pr-manager-helper-avoid-SIGSEGV-when-writing-to-the-.patch [bz#1533158]
+- kvm-pr-manager-put-stubs-in-.c-file.patch [bz#1533158]
+- kvm-pr-manager-add-query-pr-managers-QMP-command.patch [bz#1533158]
+- kvm-pr-manager-helper-report-event-on-connection-disconn.patch [bz#1533158]
+- kvm-pr-helper-avoid-error-on-PR-IN-command-with-zero-req.patch [bz#1533158]
+- kvm-pr-helper-Rework-socket-path-handling.patch [bz#1533158]
+- kvm-pr-manager-helper-fix-memory-leak-on-event.patch [bz#1533158]
+- kvm-object-fix-OBJ_PROP_LINK_UNREF_ON_RELEASE-ambivalenc.patch [bz#1556678]
+- kvm-usb-hcd-xhci-test-add-a-test-for-ccid-hotplug.patch [bz#1556678]
+- kvm-Revert-usb-release-the-created-buses.patch [bz#1556678]
+- kvm-file-posix-Fix-creation-locking.patch [bz#1599335]
+- kvm-file-posix-Unlock-FD-after-creation.patch [bz#1599335]
+- kvm-ahci-trim-signatures-on-raise-lower.patch [bz#1584914]
+- kvm-ahci-fix-PxCI-register-race.patch [bz#1584914]
+- kvm-ahci-don-t-schedule-unnecessary-BH.patch [bz#1584914]
+- kvm-qcow2-Fix-qcow2_truncate-error-return-value.patch [bz#1595173]
+- kvm-block-Convert-.bdrv_truncate-callback-to-coroutine_f.patch [bz#1595173]
+- kvm-qcow2-Remove-coroutine-trampoline-for-preallocate_co.patch [bz#1595173]
+- kvm-block-Move-bdrv_truncate-implementation-to-io.c.patch [bz#1595173]
+- kvm-block-Use-tracked-request-for-truncate.patch [bz#1595173]
+- kvm-file-posix-Make-.bdrv_co_truncate-asynchronous.patch [bz#1595173]
+- kvm-block-Fix-copy-on-read-crash-with-partial-final-clus.patch [bz#1590640]
+- kvm-block-fix-QEMU-crash-with-scsi-hd-and-drive_del.patch [bz#1599515]
+- kvm-virtio-rng-process-pending-requests-on-DRIVER_OK.patch [bz#1576743]
+- kvm-file-posix-specify-expected-filetypes.patch [bz#1525829]
+- kvm-iotests-add-test-226-for-file-driver-types.patch [bz#1525829]
+- kvm-osdep-powerpc64-align-memory-to-allow-2MB-radix-THP-.patch [bz#1600797]
+- kvm-spapr-Correct-inverted-test-in-spapr_pc_dimm_node.patch [bz#1598287]
+- kvm-block-dirty-bitmap-add-lock-to-bdrv_enable-disable_d.patch [bz#1207657]
+- kvm-qapi-add-x-block-dirty-bitmap-enable-disable.patch [bz#1207657]
+- kvm-qmp-transaction-support-for-x-block-dirty-bitmap-ena.patch [bz#1207657]
+- kvm-qapi-add-x-block-dirty-bitmap-merge.patch [bz#1207657]
+- kvm-qapi-add-disabled-parameter-to-block-dirty-bitmap-ad.patch [bz#1207657]
+- kvm-block-dirty-bitmap-add-bdrv_enable_dirty_bitmap_lock.patch [bz#1207657]
+- kvm-dirty-bitmap-fix-double-lock-on-bitmap-enabling.patch [bz#1207657]
+- kvm-block-qcow2-bitmap-fix-free_bitmap_clusters.patch [bz#1207657]
+- kvm-qcow2-add-overlap-check-for-bitmap-directory.patch [bz#1207657]
+- kvm-blockdev-enable-non-root-nodes-for-backup-source.patch [bz#1207657]
+- kvm-iotests-add-222-to-test-basic-fleecing.patch [bz#1207657]
+- kvm-qcow2-Remove-dead-check-on-ret.patch [bz#1207657]
+- kvm-block-Move-request-tracking-to-children-in-copy-offl.patch [bz#1207657]
+- kvm-block-Fix-parameter-checking-in-bdrv_co_copy_range_i.patch [bz#1207657]
+- kvm-block-Honour-BDRV_REQ_NO_SERIALISING-in-copy-range.patch [bz#1207657]
+- kvm-backup-Use-copy-offloading.patch [bz#1207657]
+- kvm-block-backup-disable-copy-offloading-for-backup.patch [bz#1207657]
+- kvm-iotests-222-Don-t-run-with-luks.patch [bz#1207657]
+- kvm-block-io-fix-copy_range.patch [bz#1207657]
+- kvm-block-split-flags-in-copy_range.patch [bz#1207657]
+- kvm-block-add-BDRV_REQ_SERIALISING-flag.patch [bz#1207657]
+- kvm-block-backup-fix-fleecing-scheme-use-serialized-writ.patch [bz#1207657]
+- kvm-nbd-server-Reject-0-length-block-status-request.patch [bz#1207657]
+- kvm-nbd-server-fix-trace.patch [bz#1207657]
+- kvm-nbd-server-refactor-NBDExportMetaContexts.patch [bz#1207657]
+- kvm-nbd-server-add-nbd_meta_empty_or_pattern-helper.patch [bz#1207657]
+- kvm-nbd-server-implement-dirty-bitmap-export.patch [bz#1207657]
+- kvm-qapi-new-qmp-command-nbd-server-add-bitmap.patch [bz#1207657]
+- kvm-docs-interop-add-nbd.txt.patch [bz#1207657]
+- kvm-nbd-server-introduce-NBD_CMD_CACHE.patch [bz#1207657]
+- kvm-nbd-server-Silence-gcc-false-positive.patch [bz#1207657]
+- kvm-nbd-server-Fix-dirty-bitmap-logic-regression.patch [bz#1207657]
+- kvm-nbd-server-fix-nbd_co_send_block_status.patch [bz#1207657]
+- kvm-nbd-client-Add-x-dirty-bitmap-to-query-bitmap-from-s.patch [bz#1207657]
+- kvm-iotests-New-test-223-for-exporting-dirty-bitmap-over.patch [bz#1207657]
+- kvm-hw-char-serial-Only-retry-if-qemu_chr_fe_write-retur.patch [bz#1592817]
+- kvm-hw-char-serial-retry-write-if-EAGAIN.patch [bz#1592817]
+- kvm-throttle-groups-fix-hang-when-group-member-leaves.patch [bz#1535914]
+- Resolves: bz#1207657
+  (RFE: QEMU Incremental live backup - push and pull modes)
+- Resolves: bz#1481253
+  (AMD EPYC/Zen SMT support for KVM / QEMU guest (qemu-kvm-rhev))
+- Resolves: bz#1525829
+  (can not boot up a scsi-block passthrough disk via -blockdev with error "cannot get SG_IO version number: Operation not supported.  Is this a SCSI device?")
+- Resolves: bz#1533158
+  (QEMU support for libvirtd restarting qemu-pr-helper)
+- Resolves: bz#1535914
+  (Disable io throttling for one member disk of a group during io will induce the other one hang with io)
+- Resolves: bz#1549654
+  (Reject node-names which would be truncated by the block layer commands)
+- Resolves: bz#1556678
+  (Hot plug usb-ccid for the 2nd time with the same ID as the 1st time failed)
+- Resolves: bz#1576743
+  (virtio-rng hangs when running on recent (2.x) QEMU versions)
+- Resolves: bz#1584914
+  (SATA emulator lags and hangs)
+- Resolves: bz#1589634
+  (Migration failed when rebooting guest with multiple virtio videos)
+- Resolves: bz#1590640
+  (qemu-kvm: block/io.c:1098: bdrv_co_do_copy_on_readv: Assertion `skip_bytes < pnum' failed.)
+- Resolves: bz#1592648
+  (Create pseries-rhel7.6.0-sxxm machine type)
+- Resolves: bz#1592817
+  (Retrying on serial_xmit if the pipe is broken may compromise the Guest)
+- Resolves: bz#1594135
+  (system_reset many times linux guests cause qemu process Aborted)
+- Resolves: bz#1595173
+  (blockdev-create is blocking)
+- Resolves: bz#1598287
+  (After rebooting guest,all the hot plug memory will be assigned to the 1st numa node.)
+- Resolves: bz#1599335
+  (Image creation locking is too tight and is not properly released)
+- Resolves: bz#1599515
+  (qemu core-dump with aio_read via hmp (util/qemu-thread-posix.c:64: qemu_mutex_lock_impl: Assertion `mutex->initialized' failed))
+- Resolves: bz#1600797
+  (RHEL7.5/RHV4.2 - qemu patch to align memory to allow 2MB THP)
+
 * Wed Jul 04 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-7.el7
 - kvm-vfio-pci-Default-display-option-to-off.patch [bz#1583050]
 - kvm-Add-qemu-keymap-to-qemu-kvm-tools.patch [bz#1590756]
