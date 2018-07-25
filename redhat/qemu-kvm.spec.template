@@ -733,6 +733,9 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
 
 find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
 
+# Hack to prevent coloring tools package
+chmod 0644 $RPM_BUILD_ROOT%{_bindir}/qemu-keymap
+
 %check
 export DIFF=diff; make check V=1
 
@@ -877,7 +880,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %files -n qemu-kvm-tools%{?pkgsuffix}
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
-%{_bindir}/qemu-keymap
+%attr(0755, -, -) %{_bindir}/qemu-keymap
 %{_mandir}/man1/kvm_stat.1*
 %ifarch x86_64
 %{_datadir}/%{pkgname}/tscdeadline_latency.flat
