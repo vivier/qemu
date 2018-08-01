@@ -813,6 +813,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Aug 01 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7_5.5
+- kvm-multiboot-bss_end_addr-can-be-zero.patch [bz#1549824]
+- kvm-multiboot-Remove-unused-variables-from-multiboot.c.patch [bz#1549824]
+- kvm-multiboot-Use-header-names-when-displaying-fields.patch [bz#1549824]
+- kvm-multiboot-fprintf-stderr.-error_report.patch [bz#1549824]
+- kvm-multiboot-Reject-kernels-exceeding-the-address-space.patch [bz#1549824]
+- kvm-multiboot-Check-validity-of-mh_header_addr.patch [bz#1549824]
+- kvm-slirp-remove-mbuf-m_hdr-m_dat-indirection.patch [bz#1586248]
+- kvm-slirp-correct-size-computation-while-concatenating-m.patch [bz#1586248]
+- Resolves: bz#1549824
+  (CVE-2018-7550 qemu-kvm: Qemu: i386:  multiboot OOB access while loading kernel image [rhel-7.5.z])
+- Resolves: bz#1586248
+  (CVE-2018-11806 qemu-kvm: QEMU: slirp: heap buffer overflow while reassembling fragmented datagrams [rhel-7.5.z])
+
 * Mon Jul 23 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7_5.4
 - kvm-target-i386-introduce-kvm_put_one_msr.patch [bz#1596302]
 - kvm-apic-fix-2.2-2.1-migration.patch [bz#1596302]
