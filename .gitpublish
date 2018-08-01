@@ -1,5 +1,5 @@
-# The first profile is the default
-[gitpublishprofile "rhel"]
+# Default profile for RHEL qemu-kvm
+[gitpublishprofile "default"]
 base = rhel7/master-1.5.3
 prefix = RHEL-7.5 qemu-kvm PATCH
 to = rhvirt-patches@redhat.com

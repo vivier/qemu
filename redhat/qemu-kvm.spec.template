@@ -813,6 +813,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Aug 01 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-159.el7
+- kvm-multiboot-bss_end_addr-can-be-zero.patch [bz#1549822]
+- kvm-multiboot-Remove-unused-variables-from-multiboot.c.patch [bz#1549822]
+- kvm-multiboot-Use-header-names-when-displaying-fields.patch [bz#1549822]
+- kvm-multiboot-fprintf-stderr.-error_report.patch [bz#1549822]
+- kvm-multiboot-Reject-kernels-exceeding-the-address-space.patch [bz#1549822]
+- kvm-multiboot-Check-validity-of-mh_header_addr.patch [bz#1549822]
+- kvm-slirp-remove-mbuf-m_hdr-m_dat-indirection.patch [bz#1586253]
+- kvm-slirp-correct-size-computation-while-concatenating-m.patch [bz#1586253]
+- Resolves: bz#1549822
+  (CVE-2018-7550 qemu-kvm: Qemu: i386:  multiboot OOB access while loading kernel image [rhel-7.6])
+- Resolves: bz#1586253
+  (CVE-2018-11806 qemu-kvm: QEMU: slirp: heap buffer overflow while reassembling fragmented datagrams [rhel-7.6])
+
 * Wed Jun 27 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-158.el7
 - kvm-x86-cpu-Enable-new-SSE-AVX-AVX512-cpu-features.patch [bz#1513686]
 - kvm-target-i386-Add-support-for-UMIP-and-RDPID-CPUID-bit.patch [bz#1526638]
