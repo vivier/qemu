@@ -179,7 +179,9 @@ static void ide_identify(IDEState *s)
     if (dev && dev->conf.discard_granularity) {
         put_le16(p + 169, 1); /* TRIM support */
     }
-    put_le16(p + 217, dev->rotation_rate); /* Nominal media rotation rate */
+    if (dev) {
+        put_le16(p + 217, dev->rotation_rate); /* Nominal media rotation rate */
+    }
 
     memcpy(s->identify_data, p, sizeof(s->identify_data));
     s->identify_set = 1;
