@@ -405,6 +405,9 @@ ApplyOptionalPatch()
 
 %%PATCHAPPLY%%
 
+# Fix executable permission for iotests
+chmod 755 $(ls tests/qemu-iotests/???)
+
 ApplyOptionalPatch qemu-kvm-test.patch
 
 # for tscdeadline_latency.flat
