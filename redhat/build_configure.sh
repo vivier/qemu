@@ -50,6 +50,8 @@ have_vhost_user=$1
 shift
 is_rhv=$1
 shift
+have_malloc_trim=$1
+shift
 
 if [ "$have_rbd" == "enable" ]; then
   rbd_driver=rbd,
@@ -77,10 +79,12 @@ fi
     --localstatedir=${_localstatedir} \
     --docdir=${qemudocdir} \
     --libexecdir=${_libexecdir} \
+    --firmwarepath=${_prefix}/share/qemu-firmware \
     --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
     --extra-cflags="${optflags} -fPIE -DPIE" \
     --with-pkgversion=${nvr} \
     --with-confsuffix=/${pkgname} \
+    --with-git=git \
     --with-coroutine=ucontext \
     --tls-priority=NORMAL \
     --disable-bluez \
@@ -160,7 +164,16 @@ fi
     --${have_vtd}-vtd \
     --${have_live_block_ops}-live-block-ops \
     --${have_vhost_user}-vhost-user \
+    --disable-sanitizers \
+    --disable-hvf \
+    --disable-whpx \
+    --${have_malloc_trim}-malloc-trim \
+    --disable-membarrier \
+    --enable-vhost-crypto \
+    --disable-libxml2 \
+    --enable-capstone \
     --audio-drv-list= \
+    --disable-git-update \
     --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,${gluster_driver}${rbd_driver}${vxhs_driver}blkdebug,luks,null-co,nvme,copy-on-read,throttle \
     --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
     --rhel-target=${rhel_target} \

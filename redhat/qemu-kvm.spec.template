@@ -508,6 +508,11 @@ cp %{SOURCE24} build_configure.sh
 %else
   disable \
 %endif
+%if 0%{have_tcmalloc}
+  disable \
+%else
+  enable \
+%endif
   --target-list="$buildarch"
 
 echo "config-host.mak contents:"
