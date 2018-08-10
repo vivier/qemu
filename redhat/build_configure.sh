@@ -173,7 +173,7 @@ fi
     --disable-libxml2 \
     --enable-capstone \
     --audio-drv-list= \
-    --disable-git-update \
+    --enable-git-update \
     --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,${gluster_driver}${rbd_driver}${vxhs_driver}blkdebug,luks,null-co,nvme,copy-on-read,throttle \
     --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
     --rhel-target=${rhel_target} \

@@ -43,6 +43,12 @@ TMALLOC_OPTION-i386:=
 TMALLOC_OPTION-s390x:=disable
 TMALLOC_OPTION:=$(TMALLOC_OPTION-$(ARCH))
 
+ifeq ($(TMALLOC_OPTION),enable)
+  MALLOC_TRIM_OPTION=disable
+else
+  MALLOC_TRIM_OPTION=enable
+endif
+
 FDT_OPTION-aarch64:=enable
 FDT_OPTION-ppc64:=enable
 FDT_OPTION-ppc64le:=enable
