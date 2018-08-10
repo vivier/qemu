@@ -919,7 +919,33 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
-* Wed Aug 01 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.12.0-9.el7
+* Fri Aug 10 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-10.el7
+- kvm-qemu-img-Add-C-option-for-convert-with-copy-offloadi.patch [bz#1607774]
+- kvm-iotests-Add-test-for-qemu-img-convert-C-compatibilit.patch [bz#1607774]
+- kvm-qemu-img-Fix-assert-when-mapping-unaligned-raw-file.patch [bz#1601310]
+- kvm-iotests-Add-test-221-to-catch-qemu-img-map-regressio.patch [bz#1601310]
+- kvm-pc-acpi-fix-memory-hotplug-regression-by-reducing-st.patch [bz#1609234]
+- kvm-block-qapi-Add-qdev-field-to-query-blockstats-result.patch [bz#1612114]
+- kvm-block-qapi-Include-anonymous-BBs-in-query-blockstats.patch [bz#1612114]
+- kvm-qemu-iotests-Test-query-blockstats-with-drive-and-bl.patch [bz#1612114]
+- kvm-Add-local-build-configure-for-s390x.patch [bz#1573135]
+- kvm-Update-build-configuration.patch [bz#1573135]
+- kvm-Update-local-build-to-work-with-2.12.0-configuration.patch [bz#1573135]
+- kvm-Ensure-all-iotests-are-executable-on-build-from-srpm.patch [bz#1608229]
+- Resolves: bz#1573135
+  (Update build configure for QEMU 2.12.0)
+- Resolves: bz#1601310
+  (qemu-img map 'Aborted (core dumped)' when specifying a plain file)
+- Resolves: bz#1607774
+  (Target files for 'qemu-img convert' do not support thin_provisoning with iscsi/nfs backend)
+- Resolves: bz#1608229
+  (Parts of iotest cases in SRPM don't have execute permission)
+- Resolves: bz#1609234
+  (Win2016 guest can't recognize pc-dimm hotplugged to node 0)
+- Resolves: bz#1612114
+  (Anonymous BlockBackends are missing in query-blockstats)
+
+* Wed Aug 01 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-9.el7
 - kvm-Disable-aarch64-devices-reappeared-after-2.12-rebase.patch [bz#1586357]
 - kvm-Disable-split-irq-device.patch [bz#1586357]
 - kvm-Disable-AT24Cx-i2c-eeprom.patch [bz#1586357]
