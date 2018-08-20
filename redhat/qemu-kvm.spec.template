@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon Aug 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7_5.6
+- kvm-slirp-Correct-size-check-in-m_inc.patch [bz#1586248]
+- Resolves: bz#1586248
+  (CVE-2018-11806 qemu-kvm: QEMU: slirp: heap buffer overflow while reassembling fragmented datagrams [rhel-7.5.z])
+
 * Wed Aug 01 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-156.el7_5.5
 - kvm-multiboot-bss_end_addr-can-be-zero.patch [bz#1549824]
 - kvm-multiboot-Remove-unused-variables-from-multiboot.c.patch [bz#1549824]
