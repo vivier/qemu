@@ -919,6 +919,19 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Aug 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-11.el7
+- kvm-slirp-reformat-m_inc-routine.patch [bz#1586255]
+- kvm-slirp-Correct-size-check-in-m_inc.patch [bz#1586255]
+- kvm-Revert-Disable-PCIe-to-PCI-bridge-device.patch [bz#1390329]
+- kvm-aio-posix-Don-t-count-ctx-notifier-as-progress-when-.patch [bz#1562750]
+- kvm-aio-Do-aio_notify_accept-only-during-blocking-aio_po.patch [bz#1562750]
+- Resolves: bz#1390329
+  (PCIe: Add Generic PCIe-PCI bridge)
+- Resolves: bz#1562750
+  (VM doesn't boot from HD)
+- Resolves: bz#1586255
+  (CVE-2018-11806 qemu-kvm-rhev: QEMU: slirp: heap buffer overflow while reassembling fragmented datagrams [rhel-7.6])
+
 * Fri Aug 10 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-10.el7
 - kvm-qemu-img-Add-C-option-for-convert-with-copy-offloadi.patch [bz#1607774]
 - kvm-iotests-Add-test-for-qemu-img-convert-C-compatibilit.patch [bz#1607774]
