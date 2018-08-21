@@ -896,6 +896,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 21 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.10.0-21.el7_5.6
+- kvm-slirp-reformat-m_inc-routine.patch [bz#1586256]
+- kvm-slirp-Correct-size-check-in-m_inc.patch [bz#1586256]
+- Resolves: bz#1586256
+  (CVE-2018-11806 qemu-kvm-rhev: QEMU: slirp: heap buffer overflow while reassembling fragmented datagrams [rhel-7.5.z])
+
 * Fri Aug 03 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.10.0-21.el7_5.5
 - kvm-slirp-correct-size-computation-while-concatenating-m.patch [bz#1586256]
 - Resolves: bz#1586256
