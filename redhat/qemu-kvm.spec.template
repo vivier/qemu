@@ -902,6 +902,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 21 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7_5.4
+- kvm-slirp-correct-size-computation-while-concatenating-m.patch [bz#1586247]
+- kvm-slirp-reformat-m_inc-routine.patch [bz#1586247]
+- kvm-slirp-Correct-size-check-in-m_inc.patch [bz#1586247]
+- Resolves: bz#1586247
+  (CVE-2018-11806 qemu-kvm-ma: QEMU: slirp: heap buffer overflow while reassembling fragmented datagrams [rhel-7.5.z])
+
 * Mon Jul 02 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7_5.3
 - kvm-scsi-disk-allow-customizing-the-SCSI-version.patch [bz#1593193]
 - kvm-hw-scsi-support-SCSI-2-passthrough-without-PI.patch [bz#1593193]
