@@ -24,6 +24,12 @@ kvm_setup_powerpc () {
 	# order to run KVM guests. (Also applieds to POWER7, but we
 	# don't support that).
 	#
+	# Additionally, POWER8 guests can't benefit from transparent
+	# hugepages used to back them, and THPs allocated by any app
+	# can potentially interfere with HPT allocation (if they
+	# become locked, they can fragment the CMA).  So, also disable
+	# THPs system wide.
+	#
 	# POWER9 doesn't have this limitation (though it will for hash
 	# guests on radix host when that's implemented).  So, only set
 	# up subcores and disable SMT for POWER*.
@@ -33,6 +39,9 @@ kvm_setup_powerpc () {
 
 	    # Step 3. Disable SMT (multithreading)
 	    /usr/sbin/ppc64_cpu --smt=off
+
+	    # Step 4. Disable transparent hugepages (THP)
+	    echo never > /sys/kernel/mm/transparent_hugepage/enabled
 	fi
     fi
 }
