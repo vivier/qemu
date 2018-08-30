@@ -98,6 +98,7 @@ rh-env-prep: rh-prep
 		$(RDMA_OPTION) \
 		$(SECCOMP_OPTION) \
 		$(SPICE_OPTION) \
+		$(OPENGL_OPTION) \
 		$(USBREDIR_OPTION) \
 		$(TMALLOC_OPTION) \
 		$(VXHS_OPTION) \

@@ -36,6 +36,8 @@ have_seccomp=$1
 shift
 have_spice=$1
 shift
+have_opengl=$1
+shift
 have_usbredir=$1
 shift
 have_tcmalloc=$1
@@ -105,7 +107,6 @@ fi
     --enable-linux-aio \
     --disable-live-block-migration \
     --enable-lzo \
-    --disable-opengl \
     --enable-pie \
     --disable-qom-cast-debug \
     --disable-sdl \
@@ -158,6 +159,7 @@ fi
     --${have_seccomp}-seccomp \
     --${have_spice}-spice \
     --${have_spice}-smartcard \
+    --${have_opengl}-opengl \
     --${have_usbredir}-usb-redir \
     --${have_tcmalloc}-tcmalloc \
     --${have_vxhs}-vxhs \

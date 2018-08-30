@@ -5,6 +5,7 @@
 
 %global have_usbredir 1
 %global have_spice    1
+%global have_opengl   1
 %global have_fdt      0
 %global have_gluster  1
 %global have_kvm_setup 0
@@ -35,6 +36,7 @@
     %global have_vxhs    1
 %else
     %global have_spice   0
+    %global have_opengl  0
     %global have_gluster 0
 %endif
 %ifarch %{power64}
@@ -301,6 +303,12 @@ BuildRequires: binutils >= 2.27-16
 # qemu-keymap
 BuildRequires: pkgconfig(xkbcommon)
 
+%if %{have_opengl}
+BuildRequires: pkgconfig(epoxy)
+BuildRequires: pkgconfig(libdrm)
+BuildRequires: pkgconfig(gbm)
+%endif
+
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 
 # RHEV-specific changes:
@@ -472,6 +480,11 @@ cp %{SOURCE24} build_configure.sh
   disable \
 %endif
 %if 0%{have_spice}
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_opengl}
   enable \
 %else
   disable \
