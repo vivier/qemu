@@ -454,6 +454,7 @@ vxhs=""
 libxml2=""
 vtd="yes"
 rhel_target="rhv"
+libpmem=""
 
 supported_cpu="no"
 supported_os="no"
@@ -1387,6 +1388,10 @@ for opt do
   ;;
   --rhel-target=*) rhel_target="$optarg"
   ;;
+  --enable-libpmem) libpmem=yes
+  ;;
+  --disable-libpmem) libpmem=no
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1648,6 +1653,7 @@ disabled with --disable-FEATURE, default is enabled if available:
   crypto-afalg    Linux AF_ALG crypto backend driver
   vhost-user      vhost-user support
   capstone        capstone disassembler support
+  libpmem         libpmem support
 
 NOTE: The object files are built at the place where configure is launched
 EOF
@@ -5410,6 +5416,24 @@ EOF
 fi
 
 ##########################################
+# check for libpmem
+
+if test "$libpmem" != "no"; then
+	if $pkg_config --exists "libpmem"; then
+		libpmem="yes"
+		libpmem_libs=$($pkg_config --libs libpmem)
+		libpmem_cflags=$($pkg_config --cflags libpmem)
+		libs_softmmu="$libs_softmmu $libpmem_libs"
+		QEMU_CFLAGS="$QEMU_CFLAGS $libpmem_cflags"
+	else
+		if test "$libpmem" = "yes" ; then
+			feature_not_found "libpmem" "Install nvml or pmdk"
+		fi
+		libpmem="no"
+	fi
+fi
+
+##########################################
 # End of CC checks
 # After here, no more $cc or $ld runs
 
@@ -5873,6 +5897,7 @@ echo "VxHS block device $vxhs"
 echo "capstone          $capstone"
 echo "VT-d emulation    $vtd"
 echo "RHEL target       $rhel_target"
+echo "libpmem support   $libpmem"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -6630,6 +6655,10 @@ fi
 
 if test "$rhel_target" = "rhv" ; then
   echo "CONFIG_RHV=y" >> $config_host_mak
+fi
+
+if test "$libpmem" = "yes" ; then
+  echo "CONFIG_LIBPMEM=y" >> $config_host_mak
 fi
 
 if test "$tcg_interpreter" = "yes"; then
