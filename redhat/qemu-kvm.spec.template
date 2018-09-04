@@ -932,6 +932,53 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 04 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-13.el7
+- kvm-linux-headers-asm-s390-kvm.h-header-sync.patch [bz#1622962]
+- kvm-s390x-kvm-add-etoken-facility.patch [bz#1622962]
+- kvm-block-for-jobs-do-not-clear-user_paused-until-after-.patch [bz#1605026]
+- kvm-iotests-Add-failure-matching-to-common.qemu.patch [bz#1605026]
+- kvm-block-iotest-to-catch-abort-on-forced-blockjob-cance.patch [bz#1605026]
+- kvm-i386-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch [bz#1574216]
+- kvm-target-i386-sev-fix-memory-leaks.patch [bz#1624390]
+- kvm-i386-Fix-arch_query_cpu_model_expansion-leak.patch [bz#1624390]
+- kvm-migration-discard-non-migratable-RAMBlocks.patch [bz#1539280]
+- kvm-vfio-pci-do-not-set-the-PCIDevice-has_rom-attribute.patch [bz#1539280]
+- kvm-memory-exec-Expose-all-memory-block-related-flags.patch [bz#1539280]
+- kvm-memory-exec-switch-file-ram-allocation-functions-to-.patch [bz#1539280]
+- kvm-configure-add-libpmem-support.patch [bz#1539280]
+- kvm-hostmem-file-add-the-pmem-option.patch [bz#1539280]
+- kvm-mem-nvdimm-ensure-write-persistence-to-PMEM-in-label.patch [bz#1539280]
+- kvm-migration-ram-Add-check-and-info-message-to-nvdimm-p.patch [bz#1539280]
+- kvm-migration-ram-ensure-write-persistence-on-loading-al.patch [bz#1539280]
+- kvm-intel-iommu-send-PSI-always-even-if-across-PDEs.patch [bz#1623859]
+- kvm-intel-iommu-remove-IntelIOMMUNotifierNode.patch [bz#1623859]
+- kvm-intel-iommu-add-iommu-lock.patch [bz#1623859]
+- kvm-intel-iommu-only-do-page-walk-for-MAP-notifiers.patch [bz#1623859]
+- kvm-intel-iommu-introduce-vtd_page_walk_info.patch [bz#1623859]
+- kvm-intel-iommu-pass-in-address-space-when-page-walk.patch [bz#1623859]
+- kvm-intel-iommu-trace-domain-id-during-page-walk.patch [bz#1623859]
+- kvm-util-implement-simple-iova-tree.patch [bz#1623859]
+- kvm-intel-iommu-rework-the-page-walk-logic.patch [bz#1623859]
+- kvm-qemu-img-fix-regression-copying-secrets-during-conve.patch [bz#1575578]
+- kvm-redhat-rewrap-build_configure.sh-cmdline-for-the-rh-.patch [bz#1500753]
+- kvm-redhat-enable-opengl-for-x86_64.patch [bz#1500753]
+- Resolves: bz#1500753
+  ([RFE] Support console on Intel vGPU - qemu)
+- Resolves: bz#1539280
+  ([Intel 7.6 Bug] [KVM][Crystal Ridge] Lack of data persistence guarantee of QEMU writes to host PMEM)
+- Resolves: bz#1574216
+  (CVE-2018-3639 qemu-kvm-rhev: hw: cpu: speculative store bypass [rhel-7.6])
+- Resolves: bz#1575578
+  (Failed to convert a source image to the qcow2 image encrypted by luks)
+- Resolves: bz#1605026
+  (Quitting VM causes qemu core dump once the block mirror job paused for no enough target space)
+- Resolves: bz#1622962
+  (Add etoken support to qemu-kvm for s390x KVM guests)
+- Resolves: bz#1623859
+  (Guest "Detected Tx unit Hang" and host "DMAR: fault addr" when booting guest with ixgbe device assignment,)
+- Resolves: bz#1624390
+  (Memory leaks)
+
 * Tue Aug 28 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-12.el7
 - kvm-e1000e-Do-not-auto-clear-ICR-bits-which-aren-t-set-i.patch [bz#1596010]
 - kvm-e1000e-Prevent-MSI-MSI-X-storms.patch [bz#1596010]
