@@ -932,6 +932,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 11 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-14.el7
+- kvm-mirror-Fail-gracefully-for-source-target.patch [bz#1582042]
+- Resolves: bz#1582042
+  (Segfault on 'blockdev-mirror' with same node as source and target)
+
 * Tue Sep 04 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-13.el7
 - kvm-linux-headers-asm-s390-kvm.h-header-sync.patch [bz#1622962]
 - kvm-s390x-kvm-add-etoken-facility.patch [bz#1622962]
