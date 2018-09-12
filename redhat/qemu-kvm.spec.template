@@ -932,6 +932,35 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Sep 12 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-15.el7
+- kvm-jobs-change-start-callback-to-run-callback.patch [bz#1626061]
+- kvm-jobs-canonize-Error-object.patch [bz#1626061]
+- kvm-jobs-add-exit-shim.patch [bz#1626061]
+- kvm-block-commit-utilize-job_exit-shim.patch [bz#1626061]
+- kvm-block-mirror-utilize-job_exit-shim.patch [bz#1626061]
+- kvm-jobs-utilize-job_exit-shim.patch [bz#1626061]
+- kvm-block-backup-make-function-variables-consistently-na.patch [bz#1626061]
+- kvm-jobs-remove-ret-argument-to-job_completed-privatize-.patch [bz#1626061]
+- kvm-jobs-remove-job_defer_to_main_loop.patch [bz#1626061]
+- kvm-block-commit-add-block-job-creation-flags.patch [bz#1626061]
+- kvm-block-mirror-add-block-job-creation-flags.patch [bz#1626061]
+- kvm-block-stream-add-block-job-creation-flags.patch [bz#1626061]
+- kvm-block-commit-refactor-commit-to-use-job-callbacks.patch [bz#1626061]
+- kvm-block-mirror-don-t-install-backing-chain-on-abort.patch [bz#1626061]
+- kvm-block-mirror-conservative-mirror_exit-refactor.patch [bz#1626061]
+- kvm-block-stream-refactor-stream-to-use-job-callbacks.patch [bz#1626061]
+- kvm-tests-blockjob-replace-Blockjob-with-Job.patch [bz#1626061]
+- kvm-tests-test-blockjob-remove-exit-callback.patch [bz#1626061]
+- kvm-tests-test-blockjob-txn-move-.exit-to-.clean.patch [bz#1626061]
+- kvm-jobs-remove-.exit-callback.patch [bz#1626061]
+- kvm-qapi-block-commit-expose-new-job-properties.patch [bz#1626061]
+- kvm-qapi-block-mirror-expose-new-job-properties.patch [bz#1626061]
+- kvm-qapi-block-stream-expose-new-job-properties.patch [bz#1626061]
+- kvm-block-backup-qapi-documentation-fixup.patch [bz#1626061]
+- kvm-blockdev-document-transactional-shortcomings.patch [bz#1626061]
+- Resolves: bz#1626061
+  (qemu blockjobs other than backup do not support job-finalize or job-dismiss)
+
 * Tue Sep 11 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-14.el7
 - kvm-mirror-Fail-gracefully-for-source-target.patch [bz#1582042]
 - Resolves: bz#1582042
