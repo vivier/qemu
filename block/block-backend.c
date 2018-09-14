@@ -1341,8 +1341,16 @@ static const AIOCBInfo blk_aio_em_aiocb_info = {
 static void blk_aio_complete(BlkAioEmAIOCB *acb)
 {
     if (acb->has_returned) {
-        blk_dec_in_flight(acb->rwco.blk);
+        if (qemu_get_current_aio_context() == qemu_get_aio_context()) {
+            /* If we are in the main thread, the callback is allowed to unref
+             * the BlockBackend, so we have to hold an additional reference */
+            blk_ref(acb->rwco.blk);
+        }
         acb->common.cb(acb->common.opaque, acb->rwco.ret);
+        blk_dec_in_flight(acb->rwco.blk);
+        if (qemu_get_current_aio_context() == qemu_get_aio_context()) {
+            blk_unref(acb->rwco.blk);
+        }
         qemu_aio_unref(acb);
     }
 }
