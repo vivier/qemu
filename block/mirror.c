@@ -1335,7 +1335,14 @@ void commit_active_start(const char *job_id, BlockDriverState *bs,
 
     orig_base_flags = bdrv_get_flags(base);
 
+    /* bdrv_reopen() drains, which might make the BDSes go away before a
+     * reference is taken in mirror_start_job(). */
+    bdrv_ref(bs);
+    bdrv_ref(base);
+
     if (bdrv_reopen(base, bs->open_flags, errp)) {
+        bdrv_unref(bs);
+        bdrv_unref(base);
         return;
     }
 
@@ -1344,6 +1351,10 @@ void commit_active_start(const char *job_id, BlockDriverState *bs,
                      on_error, on_error, true, cb, opaque,
                      &commit_active_job_driver, false, base, auto_complete,
                      filter_node_name, false, &local_err);
+
+    bdrv_unref(bs);
+    bdrv_unref(base);
+
     if (local_err) {
         error_propagate(errp, local_err);
         goto error_restore_flags;
