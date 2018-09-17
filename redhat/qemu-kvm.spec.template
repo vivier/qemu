@@ -932,6 +932,67 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Sep 17 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-16.el7
+- kvm-commit-Add-top-node-base-node-options.patch [bz#1624012]
+- kvm-qemu-iotests-Test-commit-with-top-node-base-node.patch [bz#1624012]
+- kvm-block-rbd-pull-out-qemu_rbd_convert_options.patch [bz#1610605]
+- kvm-block-rbd-Attempt-to-parse-legacy-filenames.patch [bz#1610605]
+- kvm-block-rbd-add-iotest-for-rbd-legacy-keyvalue-filenam.patch [bz#1610605]
+- kvm-pc-acpi-revert-back-to-1-SRAT-entry-for-hotpluggable.patch [bz#1626059]
+- kvm-blockdev-backup-add-bitmap-argument.patch [bz#1628373]
+- kvm-test-bdrv-drain-bdrv_drain-works-with-cross-AioConte.patch [bz#1601212]
+- kvm-block-Use-bdrv_do_drain_begin-end-in-bdrv_drain_all.patch [bz#1601212]
+- kvm-block-Remove-recursive-parameter-from-bdrv_drain_inv.patch [bz#1601212]
+- kvm-block-Don-t-manually-poll-in-bdrv_drain_all.patch [bz#1601212]
+- kvm-tests-test-bdrv-drain-bdrv_drain_all-works-in-corout.patch [bz#1601212]
+- kvm-block-Avoid-unnecessary-aio_poll-in-AIO_WAIT_WHILE.patch [bz#1601212]
+- kvm-block-Really-pause-block-jobs-on-drain.patch [bz#1601212]
+- kvm-block-Remove-bdrv_drain_recurse.patch [bz#1601212]
+- kvm-test-bdrv-drain-Add-test-for-node-deletion.patch [bz#1601212]
+- kvm-block-Drain-recursively-with-a-single-BDRV_POLL_WHIL.patch [bz#1601212]
+- kvm-test-bdrv-drain-Test-node-deletion-in-subtree-recurs.patch [bz#1601212]
+- kvm-block-Don-t-poll-in-parent-drain-callbacks.patch [bz#1601212]
+- kvm-test-bdrv-drain-Graph-change-through-parent-callback.patch [bz#1601212]
+- kvm-block-Defer-.bdrv_drain_begin-callback-to-polling-ph.patch [bz#1601212]
+- kvm-test-bdrv-drain-Test-that-bdrv_drain_invoke-doesn-t-.patch [bz#1601212]
+- kvm-block-Allow-AIO_WAIT_WHILE-with-NULL-ctx.patch [bz#1601212]
+- kvm-block-Move-bdrv_drain_all_begin-out-of-coroutine-con.patch [bz#1601212]
+- kvm-block-ignore_bds_parents-parameter-for-drain-functio.patch [bz#1601212]
+- kvm-block-Allow-graph-changes-in-bdrv_drain_all_begin-en.patch [bz#1601212]
+- kvm-test-bdrv-drain-Test-graph-changes-in-drain_all-sect.patch [bz#1601212]
+- kvm-block-Poll-after-drain-on-attaching-a-node.patch [bz#1601212]
+- kvm-test-bdrv-drain-Test-bdrv_append-to-drained-node.patch [bz#1601212]
+- kvm-block-linux-aio-acquire-AioContext-before-qemu_laio_.patch [bz#1601212]
+- kvm-util-async-use-qemu_aio_coroutine_enter-in-co_schedu.patch [bz#1601212]
+- kvm-job-Fix-nested-aio_poll-hanging-in-job_txn_apply.patch [bz#1601212]
+- kvm-job-Fix-missing-locking-due-to-mismerge.patch [bz#1601212]
+- kvm-blockjob-Wake-up-BDS-when-job-becomes-idle.patch [bz#1601212]
+- kvm-aio-wait-Increase-num_waiters-even-in-home-thread.patch [bz#1601212]
+- kvm-test-bdrv-drain-Drain-with-block-jobs-in-an-I-O-thre.patch [bz#1601212]
+- kvm-test-blockjob-Acquire-AioContext-around-job_cancel_s.patch [bz#1601212]
+- kvm-job-Use-AIO_WAIT_WHILE-in-job_finish_sync.patch [bz#1601212]
+- kvm-test-bdrv-drain-Test-AIO_WAIT_WHILE-in-completion-ca.patch [bz#1601212]
+- kvm-block-Add-missing-locking-in-bdrv_co_drain_bh_cb.patch [bz#1601212]
+- kvm-block-backend-Add-.drained_poll-callback.patch [bz#1601212]
+- kvm-block-backend-Fix-potential-double-blk_delete.patch [bz#1601212]
+- kvm-block-backend-Decrease-in_flight-only-after-callback.patch [bz#1601212]
+- kvm-mirror-Fix-potential-use-after-free-in-active-commit.patch [bz#1601212]
+- kvm-blockjob-Lie-better-in-child_job_drained_poll.patch [bz#1601212]
+- kvm-block-Remove-aio_poll-in-bdrv_drain_poll-variants.patch [bz#1601212]
+- kvm-test-bdrv-drain-Test-nested-poll-in-bdrv_drain_poll_.patch [bz#1601212]
+- kvm-job-Avoid-deadlocks-in-job_completed_txn_abort.patch [bz#1601212]
+- kvm-test-bdrv-drain-AIO_WAIT_WHILE-in-job-.commit-.abort.patch [bz#1601212]
+- Resolves: bz#1601212
+  (qemu coredumps on block-commit)
+- Resolves: bz#1610605
+  (rbd json format of 7.6 is incompatible with 7.5)
+- Resolves: bz#1624012
+  (allow using node-names with block-commit)
+- Resolves: bz#1626059
+  (RHEL6 guest panics on boot if  hotpluggable memory (pc-dimm) is present  at boot time)
+- Resolves: bz#1628373
+  (blockdev-backup does not accept bitmap parameter)
+
 * Wed Sep 12 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-15.el7
 - kvm-jobs-change-start-callback-to-run-callback.patch [bz#1626061]
 - kvm-jobs-canonize-Error-object.patch [bz#1626061]
