@@ -932,6 +932,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Sep 19 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-17.el7
+- kvm-aio-posix-fix-concurrent-access-to-poll_disable_cnt.patch [bz#1628191]
+- kvm-aio-posix-compute-timeout-before-polling.patch [bz#1628191]
+- kvm-aio-posix-do-skip-system-call-if-ctx-notifier-pollin.patch [bz#1628191]
+- Resolves: bz#1628191
+  (~40% virtio_blk disk performance drop for win2012r2 guest when comparing qemu-kvm-rhev-2.12.0-9 with qemu-kvm-rhev-2.12.0-12)
+
 * Mon Sep 17 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-16.el7
 - kvm-commit-Add-top-node-base-node-options.patch [bz#1624012]
 - kvm-qemu-iotests-Test-commit-with-top-node-base-node.patch [bz#1624012]
