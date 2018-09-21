@@ -932,6 +932,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Sep 21 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7
+- kvm-test-bdrv-drain-Fix-outdated-comments.patch [bz#1618584]
+- kvm-block-Use-a-single-global-AioWait.patch [bz#1618584]
+- kvm-test-bdrv-drain-Test-draining-job-source-child-and-p.patch [bz#1618584]
+- Resolves: bz#1618584
+  (block commit aborts with "Co-routine was already scheduled")
+
 * Wed Sep 19 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-17.el7
 - kvm-aio-posix-fix-concurrent-access-to-poll_disable_cnt.patch [bz#1628191]
 - kvm-aio-posix-compute-timeout-before-polling.patch [bz#1628191]
