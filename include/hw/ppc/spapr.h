@@ -106,6 +106,7 @@ struct sPAPRMachineClass {
     bool pre_2_10_has_unused_icps;
     bool legacy_irq_allocation;
 
+    bool has_power9_support;
     void (*phb_placement)(sPAPRMachineState *spapr, uint32_t index,
                           uint64_t *buid, hwaddr *pio, 
                           hwaddr *mmio32, hwaddr *mmio64,
