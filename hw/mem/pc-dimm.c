@@ -442,12 +442,12 @@ static MemoryRegion *pc_dimm_get_memory_region(PCDIMMDevice *dimm, Error **errp)
         return NULL;
     }
 
-    return host_memory_backend_get_memory(dimm->hostmem, errp);
+    return host_memory_backend_get_memory(dimm->hostmem);
 }
 
 static MemoryRegion *pc_dimm_get_vmstate_memory_region(PCDIMMDevice *dimm)
 {
-    return host_memory_backend_get_memory(dimm->hostmem, &error_abort);
+    return host_memory_backend_get_memory(dimm->hostmem);
 }
 
 static void pc_dimm_class_init(ObjectClass *oc, void *data)
