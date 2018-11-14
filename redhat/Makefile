@@ -78,7 +78,9 @@ rh-brew: rh-srpm
 	@echo "Build $(SRPM_NAME)$(LOCALVERSION).src.rpm as $(BUILD_TARGET)"
 	$(DS)brew build $(BREW_OPTIONS) $(BUILD_TARGET) $(RPMBUILD)/SRPMS/$(SRPM_NAME)$(LOCALVERSION).src.rpm
 rh-env-prep: rh-prep
-	$(DS)yum-builddep $(RPMBUILD)/SPECS/$(SPECFILE)
+	$(DS)if test "$$EUID" -eq 0; then \
+		yum-builddep $(RPMBUILD)/SPECS/$(SPECFILE); \
+	fi
 	$(DS)cd ..; redhat/build_configure.sh \
 		/usr \
 		/usr/lib64 \
@@ -110,7 +112,7 @@ rh-env-prep: rh-prep
 		--target-list=$(TARGET_NAME)-softmmu
 
 rh-local: rh-env-prep
-	make V=1 -j8 -C $(REDHAT)/..  VL_LDFLAGS=-Wl,--build-id
+	make V=1 -j$$(getconf _NPROCESSORS_ONLN) -C $(REDHAT)/..  VL_LDFLAGS=-Wl,--build-id
 
 rh-help:
 	@echo "rh-brew: Build RHEV package on brew"
