@@ -932,6 +932,54 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Nov 21 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-19.el7
+- kvm-nbd-server-fix-NBD_CMD_CACHE.patch [bz#1636148]
+- kvm-nbd-fix-NBD_FLAG_SEND_CACHE-value.patch [bz#1636148]
+- kvm-pc-dimm-turn-alignment-assert-into-check.patch [bz#1629720]
+- kvm-exec-check-that-alignment-is-a-power-of-two.patch [bz#1629717]
+- kvm-nvdimm-no-need-to-overwrite-get_vmstate_memory_regio.patch [bz#1620373]
+- kvm-hostmem-drop-error-variable-from-host_memory_backend.patch [bz#1620373]
+- kvm-ivshmem-Fix-unplug-of-device-ivshmem-plain.patch [bz#1620373]
+- kvm-qemu-error-introduce-error-warn-_report_once.patch [bz#1627272]
+- kvm-intel-iommu-start-to-use-error_report_once.patch [bz#1627272]
+- kvm-intel-iommu-replace-more-vtd_err_-traces.patch [bz#1627272]
+- kvm-intel_iommu-introduce-vtd_reset_caches.patch [bz#1627272]
+- kvm-intel_iommu-better-handling-of-dmar-state-switch.patch [bz#1627272]
+- kvm-intel_iommu-move-ce-fetching-out-when-sync-shadow.patch [bz#1627272]
+- kvm-intel_iommu-handle-invalid-ce-for-shadow-sync.patch [bz#1627272]
+- kvm-qapi-fill-in-CpuInfoFast.arch-in-query-cpus-fast.patch [bz#1607406]
+- kvm-qapi-add-SysEmuTarget-to-common.json.patch [bz#1607406]
+- kvm-qapi-change-the-type-of-TargetInfo.arch-from-string-.patch [bz#1607406]
+- kvm-qapi-discriminate-CpuInfoFast-on-SysEmuTarget-not-Cp.patch [bz#1607406]
+- kvm-qapi-deprecate-CpuInfoFast.arch.patch [bz#1607406]
+- kvm-docs-interop-add-firmware.json.patch [bz#1607406]
+- kvm-migration-postcopy-Clear-have_listen_thread.patch [bz#1608877]
+- kvm-migration-cleanup-in-error-paths-in-loadvm.patch [bz#1608877]
+- Resolves: bz#1607406
+  ([RHEL 7.7] RFE: Define firmware metadata format)
+- Resolves: bz#1608877
+  (After postcopy migration,  do savevm and loadvm, guest hang and call trace)
+- Resolves: bz#1620373
+  (Failed to do migration after hotplug and hotunplug the ivshmem device)
+- Resolves: bz#1627272
+  (boot guest with q35+vIOMMU+ device assignment, qemu crash when return assigned network devices from vfio driver to ixgbe in guest)
+- Resolves: bz#1629717
+  (qemu_ram_mmap: Assertion `is_power_of_2(align)' failed)
+- Resolves: bz#1629720
+  ([Intel 7.6 BUG][Crystal Ridge] pc_dimm_get_free_addr: assertion failed: (QEMU_ALIGN_UP(address_space_start, align) == address_space_start))
+- Resolves: bz#1636148
+  (qemu NBD_CMD_CACHE flaws impacting non-qemu NBD clients)
+
+* Wed Nov 07 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.2
+- kvm-Re-enable-disabled-Hyper-V-enlightenments.patch [bz#1638835]
+- Resolves: bz#1638835
+  (High Host CPU load for Windows 10 Guests (Update 1803)  when idle [rhel-7.6.z])
+
+* Thu Oct 11 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.1
+- kvm-target-i386-cpu-Add-downstream-only-STIBP-CPUID-flag.patch [bz#1638077]
+- Resolves: bz#1638077
+  (Cross migration from RHEL7.5 to RHEL7.6 fails with cpu flag stibp [rhel-7.6.z])
+
 * Fri Sep 21 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7
 - kvm-test-bdrv-drain-Fix-outdated-comments.patch [bz#1618584]
 - kvm-block-Use-a-single-global-AioWait.patch [bz#1618584]
