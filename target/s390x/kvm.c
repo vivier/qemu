@@ -34,6 +34,7 @@
 #include "qapi/error.h"
 #include "qemu/error-report.h"
 #include "qemu/timer.h"
+#include "qemu/mmap-alloc.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/hw_accel.h"
 #include "hw/hw.h"
@@ -282,9 +283,26 @@ void kvm_s390_crypto_reset(void)
     }
 }
 
+static int kvm_s390_configure_mempath_backing(KVMState *s)
+{
+    size_t path_psize = qemu_mempath_getpagesize(mem_path);
+
+    if (path_psize == 4096) {
+        return 0;
+    }
+
+    /* Disabled in Red Hat Enterprise Linux 7 (KVM support missing) */
+    error_report("This QEMU does not support huge page mappings");
+    return -EINVAL;
+}
+
 int kvm_arch_init(MachineState *ms, KVMState *s)
 {
     MachineClass *mc = MACHINE_GET_CLASS(ms);
+
+    if (mem_path && kvm_s390_configure_mempath_backing(s)) {
+        return -EINVAL;
+    }
 
     mc->default_cpu_type = S390_CPU_TYPE_NAME("host");
     cap_sync_regs = kvm_check_extension(s, KVM_CAP_SYNC_REGS);
