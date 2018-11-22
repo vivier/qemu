@@ -360,6 +360,9 @@ This package provides documentation and auxiliary programs used with qemu-kvm.
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
 
+# Needed due to coloring hack
+Requires: libxkbcommon
+
 %rhel_rhev_conflicts qemu-kvm-tools
 
 %description -n qemu-kvm-tools%{?pkgsuffix}
