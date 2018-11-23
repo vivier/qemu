@@ -83,6 +83,7 @@ Source4: build_configure.sh
 BuildRequires: zlib-devel
 BuildRequires: glib2-devel
 BuildRequires: systemd
+BuildRequires: systemd-devel
 BuildRequires: python
 BuildRequires: systemtap-sdt-devel
 BuildRequires: perl-podlators
