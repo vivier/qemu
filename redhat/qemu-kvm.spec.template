@@ -307,6 +307,9 @@ BuildRequires: pkgconfig(xkbcommon)
 BuildRequires: pkgconfig(epoxy)
 BuildRequires: pkgconfig(libdrm)
 BuildRequires: pkgconfig(gbm)
+Requires: mesa-libGL
+Requires: mesa-libEGL
+Requires: mesa-dri-drivers
 %endif
 
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
