@@ -935,6 +935,58 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Dec 06 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-20.el7
+- kvm-vnc-call-sasl_server_init-only-when-required.patch [bz#1614302]
+- kvm-block-Update-flags-in-bdrv_set_read_only.patch [bz#1623986]
+- kvm-block-Add-auto-read-only-option.patch [bz#1623986]
+- kvm-rbd-Close-image-in-qemu_rbd_open-error-path.patch [bz#1623986]
+- kvm-block-Require-auto-read-only-for-existing-fallbacks.patch [bz#1623986]
+- kvm-nbd-Support-auto-read-only-option.patch [bz#1623986]
+- kvm-file-posix-Support-auto-read-only-option.patch [bz#1623986]
+- kvm-curl-Support-auto-read-only-option.patch [bz#1623986]
+- kvm-gluster-Support-auto-read-only-option.patch [bz#1623986]
+- kvm-iscsi-Support-auto-read-only-option.patch [bz#1623986]
+- kvm-block-Make-auto-read-only-on-default-for-drive.patch [bz#1623986]
+- kvm-qemu-iotests-Test-auto-read-only-with-drive-and-bloc.patch [bz#1623986]
+- kvm-block-Fix-update-of-BDRV_O_AUTO_RDONLY-in-update_fla.patch [bz#1623986]
+- kvm-memory-cleanup-side-effects-of-memory_region_init_fo.patch [bz#1585155]
+- kvm-block-Don-t-inactivate-children-before-parents.patch [bz#1633536]
+- kvm-iotests-Test-migration-with-blockdev.patch [bz#1633536]
+- kvm-iothread-fix-crash-with-invalid-properties.patch [bz#1607768]
+- kvm-balloon-Allow-multiple-inhibit-users.patch [bz#1619778]
+- kvm-Use-inhibit-to-prevent-ballooning-without-synchr.patch [bz#1619778]
+- kvm-vfio-Inhibit-ballooning-based-on-group-attachment-to.patch [bz#1619778]
+- kvm-vfio-ccw-pci-Allow-devices-to-opt-in-for-ballooning.patch [bz#1619778]
+- kvm-vfio-pci-Handle-subsystem-realpath-returning-NULL.patch [bz#1619778]
+- kvm-vfio-pci-Fix-failure-to-close-file-descriptor-on-err.patch [bz#1619778]
+- kvm-postcopy-Synchronize-usage-of-the-balloon-inhibitor.patch [bz#1619778]
+- kvm-include-Add-IEC-binary-prefixes-in-qemu-units.h.patch [bz#1566195]
+- kvm-hw-scsi-cleanups-before-VPD-BL-emulation.patch [bz#1566195]
+- kvm-hw-scsi-centralize-SG_IO-calls-into-single-function.patch [bz#1566195]
+- kvm-hw-scsi-add-VPD-Block-Limits-emulation.patch [bz#1566195]
+- kvm-scsi-disk-Block-Device-Characteristics-emulation-fix.patch [bz#1566195]
+- kvm-scsi-generic-keep-VPD-page-list-sorted.patch [bz#1566195]
+- kvm-scsi-generic-avoid-out-of-bounds-access-to-VPD-page-.patch [bz#1566195]
+- kvm-scsi-generic-avoid-invalid-access-to-struct-when-emu.patch [bz#1566195]
+- kvm-scsi-generic-do-not-do-VPD-emulation-for-sense-other.patch [bz#1566195]
+- kvm-redhat-add-opengl-runtime-dependencies.patch [bz#1628455]
+- Resolves: bz#1566195
+  (Guests don't always see correct transfer limits for passed through scsi devices (e.g. raid0 controlled by sas 9361-8i))
+- Resolves: bz#1585155
+  (QEMU core dumped when hotplug memory exceeding host hugepages and with discard-data=yes)
+- Resolves: bz#1607768
+  (qemu aborted when start guest with a big iothreads)
+- Resolves: bz#1614302
+  (qemu-kvm: Could not find keytab file: /etc/qemu/krb5.tab: No such file or directory)
+- Resolves: bz#1619778
+  (Ballooning is incompatible with vfio assigned devices, but not prevented)
+- Resolves: bz#1623986
+  (block-commit can't be used with -blockdev)
+- Resolves: bz#1628455
+  (qemu-kvm-rhev should add opengl packages as dependencies)
+- Resolves: bz#1633536
+  (Qemu core dump when do migration after hot plugging a backend image with 'blockdev-add'(without the frontend))
+
 * Wed Nov 21 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-19.el7
 - kvm-nbd-server-fix-NBD_CMD_CACHE.patch [bz#1636148]
 - kvm-nbd-fix-NBD_FLAG_SEND_CACHE-value.patch [bz#1636148]
