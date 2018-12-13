@@ -37,6 +37,7 @@
 #include "qemu/event_notifier.h"
 #include "qemu/queue.h"
 #include "qemu/range.h"
+#include "sysemu/balloon.h"
 #include "sysemu/kvm.h"
 #include "sysemu/sysemu.h"
 #include "trace.h"
@@ -3667,6 +3668,33 @@ static int vfio_connect_container(VFIOGroup *group)
         return 0;
     }
 
+    /*
+     * VFIO is currently incompatible with memory ballooning insofar as the
+     * madvise to purge (zap) the page from QEMU's address space does not
+     * interact with the memory API and therefore leaves stale virtual to
+     * physical mappings in the IOMMU if the page was previously pinned.  We
+     * therefore add a balloon inhibit for each group added to a container,
+     * whether the container is used individually or shared.  This provides
+     * us with options to allow devices within a group to opt-in and allow
+     * ballooning, so long as it is done consistently for a group (for instance
+     * if the device is an mdev device where it is known that the host vendor
+     * driver will never pin pages outside of the working set of the guest
+     * driver, which would thus not be ballooning candidates).
+     *
+     * The first opportunity to induce pinning occurs here where we attempt to
+     * attach the group to existing containers within the AddressSpace.  If any
+     * pages are already zapped from the virtual address space, such as from a
+     * previous ballooning opt-in, new pinning will cause valid mappings to be
+     * re-established.  Likewise, when the overall MemoryListener for a new
+     * container is registered, a replay of mappings within the AddressSpace
+     * will occur, re-establishing any previously zapped pages as well.
+     *
+     * NB. Balloon inhibiting does not currently block operation of the
+     * balloon driver or revoke previously pinned pages, it only prevents
+     * calling madvise to modify the virtual mapping of ballooned pages.
+     */
+    qemu_balloon_inhibit(true);
+
     QLIST_FOREACH(container, &container_list, next) {
         if (!ioctl(group->fd, VFIO_GROUP_SET_CONTAINER, &container->fd)) {
             group->container = container;
@@ -3678,6 +3706,7 @@ static int vfio_connect_container(VFIOGroup *group)
     fd = qemu_open("/dev/vfio/vfio", O_RDWR);
     if (fd < 0) {
         error_report("vfio: failed to open /dev/vfio/vfio: %m");
+        qemu_balloon_inhibit(false);
         return -errno;
     }
 
@@ -3686,6 +3715,7 @@ static int vfio_connect_container(VFIOGroup *group)
         error_report("vfio: supported vfio version: %d, "
                      "reported version: %d", VFIO_API_VERSION, ret);
         close(fd);
+        qemu_balloon_inhibit(false);
         return -EINVAL;
     }
 
@@ -3701,6 +3731,7 @@ static int vfio_connect_container(VFIOGroup *group)
             error_report("vfio: failed to set group container: %m");
             g_free(container);
             close(fd);
+            qemu_balloon_inhibit(false);
             return -errno;
         }
 
@@ -3710,6 +3741,7 @@ static int vfio_connect_container(VFIOGroup *group)
             error_report("vfio: failed to set iommu for container: %m");
             g_free(container);
             close(fd);
+            qemu_balloon_inhibit(false);
             return -errno;
         }
 
@@ -3724,6 +3756,7 @@ static int vfio_connect_container(VFIOGroup *group)
             vfio_listener_release(container);
             g_free(container);
             close(fd);
+            qemu_balloon_inhibit(false);
             error_report("vfio: memory listener initialization failed for container\n");
             return ret;
         }
@@ -3734,6 +3767,7 @@ static int vfio_connect_container(VFIOGroup *group)
         error_report("vfio: No available IOMMU models");
         g_free(container);
         close(fd);
+        qemu_balloon_inhibit(false);
         return -EINVAL;
     }
 
@@ -3834,6 +3868,7 @@ static void vfio_put_group(VFIOGroup *group)
         return;
     }
 
+    qemu_balloon_inhibit(false);
     vfio_kvm_device_del_group(group);
     vfio_disconnect_container(group);
     QLIST_REMOVE(group, next);
