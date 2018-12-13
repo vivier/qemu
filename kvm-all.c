@@ -17,6 +17,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <stdarg.h>
+#include "sysemu/balloon.h"
 
 #include <linux/kvm.h>
 
@@ -1481,6 +1482,9 @@ int kvm_init(void)
     cpu_interrupt_handler = kvm_handle_interrupt;
 
     s->sync_mmu = !!kvm_check_extension(kvm_state, KVM_CAP_SYNC_MMU);
+    if (!s->sync_mmu) {
+        qemu_balloon_inhibit(true);
+    }
 
     return 0;
 
