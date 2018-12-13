@@ -92,6 +92,7 @@ struct KVMState
     int xsave, xcrs;
     int many_ioeventfds;
     int intx_set_mask;
+    bool sync_mmu;
     /* The man page (and posix) say ioctl numbers are signed int, but
      * they're not.  Linux, glibc and *BSD all treat ioctl numbers as
      * unsigned, and treating them as signed here can break things */
@@ -1479,6 +1480,8 @@ int kvm_init(void)
 
     cpu_interrupt_handler = kvm_handle_interrupt;
 
+    s->sync_mmu = !!kvm_check_extension(kvm_state, KVM_CAP_SYNC_MMU);
+
     return 0;
 
 err:
@@ -1775,9 +1778,9 @@ int kvm_vcpu_ioctl(CPUState *cpu, int type, ...)
     return ret;
 }
 
-int kvm_has_sync_mmu(void)
+bool kvm_has_sync_mmu(void)
 {
-    return kvm_check_extension(kvm_state, KVM_CAP_SYNC_MMU);
+    return kvm_state->sync_mmu;
 }
 
 int kvm_has_vcpu_events(void)
