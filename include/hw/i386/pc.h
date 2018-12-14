@@ -1000,6 +1000,9 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 
 /* Similar to PC_COMPAT_3_0 + PC_COMPAT_2_12, but:
  * all of the 2_12 stuff was already in 7.6 from bz 1481253
+ * x-migrate-smi-count comes from PC_COMPAT_2_11 but
+ * is really tied to kernel version so keep it off on 7.x
+ * machine types irrespective of host.
  */
 #define PC_RHEL7_6_COMPAT \
         HW_COMPAT_RHEL7_6 \
@@ -1014,6 +1017,10 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
         },{ /* PC_RHEL7_6_COMPAT from PC_COMPAT_3_0 */ \
             .driver   = "Skylake-Server-IBRS" "-" TYPE_X86_CPU,\
             .property = "pku",\
+            .value    = "off",\
+        },{ /* PC_RHEL7_6_COMPAT from PC_COMPAT_2_11 */ \
+            .driver   = TYPE_X86_CPU,\
+            .property = "x-migrate-smi-count",\
             .value    = "off",\
         },
 
