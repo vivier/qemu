@@ -2391,6 +2391,7 @@ static void pc_machine_class_init(ObjectClass *oc, void *data)
     pcmc->linuxboot_dma_enabled = true;
     assert(!mc->get_hotplug_handler);
     pcmc->pc_rom_ro = true;
+    mc->async_pf_vmexit_disable = false;
     mc->get_hotplug_handler = pc_get_hotpug_handler;
     mc->cpu_index_to_instance_props = pc_cpu_index_to_props;
     mc->get_default_cpu_node_id = pc_get_default_cpu_node_id;

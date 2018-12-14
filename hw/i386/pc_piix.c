@@ -1186,6 +1186,7 @@ static void pc_machine_rhel760_options(MachineClass *m)
 {
     pc_machine_rhel7_options(m);
     m->desc = "RHEL 7.6.0 PC (i440FX + PIIX, 1996)";
+    m->async_pf_vmexit_disable = true;
     SET_MACHINE_COMPAT(m, PC_RHEL7_6_COMPAT);
 }
 

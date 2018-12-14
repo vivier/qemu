@@ -470,6 +470,7 @@ static void pc_q35_machine_rhel760_options(MachineClass *m)
     pc_q35_machine_rhel800_options(m);
     m->alias = NULL;
     m->desc = "RHEL-7.6.0 PC (Q35 + ICH9, 2009)";
+    m->async_pf_vmexit_disable = true;
     SET_MACHINE_COMPAT(m, PC_RHEL7_6_COMPAT);
 }
 
