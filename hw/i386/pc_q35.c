@@ -431,8 +431,8 @@ DEFINE_Q35_MACHINE(v2_4, "pc-q35-2.4", NULL,
 
 /* Red Hat Enterprise Linux machine types */
 
-/* Options for the latest rhel7 q35 machine type */
-static void pc_q35_machine_rhel7_options(MachineClass *m)
+/* Options for the latest rhel q35 machine type */
+static void pc_q35_machine_rhel_options(MachineClass *m)
 {
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pcmc->default_nic_model = "e1000e";
@@ -446,6 +446,20 @@ static void pc_q35_machine_rhel7_options(MachineClass *m)
     SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
 }
 
+static void pc_q35_init_rhel800(MachineState *machine)
+{
+    pc_q35_init(machine);
+}
+
+static void pc_q35_machine_rhel800_options(MachineClass *m)
+{
+    pc_q35_machine_rhel_options(m);
+    m->desc = "RHEL-8.0.0 PC (Q35 + ICH9, 2009)";
+}
+
+DEFINE_PC_MACHINE(q35_rhel800, "pc-q35-rhel8.0.0", pc_q35_init_rhel800,
+                  pc_q35_machine_rhel800_options);
+
 static void pc_q35_init_rhel760(MachineState *machine)
 {
     pc_q35_init(machine);
@@ -453,8 +467,10 @@ static void pc_q35_init_rhel760(MachineState *machine)
 
 static void pc_q35_machine_rhel760_options(MachineClass *m)
 {
-    pc_q35_machine_rhel7_options(m);
+    pc_q35_machine_rhel800_options(m);
+    m->alias = NULL;
     m->desc = "RHEL-7.6.0 PC (Q35 + ICH9, 2009)";
+    SET_MACHINE_COMPAT(m, PC_RHEL7_6_COMPAT);
 }
 
 DEFINE_PC_MACHINE(q35_rhel760, "pc-q35-rhel7.6.0", pc_q35_init_rhel760,
