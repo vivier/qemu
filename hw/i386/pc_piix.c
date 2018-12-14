@@ -1186,6 +1186,7 @@ static void pc_machine_rhel760_options(MachineClass *m)
 {
     pc_machine_rhel7_options(m);
     m->desc = "RHEL 7.6.0 PC (i440FX + PIIX, 1996)";
+    SET_MACHINE_COMPAT(m, PC_RHEL7_6_COMPAT);
 }
 
 DEFINE_PC_MACHINE(rhel760, "pc-i440fx-rhel7.6.0", pc_init_rhel760,
