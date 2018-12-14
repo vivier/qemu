@@ -513,5 +513,34 @@
         .value    = "off",\
     },
 
+/* The same as HW_COMPAT_3_0 + HW_COMPAT_2_12
+ * except that
+ *   there's nothing in 3_0
+ *   migration.decompress-error-check=off was in 7.5 from bz 1584139
+ *
+ */
+#define HW_COMPAT_RHEL7_6 \
+    { /* HW_COMPAT_RHEL7_6 from HW_COMPAT_2_12 */ \
+        .driver   = "hda-audio",\
+        .property = "use-timer",\
+        .value    = "false",\
+    },{ /* HW_COMPAT_RHEL7_6 from HW_COMPAT_2_12 */ \
+        .driver   = "cirrus-vga",\
+        .property = "global-vmstate",\
+        .value    = "true",\
+    },{ /* HW_COMPAT_RHEL7_6 from HW_COMPAT_2_12 */ \
+        .driver   = "VGA",\
+        .property = "global-vmstate",\
+        .value    = "true",\
+    },{ /* HW_COMPAT_RHEL7_6 from HW_COMPAT_2_12 */ \
+        .driver   = "vmware-svga",\
+        .property = "global-vmstate",\
+        .value    = "true",\
+    },{ /* HW_COMPAT_RHEL7_6 from HW_COMPAT_2_12 */ \
+        .driver   = "qxl-vga",\
+        .property = "global-vmstate",\
+        .value    = "true",\
+    },
+
 
 #endif /* HW_COMPAT_H */
