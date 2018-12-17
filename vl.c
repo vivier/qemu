@@ -840,6 +840,7 @@ static void configure_rtc(QemuOpts *opts)
     }
 }
 
+#if 0 // Disabled for Red Hat Enterprise Linux
 /***********************************************************/
 /* Bluetooth support */
 static int nb_hcis;
@@ -961,6 +962,7 @@ static int bt_parse(const char *opt)
     fprintf(stderr, "qemu: bad bluetooth parameter '%s'\n", opt);
     return 1;
 }
+#endif
 
 static int parse_sandbox(QemuOpts *opts, void *opaque)
 {
@@ -3132,9 +3134,11 @@ int main(int argc, char **argv, char **envp)
                     exit(1);
                 break;
 #endif
+#if 0 // Disabled for Red Hat Enterprise Linux
             case QEMU_OPTION_bt:
                 add_device_config(DEV_BT, optarg);
                 break;
+#endif
             case QEMU_OPTION_audio_help:
                 AUD_help ();
                 exit (0);
@@ -4113,9 +4117,11 @@ int main(int argc, char **argv, char **envp)
     }
 #endif
 
+#if 0 // Disabled for Red Hat Enterprise Linux
     /* init the bluetooth world */
     if (foreach_device_config(DEV_BT, bt_parse))
         exit(1);
+#endif
 
     if (!xen_enabled()) {
         /* On 32-bit hosts, QEMU is limited by virtual address space */

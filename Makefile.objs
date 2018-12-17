@@ -64,7 +64,7 @@ common-obj-y += audio/
 common-obj-y += hw/
 
 common-obj-y += ui/
-common-obj-y += bt-host.o bt-vhci.o
+#common-obj-y += bt-host.o bt-vhci.o
 
 common-obj-y += dma-helpers.o
 common-obj-y += vl.o
