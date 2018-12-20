@@ -4385,19 +4385,64 @@ DEFINE_SPAPR_MACHINE(2_1, "2.1", false);
 #endif
 
 /*
- * pseries-rhel7.6.0
+ * pseries-rhel8.0.0
  */
 
-static void spapr_machine_rhel760_instance_options(MachineState *machine)
+static void spapr_machine_rhel800_instance_options(MachineState *machine)
 {
 }
 
-static void spapr_machine_rhel760_class_options(MachineClass *mc)
+static void spapr_machine_rhel800_class_options(MachineClass *mc)
 {
     /* Defaults for the latest behaviour inherited from the base class */
 }
 
-DEFINE_SPAPR_MACHINE(rhel760, "rhel7.6.0", true);
+DEFINE_SPAPR_MACHINE(rhel800, "rhel8.0.0", true);
+
+/*
+ * pseries-rhel7.6.0
+ * like SPAPR_COMPAT_2_12 and SPAPR_COMPAT_3_0
+ * SPAPR_COMPAT_3_0 is empty
+ */
+#define SPAPR_COMPAT_RHEL7_6                                           \
+    HW_COMPAT_RHEL7_6                                                  \
+    {                                                                  \
+        .driver = TYPE_POWERPC_CPU,                                    \
+        .property = "pre-3.0-migration",                               \
+        .value    = "on",                                              \
+    },                                                                 \
+    {                                                                  \
+        .driver = TYPE_SPAPR_CPU_CORE,                                 \
+        .property = "pre-3.0-migration",                               \
+        .value    = "on",                                              \
+    },
+
+static void spapr_machine_rhel760_instance_options(MachineState *machine)
+{
+    spapr_machine_rhel800_instance_options(machine);
+}
+
+static void spapr_machine_rhel760_class_options(MachineClass *mc)
+{
+    sPAPRMachineClass *smc = SPAPR_MACHINE_CLASS(mc);
+
+    spapr_machine_rhel800_class_options(mc);
+    SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_RHEL7_6);
+
+    /* from spapr_machine_3_0_class_options() */
+    smc->legacy_irq_allocation = true;
+    smc->irq = &spapr_irq_xics_legacy;
+
+    /* from spapr_machine_2_12_class_options() */
+    /* We depend on kvm_enabled() to choose a default value for the
+     * hpt-max-page-size capability. Of course we can't do it here
+     * because this is too early and the HW accelerator isn't initialzed
+     * yet. Postpone this to machine init (see default_caps_with_cpu()).
+     */
+    smc->default_caps.caps[SPAPR_CAP_HPT_MAXPAGESIZE] = 0;
+}
+
+DEFINE_SPAPR_MACHINE(rhel760, "rhel7.6.0", false);
 
 /*
  * pseries-rhel7.6.0-sxxm
