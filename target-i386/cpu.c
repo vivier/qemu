@@ -34,6 +34,7 @@
 #include "qapi-visit.h"
 #include "qapi/visitor.h"
 #include "sysemu/arch_init.h"
+#include "migration/migration.h"
 
 #include "hw/hw.h"
 #if defined(CONFIG_KVM)
@@ -1742,6 +1743,14 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
                                          wi->cpuid_reg);
     }
 
+    /*
+     * Features that won't be enabled automatically by "-cpu host" even if
+     * reported by GET_SUPPORTED_CPUID:
+     */
+
+    /* arch-facilities: deprecated (see comment on x86_cpu_realizefn()) */
+    x86_cpu_def->features[FEAT_7_0_EDX] &= ~CPUID_7_0_EDX_ARCH_CAPABILITIES;
+
 #endif /* CONFIG_KVM */
 }
 
@@ -3087,6 +3096,32 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
 #ifdef CONFIG_KVM
         filter_features_for_kvm(cpu);
 #endif
+    }
+
+    /*
+     * RHEL-only:
+     *
+     * The arch-facilities feature flag is deprecated because it was never
+     * supported upstream.  The upstream property is "arch-capabilities",
+     * but it was not backported to this QEMU version.  Note that
+     * arch-capabilities is not required for mitigation of CVE-2017-5715.
+     *
+     * In addition to being deprecated, arch-facilities blocks live migration
+     * because the value of MSR_IA32_ARCH_CAPABILITIES is host-dependent and
+     * not migration-safe.
+     */
+    if (cpu->env.features[FEAT_7_0_EDX] & CPUID_7_0_EDX_ARCH_CAPABILITIES) {
+        static bool warned = false;
+        static Error *arch_facilities_blocker;
+        if (!warned) {
+            error_setg(&arch_facilities_blocker,
+                       "The arch-facilities CPU feature is deprecated and "
+                       "does not support live migration");
+            migrate_add_blocker(arch_facilities_blocker);
+            error_report("WARNING: the arch-facilities CPU feature is "
+                         "deprecated and does not support live migration");
+            warned = true;
+        }
     }
 
 #ifndef CONFIG_USER_ONLY
