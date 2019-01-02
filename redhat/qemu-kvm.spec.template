@@ -938,6 +938,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Jan 02 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-21.el7
+- kvm-Add-dependency-to-libxkbcommon.patch [bz#1642551]
+- Resolves: bz#1642551
+  (qemu-kvm-tools-rhev depends on libxkbcommon, but the RPM-level dependency is missing)
+
 * Thu Dec 06 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-20.el7
 - kvm-vnc-call-sasl_server_init-only-when-required.patch [bz#1614302]
 - kvm-block-Update-flags-in-bdrv_set_read_only.patch [bz#1623986]
