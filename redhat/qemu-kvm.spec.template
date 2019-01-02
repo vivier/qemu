@@ -813,6 +813,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Jan 02 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-161.el7
+- kvm-Inhibit-ballooning-during-postcopy.patch [bz#1659229]
+- kvm-balloon-Allow-multiple-inhibit-users.patch [bz#1659229]
+- kvm-check-KVM_CAP_SYNC_MMU-with-kvm_vm_check_extensi.patch [bz#1659229]
+- kvm-Use-inhibit-to-prevent-ballooning-without-synchr.patch [bz#1659229]
+- kvm-vfio-Inhibit-ballooning-based-on-group-attachment-to.patch [bz#1659229]
+- Resolves: bz#1659229
+  (Ballooning is incompatible with vfio assigned devices, but not prevented)
+
 * Mon Aug 20 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-160.el7
 - kvm-scsi-disk-support-reporting-of-rotation-rate.patch [bz#1583807]
 - kvm-ide-support-reporting-of-rotation-rate.patch [bz#1583807]
