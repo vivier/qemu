@@ -813,6 +813,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon Jan 14 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-162.el7
+- kvm-i386-Deprecate-arch-facilities-and-make-it-block-liv.patch [bz#1658407]
+- kvm-Do-not-build-bluetooth-support.patch [bz#1654627]
+- Resolves: bz#1654627
+  (Qemu: hw: bt: keep bt/* objects from building [rhel-7.7])
+- Resolves: bz#1658407
+  (mode="host-model" VMs include broken "arch-facilities" flag name [qemu-kvm])
+
 * Wed Jan 02 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-161.el7
 - kvm-Inhibit-ballooning-during-postcopy.patch [bz#1659229]
 - kvm-balloon-Allow-multiple-inhibit-users.patch [bz#1659229]
