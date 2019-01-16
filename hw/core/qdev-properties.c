@@ -1255,6 +1255,9 @@ void qdev_prop_set_globals(DeviceState *dev)
         if (object_dynamic_cast(OBJECT(dev), prop->driver) == NULL) {
             continue;
         }
+        if (prop->optional && !object_property_find(OBJECT(dev), prop->property, NULL)) {
+            continue;
+        }
         prop->used = true;
         object_property_parse(OBJECT(dev), prop->value, prop->property, &err);
         if (err != NULL) {
