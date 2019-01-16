@@ -380,10 +380,14 @@
             .driver   = "virtio-pci",\
             .property = "disable-modern",\
             .value    = "on",\
+            /* Optional because not all virtio-pci devices support legacy mode */ \
+            .optional = true,\
         },{ /* HW_COMPAT_RHEL7_2 */ \
             .driver   = "virtio-pci",\
             .property = "disable-legacy",\
             .value    = "off",\
+            /* Optional because not all virtio-pci devices support legacy mode */ \
+            .optional = true,\
         },{ /* HW_COMPAT_RHEL7_2 */ \
             .driver   = TYPE_PCI_DEVICE,\
             .property = "x-pcie-lnksta-dllla",\
