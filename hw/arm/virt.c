@@ -2144,6 +2144,5 @@ static void rhel800_virt_instance_init(Object *obj)
 static void rhel800_virt_options(MachineClass *mc)
 {
     SET_MACHINE_COMPAT(mc, ARM_RHEL_COMPAT);
-    vmc->no_highmem_ecam = true;
 }
 DEFINE_RHEL_MACHINE_AS_LATEST(8, 0, 0)
