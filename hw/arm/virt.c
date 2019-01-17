@@ -2094,7 +2094,7 @@ static void rhel_machine_init(void)
 }
 type_init(rhel_machine_init);
 
-static void rhel760_virt_instance_init(Object *obj)
+static void rhel800_virt_instance_init(Object *obj)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
     VirtMachineClass *vmc = VIRT_MACHINE_GET_CLASS(vms);
@@ -2119,6 +2119,8 @@ static void rhel760_virt_instance_init(Object *obj)
                                     "Set GIC version. "
                                     "Valid values are 2, 3 and host", NULL);
 
+    vms->highmem_ecam = !vmc->no_highmem_ecam;
+
     if (vmc->no_its) {
         vms->its = false;
     } else {
@@ -2132,12 +2134,16 @@ static void rhel760_virt_instance_init(Object *obj)
                                         NULL);
     }
 
+    /* IOMMU is disabled by default and non-configurable for RHEL */
+    vms->iommu = VIRT_IOMMU_NONE;
+
     vms->memmap=a15memmap;
     vms->irqmap=a15irqmap;
 }
 
-static void rhel760_virt_options(MachineClass *mc)
+static void rhel800_virt_options(MachineClass *mc)
 {
     SET_MACHINE_COMPAT(mc, ARM_RHEL_COMPAT);
+    vmc->no_highmem_ecam = true;
 }
-DEFINE_RHEL_MACHINE_AS_LATEST(7, 6, 0)
+DEFINE_RHEL_MACHINE_AS_LATEST(8, 0, 0)
