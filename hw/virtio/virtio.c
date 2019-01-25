@@ -345,6 +345,10 @@ int virtio_queue_ready(VirtQueue *vq)
  * Called within rcu_read_lock().  */
 static int virtio_queue_empty_rcu(VirtQueue *vq)
 {
+    if (unlikely(vq->vdev->broken)) {
+        return 1;
+    }
+
     if (unlikely(!vq->vring.avail)) {
         return 1;
     }
@@ -359,6 +363,10 @@ static int virtio_queue_empty_rcu(VirtQueue *vq)
 int virtio_queue_empty(VirtQueue *vq)
 {
     bool empty;
+
+    if (unlikely(vq->vdev->broken)) {
+        return 1;
+    }
 
     if (unlikely(!vq->vring.avail)) {
         return 1;
