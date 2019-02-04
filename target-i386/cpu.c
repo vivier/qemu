@@ -162,7 +162,7 @@ static const char *cpuid_7_0_ecx_feature_name[] = {
     "avx512bitalg", NULL, "avx512-vpopcntdq", NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, "rdpid", NULL,
-    NULL, NULL, NULL, NULL,
+    NULL, "cldemote", NULL, NULL,
     NULL, NULL, NULL, NULL,
 };
 
