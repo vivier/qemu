@@ -938,6 +938,28 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Feb 05 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-22.el7
+- kvm-spapr-Fix-ibm-max-associativity-domains-property-num.patch [bz#1626347]
+- kvm-spapr-Add-H-Call-H_HOME_NODE_ASSOCIATIVITY.patch [bz#1626347]
+- kvm-hostmem-file-remove-object-id-from-pmem-error-messag.patch [bz#1628098]
+- kvm-cpus-ignore-ESRCH-in-qemu_cpu_kick_thread.patch [bz#1614610]
+- kvm-blockdev-abort-transactions-in-reverse-order.patch [bz#1658426]
+- kvm-block-dirty-bitmap-remove-assertion-from-restore.patch [bz#1658426]
+- kvm-block-Fix-invalidate_cache-error-path-for-parent-act.patch [bz#1531888]
+- kvm-luks-Allow-share-rw-on.patch [bz#1598119]
+- Resolves: bz#1531888
+  (Local VM and migrated VM on the same host can run with same RAW file as visual disk source while without shareable configured or lock manager enabled)
+- Resolves: bz#1598119
+  ("share-rw=on" does not work for luks format image)
+- Resolves: bz#1614610
+  (Guest quit with error when hotunplug cpu)
+- Resolves: bz#1626347
+  (RHEL7.6 - [Power8][Host: 3.10.0-933.el7.ppc64le][Guest: 3.10.0-933.el7.ppc64le] [qemu-kvm-ma-2.12.0-8.el7.ppc64le] Guest VM crashes during vcpu hotplug with specific numa configuration (kvm))
+- Resolves: bz#1628098
+  ([Intel 7.7 BUG][KVM][Crystal Ridge]object_get_canonical_path_component: assertion failed: (obj->parent != NULL))
+- Resolves: bz#1658426
+  (qemu core dumped when doing incremental live backup without "bitmap" parameter by mistake in a transaction mode((blockdev-backup/block-dirty-bitmap-add/x-block-dirty-bitmap-merge))
+
 * Wed Jan 02 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-21.el7
 - kvm-Add-dependency-to-libxkbcommon.patch [bz#1642551]
 - Resolves: bz#1642551
