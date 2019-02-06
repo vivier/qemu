@@ -932,6 +932,28 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Feb 06 2019 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.12.0-18.el7_6.1
+- kvm-s390x-refuse-to-start-guests-backed-by-hugetlbfs.patch [bz#1672919]
+- kvm-s390x-tcg-avoid-overflows-in-time2tod-tod2time.patch [bz#1672920]
+- kvm-s390x-kvm-pass-values-instead-of-pointers-to-kvm_s39.patch [bz#1672920]
+- kvm-s390x-tod-factor-out-TOD-into-separate-device.patch [bz#1672920]
+- kvm-s390x-tcg-drop-tod_basetime.patch [bz#1672920]
+- kvm-s390x-tcg-properly-implement-the-TOD.patch [bz#1672920]
+- kvm-s390x-tcg-SET-CLOCK-COMPARATOR-can-clear-CKC-interru.patch [bz#1672920]
+- kvm-s390x-tcg-implement-SET-CLOCK.patch [bz#1672920]
+- kvm-s390x-tcg-rearm-the-CKC-timer-during-migration.patch [bz#1672920]
+- kvm-s390x-tcg-fix-locking-problem-with-tcg_s390_tod_upda.patch [bz#1672920]
+- kvm-hw-s390x-Include-the-tod-qemu-also-for-builds-with-d.patch [bz#1672920]
+- kvm-s390x-tod-Properly-stop-the-KVM-TOD-while-the-guest-.patch [bz#1672920]
+- kvm-hw-s390x-Fix-bad-mask-in-time2tod.patch [bz#1672920]
+- kvm-s390x-Return-specification-exception-for-unimplement.patch [bz#1668424]
+- Resolves: bz#1668424
+  (RHEL-Alt-7.6 - Backport diag308 stable exception fix (qemu-kvm-ma) [rhel-7.6.z])
+- Resolves: bz#1672919
+  (Trying to start a guest with hugetlbfs backing does not bail out so providing saying that hugetlbfs is not supported before actually trying to start the guest. [rhel-7.6.z])
+- Resolves: bz#1672920
+  (Stress guest and stop it, then do live migration, guest hit call trace on destination end [rhel-7.6.z])
+
 * Fri Sep 21 2018 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7
 - kvm-test-bdrv-drain-Fix-outdated-comments.patch [bz#1618584]
 - kvm-block-Use-a-single-global-AioWait.patch [bz#1618584]
