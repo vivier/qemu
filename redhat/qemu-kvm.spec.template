@@ -938,6 +938,49 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Feb 12 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-23.el7
+- kvm-iotests-153-Fix-dead-code.patch [bz#1551486]
+- kvm-file-posix-Include-filename-in-locking-error-message.patch [bz#1551486]
+- kvm-file-posix-Skip-effectiveless-OFD-lock-operations.patch [bz#1551486]
+- kvm-file-posix-Drop-s-lock_fd.patch [bz#1551486]
+- kvm-tests-Add-unit-tests-for-image-locking.patch [bz#1551486]
+- kvm-file-posix-Fix-shared-locks-on-reopen-commit.patch [bz#1551486]
+- kvm-iotests-Test-file-posix-locking-and-reopen.patch [bz#1551486]
+- kvm-scsi-disk-Don-t-use-empty-string-as-device-id.patch [bz#1673080]
+- kvm-scsi-disk-Add-device_id-property.patch [bz#1673080]
+- kvm-scsi-generic-avoid-possible-out-of-bounds-access-to-.patch [bz#1668999]
+- kvm-block-remove-bdrv_dirty_bitmap_make_anon.patch [bz#1658343]
+- kvm-block-simplify-code-around-releasing-bitmaps.patch [bz#1658343]
+- kvm-hbitmap-Add-advance-param-to-hbitmap_iter_next.patch [bz#1658343]
+- kvm-test-hbitmap-Add-non-advancing-iter_next-tests.patch [bz#1658343]
+- kvm-block-dirty-bitmap-Add-bdrv_dirty_iter_next_area.patch [bz#1658343]
+- kvm-dirty-bitmap-switch-assert-fails-to-errors-in-bdrv_m.patch [bz#1658343]
+- kvm-dirty-bitmap-rename-bdrv_undo_clear_dirty_bitmap.patch [bz#1658343]
+- kvm-dirty-bitmap-make-it-possible-to-restore-bitmap-afte.patch [bz#1658343]
+- kvm-blockdev-rename-block-dirty-bitmap-clear-transaction.patch [bz#1658343]
+- kvm-qapi-add-transaction-support-for-x-block-dirty-bitma.patch [bz#1658343]
+- kvm-block-dirty-bitmaps-add-user_locked-status-checker.patch [bz#1658343]
+- kvm-block-dirty-bitmaps-fix-merge-permissions.patch [bz#1658343]
+- kvm-block-dirty-bitmaps-allow-clear-on-disabled-bitmaps.patch [bz#1658343]
+- kvm-block-dirty-bitmaps-prohibit-enable-disable-on-locke.patch [bz#1658343]
+- kvm-block-backup-prohibit-backup-from-using-in-use-bitma.patch [bz#1658343]
+- kvm-nbd-forbid-use-of-frozen-bitmaps.patch [bz#1658343]
+- kvm-bitmap-Update-count-after-a-merge.patch [bz#1658343]
+- kvm-iotests-169-drop-deprecated-autoload-parameter.patch [bz#1658343]
+- kvm-block-qcow2-improve-error-message-in-qcow2_inactivat.patch [bz#1658343]
+- kvm-bloc-qcow2-drop-dirty_bitmaps_loaded-state-variable.patch [bz#1658343]
+- kvm-dirty-bitmaps-clean-up-bitmaps-loading-and-migration.patch [bz#1658343]
+- kvm-iotests-improve-169.patch [bz#1658343]
+- kvm-iotests-169-add-cases-for-source-vm-resuming.patch [bz#1658343]
+- Resolves: bz#1551486
+  (QEMU image locking needn't double open fd number (i.e. drop file-posix.c:s->lock_fd))
+- Resolves: bz#1658343
+  (QEMU incremental backup fixes and improvements (from upstream and in RHEL8))
+- Resolves: bz#1668999
+  (CVE-2019-6501 qemu-kvm-rhev: QEMU: scsi-generic: possible OOB access while handling inquiry request [rhel-7])
+- Resolves: bz#1673080
+  ("An unknown error has occurred" when using cdrom to install the system with two blockdev disks.(when choose installation destination))
+
 * Tue Feb 05 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-22.el7
 - kvm-spapr-Fix-ibm-max-associativity-domains-property-num.patch [bz#1626347]
 - kvm-spapr-Add-H-Call-H_HOME_NODE_ASSOCIATIVITY.patch [bz#1626347]
