@@ -1022,6 +1022,34 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .driver   = TYPE_X86_CPU,\
             .property = "x-migrate-smi-count",\
             .value    = "off",\
+        },{ /* PC_RHEL7_6_COMPAT from pc_compat_3_1 */ \
+            .driver   = "Skylake-Client" "-" TYPE_X86_CPU,\
+            .property = "mpx",\
+            .value    = "on",\
+        },{ /* PC_RHEL7_6_COMPAT from pc_compat_3_1 */ \
+            .driver   = "Skylake-Client-IBRS" "-" TYPE_X86_CPU,\
+            .property = "mpx",\
+            .value    = "on",\
+        },{ /* PC_RHEL7_6_COMPAT from pc_compat_3_1 */ \
+            .driver   = "Skylake-Server" "-" TYPE_X86_CPU,\
+            .property = "mpx",\
+            .value    = "on",\
+        },{ /* PC_RHEL7_6_COMPAT from pc_compat_3_1 */ \
+            .driver   = "Skylake-Server-IBRS" "-" TYPE_X86_CPU,\
+            .property = "mpx",\
+            .value    = "on",\
+        },{ /* PC_RHEL7_6_COMPAT from pc_compat_3_1 */ \
+            .driver   = "Cascadelake-Server" "-" TYPE_X86_CPU,\
+            .property = "mpx",\
+            .value    = "on",\
+        },{ /* PC_RHEL7_6_COMPAT from pc_compat_3_1 */ \
+            .driver   = "Icelake-Client" "-" TYPE_X86_CPU,\
+            .property = "mpx",\
+            .value    = "on",\
+        },{ /* PC_RHEL7_6_COMPAT from pc_compat_3_1 */ \
+            .driver   = "Icelake-Server" "-" TYPE_X86_CPU,\
+            .property = "mpx",\
+            .value    = "on",\
         },
 
 /* Similar to PC_COMPAT_2_11 + PC_COMPAT_2_10, but:
