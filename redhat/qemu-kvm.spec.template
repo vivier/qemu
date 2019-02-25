@@ -998,6 +998,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 
 %changelog
+* Mon Feb 25 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-16.el8
+- kvm-fdc-Revert-downstream-disablement-of-device-floppy.patch [bz#1664997]
+- kvm-fdc-Restrict-floppy-controllers-to-RHEL-7-machine-ty.patch [bz#1664997]
+- Resolves: bz#1664997
+  (Restrict floppy device to RHEL-7 machine types)
+
 * Wed Feb 13 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-15.el8
 - kvm-Add-raw-qcow2-nbd-and-luks-iotests-to-run-during-the.patch [bz#1664855]
 - kvm-Introduce-the-qemu-kvm-tests-rpm.patch [bz#1669924]
