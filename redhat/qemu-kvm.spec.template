@@ -998,6 +998,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 
 %changelog
+* Tue Feb 26 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-17.el8
+- kvm-block-Apply-auto-read-only-for-ro-whitelist-drivers.patch [bz#1678968]
+- Resolves: bz#1678968
+  (-blockdev: auto-read-only is ineffective for drivers on read-only whitelist)
+
 * Mon Feb 25 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-16.el8
 - kvm-fdc-Revert-downstream-disablement-of-device-floppy.patch [bz#1664997]
 - kvm-fdc-Restrict-floppy-controllers-to-RHEL-7-machine-ty.patch [bz#1664997]
