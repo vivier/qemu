@@ -952,6 +952,43 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Feb 26 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-24.el7
+- kvm-exec-move-memory-access-declarations-to-a-common-hea.patch [bz#1597482]
+- kvm-exec-small-changes-to-flatview_do_translate.patch [bz#1597482]
+- kvm-exec-extract-address_space_translate_iommu-fix-page_.patch [bz#1597482]
+- kvm-exec-reintroduce-MemoryRegion-caching.patch [bz#1597482]
+- kvm-virtio-update-MemoryRegionCaches-when-guest-negotiat.patch [bz#1597482]
+- kvm-exec-Fix-MAP_RAM-for-cached-access.patch [bz#1597482]
+- kvm-virtio-Return-true-from-virtio_queue_empty-if-broken.patch [bz#1597482]
+- kvm-block-backend-Set-werror-rerror-defaults-in-blk_new.patch [bz#1631615]
+- kvm-block-Apply-auto-read-only-for-ro-whitelist-drivers.patch [bz#1667320]
+- kvm-qcow2-Give-the-refcount-cache-the-minimum-possible-s.patch [bz#1656913]
+- kvm-docs-Document-the-new-default-sizes-of-the-qcow2-cac.patch [bz#1656913]
+- kvm-qcow2-Fix-Coverity-warning-when-calculating-the-refc.patch [bz#1656913]
+- kvm-qcow2-Options-documentation-fixes.patch [bz#1656913]
+- kvm-include-Add-a-lookup-table-of-sizes.patch [bz#1656913]
+- kvm-qcow2-Make-sizes-more-humanly-readable.patch [bz#1656913]
+- kvm-qcow2-Avoid-duplication-in-setting-the-refcount-cach.patch [bz#1656913]
+- kvm-qcow2-Assign-the-L2-cache-relatively-to-the-image-si.patch [bz#1656913]
+- kvm-qcow2-Increase-the-default-upper-limit-on-the-L2-cac.patch [bz#1656913]
+- kvm-qcow2-Resize-the-cache-upon-image-resizing.patch [bz#1656913]
+- kvm-qcow2-Set-the-default-cache-clean-interval-to-10-min.patch [bz#1656913]
+- kvm-qcow2-Explicit-number-replaced-by-a-constant.patch [bz#1656913]
+- kvm-qcow2-Fix-cache-clean-interval-documentation.patch [bz#1656913]
+- kvm-Add-raw-qcow2-nbd-and-luks-iotests-to-run-during-the.patch [bz#1676728 bz#1678898]
+- Resolves: bz#1597482
+  (qemu crashed when disk enable the IOMMU)
+- Resolves: bz#1631615
+  (Wrong werror default for -device drive=<node-name>)
+- Resolves: bz#1656913
+  (qcow2 cache is too small)
+- Resolves: bz#1667320
+  (-blockdev: auto-read-only is ineffective for drivers on read-only whitelist)
+- Resolves: bz#1676728
+  (RHEL77:  Run iotests as part of build process)
+- Resolves: bz#1678898
+  (Run iotests in rhel77 qemu-kvm-ma build %check phase)
+
 * Tue Feb 12 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-23.el7
 - kvm-iotests-153-Fix-dead-code.patch [bz#1551486]
 - kvm-file-posix-Include-filename-in-locking-error-message.patch [bz#1551486]
