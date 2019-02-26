@@ -998,6 +998,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 
 %changelog
+* Tue Feb 26 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-18.el8
+- kvm-target-i386-Disable-MPX-support-on-named-CPU-models.patch [bz#1661030]
+- kvm-i386-remove-the-new-CPUID-PCONFIG-from-Icelake-Serve.patch [bz#1661515]
+- kvm-i386-remove-the-INTEL_PT-CPUID-bit-from-named-CPU-mo.patch [bz#1661515]
+- kvm-Revert-i386-Add-CPUID-bit-for-PCONFIG.patch [bz#1661515]
+- Resolves: bz#1661030
+  (Remove MPX support from 8.0 machine types)
+- Resolves: bz#1661515
+  (Remove PCONFIG and INTEL_PT from Icelake-* CPU models)
+
 * Tue Feb 26 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-17.el8
 - kvm-block-Apply-auto-read-only-for-ro-whitelist-drivers.patch [bz#1678968]
 - Resolves: bz#1678968
