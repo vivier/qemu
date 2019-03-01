@@ -4954,6 +4954,9 @@ void bdrv_detach_aio_context(BlockDriverState *bs)
         bdrv_detach_aio_context(child->bs);
     }
 
+    if (bs->quiesce_counter) {
+        aio_enable_external(bs->aio_context);
+    }
     bs->aio_context = NULL;
 }
 
@@ -4965,6 +4968,10 @@ void bdrv_attach_aio_context(BlockDriverState *bs,
 
     if (!bs->drv) {
         return;
+    }
+
+    if (bs->quiesce_counter) {
+        aio_disable_external(new_context);
     }
 
     bs->aio_context = new_context;
