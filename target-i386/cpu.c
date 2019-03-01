@@ -169,7 +169,7 @@ static const char *cpuid_7_0_ecx_feature_name[] = {
 static const char *cpuid_7_0_edx_feature_name[] = {
     NULL, NULL, "avx512-4vnniw", "avx512-4fmaps",
     NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
+    NULL, NULL, "md-clear", NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
