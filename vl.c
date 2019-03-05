@@ -129,6 +129,7 @@ int main(int argc, char **argv)
 #include "qapi/qapi-commands-block-core.h"
 #include "qapi/qapi-commands-misc.h"
 #include "qapi/qapi-commands-run-state.h"
+#include "qapi/qapi-commands-ui.h"
 #include "qapi/qmp/qerror.h"
 #include "sysemu/iothread.h"
 
@@ -2117,6 +2118,14 @@ static void select_vgahw(const char *p)
         } else goto invalid_vga;
         opts = nextopt;
     }
+}
+
+DisplayOptions *qmp_query_display_options(Error **errp)
+{
+    DisplayOptions *r = g_new0(DisplayOptions, 1);
+
+    r->type = dpy.type;
+    return r;
 }
 
 static void parse_display(const char *p)
