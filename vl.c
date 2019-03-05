@@ -2202,6 +2202,15 @@ static void parse_display(const char *p)
         }
     } else if (strstart(p, "egl-headless", &opts)) {
         dpy.type = DISPLAY_TYPE_EGL_HEADLESS;
+        if (*opts) {
+            const char *nextopt;
+            if (strstart(opts, ",rendernode=", &nextopt)) {
+                dpy.u.egl_headless.rendernode = strdup(nextopt);
+            } else {
+                error_report("invalid egl-headless option string");
+                exit(1);
+            }
+        }
     } else if (strstart(p, "curses", &opts)) {
         dpy.type = DISPLAY_TYPE_CURSES;
     } else if (strstart(p, "gtk", &opts)) {
