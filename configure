@@ -3796,6 +3796,10 @@ if test "$mingw32" != "yes"; then
 else
   tpm_emulator=no
 fi
+
+# RHEL8-specific, only passthrough for now, rhbz#1688312
+tpm_emulator=no
+
 ##########################################
 # attr probe
 
