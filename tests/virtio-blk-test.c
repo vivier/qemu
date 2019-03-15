@@ -62,7 +62,7 @@ static QOSState *pci_test_start(void)
     QOSState *qs;
     const char *arch = qtest_get_arch();
     char *tmp_path;
-    const char *cmd = "-drive if=none,id=drive0,file=%s,format=raw "
+    const char *cmd = "-drive if=none,id=drive0,file=%s,format=raw,auto-read-only=off "
                       "-drive if=none,id=drive1,file=null-co://,format=raw "
                       "-device virtio-blk-pci,id=drv0,drive=drive0,"
                       "addr=%x.%x";
