@@ -3191,6 +3191,7 @@ int bdrv_reopen_prepare(BDRVReopenState *reopen_state, BlockReopenQueue *queue,
     QemuOpts *opts;
     const char *value;
     bool read_only;
+    bool drv_prepared = false;
 
     assert(reopen_state != NULL);
     assert(reopen_state->bs->drv != NULL);
@@ -3260,6 +3261,8 @@ int bdrv_reopen_prepare(BDRVReopenState *reopen_state, BlockReopenQueue *queue,
         goto error;
     }
 
+    drv_prepared = true;
+
     /* Options that are not handled are only okay if they are unchanged
      * compared to the old state. It is expected that some options are only
      * used for the initial open, but not reopen (e.g. filename) */
@@ -3303,6 +3306,15 @@ int bdrv_reopen_prepare(BDRVReopenState *reopen_state, BlockReopenQueue *queue,
     ret = 0;
 
 error:
+    if (ret < 0 && drv_prepared) {
+        /* drv->bdrv_reopen_prepare() has succeeded, so we need to
+         * call drv->bdrv_reopen_abort() before signaling an error
+         * (bdrv_reopen_multiple() will not call bdrv_reopen_abort()
+         * when the respective bdrv_reopen_prepare() has failed) */
+        if (drv->bdrv_reopen_abort) {
+            drv->bdrv_reopen_abort(reopen_state);
+        }
+    }
     qemu_opts_del(opts);
     return ret;
 }
