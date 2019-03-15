@@ -156,6 +156,8 @@ typedef struct BDRVRawState {
     uint64_t locked_perm;
     uint64_t locked_shared_perm;
 
+    BDRVReopenState *reopen_state;
+
 #ifdef CONFIG_XFS
     bool is_xfs:1;
 #endif
@@ -926,6 +928,7 @@ static int raw_reopen_prepare(BDRVReopenState *state,
         }
     }
 
+    s->reopen_state = state;
 out:
     return ret;
 }
@@ -950,12 +953,16 @@ static void raw_reopen_commit(BDRVReopenState *state)
 
     g_free(state->opaque);
     state->opaque = NULL;
+
+    assert(s->reopen_state == state);
+    s->reopen_state = NULL;
 }
 
 
 static void raw_reopen_abort(BDRVReopenState *state)
 {
     BDRVRawReopenState *rs = state->opaque;
+    BDRVRawState *s = state->bs->opaque;
 
      /* nothing to do if NULL, we didn't get far enough */
     if (rs == NULL) {
@@ -968,6 +975,9 @@ static void raw_reopen_abort(BDRVReopenState *state)
     }
     g_free(state->opaque);
     state->opaque = NULL;
+
+    assert(s->reopen_state == state);
+    s->reopen_state = NULL;
 }
 
 static int hdev_get_max_transfer_length(BlockDriverState *bs, int fd)
