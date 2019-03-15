@@ -897,7 +897,7 @@ static int raw_reopen_prepare(BDRVReopenState *state,
 {
     BDRVRawState *s;
     BDRVRawReopenState *rs;
-    int ret = 0;
+    int ret;
     Error *local_err = NULL;
 
     assert(state != NULL);
@@ -921,14 +921,27 @@ static int raw_reopen_prepare(BDRVReopenState *state,
     if (rs->fd != -1) {
         raw_probe_alignment(state->bs, rs->fd, &local_err);
         if (local_err) {
-            qemu_close(rs->fd);
-            rs->fd = -1;
             error_propagate(errp, local_err);
             ret = -EINVAL;
+            goto out_fd;
+        }
+
+        /* Copy locks to the new fd */
+        ret = raw_apply_lock_bytes(NULL, rs->fd, s->locked_perm,
+                                   s->locked_shared_perm, false, errp);
+        if (ret < 0) {
+            ret = -EINVAL;
+            goto out_fd;
         }
     }
 
     s->reopen_state = state;
+    ret = 0;
+out_fd:
+    if (ret < 0) {
+        qemu_close(rs->fd);
+        rs->fd = -1;
+    }
 out:
     return ret;
 }
@@ -937,17 +950,9 @@ static void raw_reopen_commit(BDRVReopenState *state)
 {
     BDRVRawReopenState *rs = state->opaque;
     BDRVRawState *s = state->bs->opaque;
-    Error *local_err = NULL;
 
     s->open_flags = rs->open_flags;
 
-    /* Copy locks to the new fd before closing the old one. */
-    raw_apply_lock_bytes(NULL, rs->fd, s->locked_perm,
-                         s->locked_shared_perm, false, &local_err);
-    if (local_err) {
-        /* shouldn't fail in a sane host, but report it just in case. */
-        error_report_err(local_err);
-    }
     qemu_close(s->fd);
     s->fd = rs->fd;
 
