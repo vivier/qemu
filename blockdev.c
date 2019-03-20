@@ -2973,6 +2973,7 @@ void qmp_block_dirty_bitmap_add(const char *node, const char *name,
 {
     BlockDriverState *bs;
     BdrvDirtyBitmap *bitmap;
+    AioContext *aio_context = NULL;
 
     if (!name || name[0] == '\0') {
         error_setg(errp, "Bitmap name cannot be empty");
@@ -3007,15 +3008,17 @@ void qmp_block_dirty_bitmap_add(const char *node, const char *name,
         disabled = false;
     }
 
-    if (persistent &&
-        !bdrv_can_store_new_dirty_bitmap(bs, name, granularity, errp))
-    {
-        return;
+    if (persistent) {
+        aio_context = bdrv_get_aio_context(bs);
+        aio_context_acquire(aio_context);
+        if (!bdrv_can_store_new_dirty_bitmap(bs, name, granularity, errp)) {
+            goto out;
+        }
     }
 
     bitmap = bdrv_create_dirty_bitmap(bs, granularity, name, errp);
     if (bitmap == NULL) {
-        return;
+        goto out;
     }
 
     if (disabled) {
@@ -3023,6 +3026,10 @@ void qmp_block_dirty_bitmap_add(const char *node, const char *name,
     }
 
     bdrv_dirty_bitmap_set_persistance(bitmap, persistent);
+ out:
+    if (aio_context) {
+        aio_context_release(aio_context);
+    }
 }
 
 void qmp_block_dirty_bitmap_remove(const char *node, const char *name,
@@ -3031,6 +3038,7 @@ void qmp_block_dirty_bitmap_remove(const char *node, const char *name,
     BlockDriverState *bs;
     BdrvDirtyBitmap *bitmap;
     Error *local_err = NULL;
+    AioContext *aio_context = NULL;
 
     bitmap = block_dirty_bitmap_lookup(node, name, &bs, errp);
     if (!bitmap || !bs) {
@@ -3045,14 +3053,20 @@ void qmp_block_dirty_bitmap_remove(const char *node, const char *name,
     }
 
     if (bdrv_dirty_bitmap_get_persistance(bitmap)) {
+        aio_context = bdrv_get_aio_context(bs);
+        aio_context_acquire(aio_context);
         bdrv_remove_persistent_dirty_bitmap(bs, name, &local_err);
         if (local_err != NULL) {
             error_propagate(errp, local_err);
-            return;
+            goto out;
         }
     }
 
     bdrv_release_dirty_bitmap(bs, bitmap);
+ out:
+    if (aio_context) {
+        aio_context_release(aio_context);
+    }
 }
 
 /**
