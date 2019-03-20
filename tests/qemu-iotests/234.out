@@ -1,28 +1,28 @@
 Launching source VM...
 Launching destination VM...
-{u'return': {}}
-{u'return': {}}
+{"return": {}}
+{"return": {}}
 Enabling migration QMP events on A...
-{u'return': {}}
+{"return": {}}
 Starting migration to B...
-{u'return': {}}
-{u'timestamp': {u'seconds': 'SECS', u'microseconds': 'USECS'}, u'data': {u'status': u'setup'}, u'event': u'MIGRATION'}
-{u'timestamp': {u'seconds': 'SECS', u'microseconds': 'USECS'}, u'data': {u'status': u'active'}, u'event': u'MIGRATION'}
-{u'timestamp': {u'seconds': 'SECS', u'microseconds': 'USECS'}, u'data': {u'status': u'completed'}, u'event': u'MIGRATION'}
+{"return": {}}
+{"data": {"status": "setup"}, "event": "MIGRATION", "timestamp": {"microseconds": "USECS", "seconds": "SECS"}}
+{"data": {"status": "active"}, "event": "MIGRATION", "timestamp": {"microseconds": "USECS", "seconds": "SECS"}}
+{"data": {"status": "completed"}, "event": "MIGRATION", "timestamp": {"microseconds": "USECS", "seconds": "SECS"}}
 completed
-{u'return': {u'status': u'postmigrate', u'singlestep': False, u'running': False}}
-{u'return': {u'status': u'running', u'singlestep': False, u'running': True}}
+{"return": {"running": false, "singlestep": false, "status": "postmigrate"}}
+{"return": {"running": true, "singlestep": false, "status": "running"}}
 Add a second parent to drive0-file...
-{u'return': {}}
+{"return": {}}
 Restart A with -incoming and second parent...
-{u'return': {}}
+{"return": {}}
 Enabling migration QMP events on B...
-{u'return': {}}
+{"return": {}}
 Starting migration back to A...
-{u'return': {}}
-{u'timestamp': {u'seconds': 'SECS', u'microseconds': 'USECS'}, u'data': {u'status': u'setup'}, u'event': u'MIGRATION'}
-{u'timestamp': {u'seconds': 'SECS', u'microseconds': 'USECS'}, u'data': {u'status': u'active'}, u'event': u'MIGRATION'}
-{u'timestamp': {u'seconds': 'SECS', u'microseconds': 'USECS'}, u'data': {u'status': u'completed'}, u'event': u'MIGRATION'}
+{"return": {}}
+{"data": {"status": "setup"}, "event": "MIGRATION", "timestamp": {"microseconds": "USECS", "seconds": "SECS"}}
+{"data": {"status": "active"}, "event": "MIGRATION", "timestamp": {"microseconds": "USECS", "seconds": "SECS"}}
+{"data": {"status": "completed"}, "event": "MIGRATION", "timestamp": {"microseconds": "USECS", "seconds": "SECS"}}
 completed
-{u'return': {u'status': u'running', u'singlestep': False, u'running': True}}
-{u'return': {u'status': u'postmigrate', u'singlestep': False, u'running': False}}
+{"return": {"running": true, "singlestep": false, "status": "running"}}
+{"return": {"running": false, "singlestep": false, "status": "postmigrate"}}
