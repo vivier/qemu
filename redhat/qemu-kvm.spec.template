@@ -952,6 +952,21 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Mar 19 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-25.el7
+- kvm-block-backend-Make-blk_inc-dec_in_flight-public.patch [bz#1671173]
+- kvm-virtio-blk-Increase-in_flight-for-request-restart-BH.patch [bz#1671173]
+- kvm-block-Fix-AioContext-switch-for-drained-node.patch [bz#1671173]
+- kvm-test-bdrv-drain-AioContext-switch-in-drained-section.patch [bz#1671173]
+- kvm-block-Use-normal-drain-for-bdrv_set_aio_context.patch [bz#1671173]
+- kvm-qapi-Add-rendernode-display-option-for-egl-headless.patch [bz#1648236]
+- kvm-ui-Allow-specifying-rendernode-display-option-for-eg.patch [bz#1648236]
+- kvm-qapi-add-query-display-options-command.patch [bz#1648236]
+- kvm-egl-headless-parse-rendernode.patch [bz#1648236]
+- Resolves: bz#1648236
+  (QEMU doesn't expose rendernode option for egl-headless display type)
+- Resolves: bz#1671173
+  (qemu with iothreads enabled crashes on resume after enospc pause for disk extension)
+
 * Tue Feb 26 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-24.el7
 - kvm-exec-move-memory-access-declarations-to-a-common-hea.patch [bz#1597482]
 - kvm-exec-small-changes-to-flatview_do_translate.patch [bz#1597482]
