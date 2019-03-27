@@ -503,11 +503,11 @@ static coroutine_fn int nbd_co_do_receive_one_chunk(
  */
 static coroutine_fn int nbd_co_receive_one_chunk(
         NBDClientSession *s, uint64_t handle, bool only_structured,
-        QEMUIOVector *qiov, NBDReply *reply, void **payload, Error **errp)
+        int *request_ret, QEMUIOVector *qiov, NBDReply *reply, void **payload,
+        Error **errp)
 {
-    int request_ret;
     int ret = nbd_co_do_receive_one_chunk(s, handle, only_structured,
-                                          &request_ret, qiov, payload, errp);
+                                          request_ret, qiov, payload, errp);
 
     if (ret < 0) {
         s->quit = true;
@@ -517,7 +517,6 @@ static coroutine_fn int nbd_co_receive_one_chunk(
             *reply = s->reply;
         }
         s->reply.handle = 0;
-        ret = request_ret;
     }
 
     if (s->read_reply_co) {
@@ -529,22 +528,17 @@ static coroutine_fn int nbd_co_receive_one_chunk(
 
 typedef struct NBDReplyChunkIter {
     int ret;
-    bool fatal;
+    int request_ret;
     Error *err;
     bool done, only_structured;
 } NBDReplyChunkIter;
 
-static void nbd_iter_error(NBDReplyChunkIter *iter, bool fatal,
-                           int ret, Error **local_err)
+static void nbd_iter_channel_error(NBDReplyChunkIter *iter,
+                                   int ret, Error **local_err)
 {
     assert(ret < 0);
 
-    if ((fatal && !iter->fatal) || iter->ret == 0) {
-        if (iter->ret != 0) {
-            error_free(iter->err);
-            iter->err = NULL;
-        }
-        iter->fatal = fatal;
+    if (!iter->ret) {
         iter->ret = ret;
         error_propagate(&iter->err, *local_err);
     } else {
@@ -552,6 +546,15 @@ static void nbd_iter_error(NBDReplyChunkIter *iter, bool fatal,
     }
 
     *local_err = NULL;
+}
+
+static void nbd_iter_request_error(NBDReplyChunkIter *iter, int ret)
+{
+    assert(ret < 0);
+
+    if (!iter->request_ret) {
+        iter->request_ret = ret;
+    }
 }
 
 /* NBD_FOREACH_REPLY_CHUNK
@@ -569,13 +572,13 @@ static bool nbd_reply_chunk_iter_receive(NBDClientSession *s,
                                          QEMUIOVector *qiov, NBDReply *reply,
                                          void **payload)
 {
-    int ret;
+    int ret, request_ret;
     NBDReply local_reply;
     NBDStructuredReplyChunk *chunk;
     Error *local_err = NULL;
     if (s->quit) {
         error_setg(&local_err, "Connection closed");
-        nbd_iter_error(iter, true, -EIO, &local_err);
+        nbd_iter_channel_error(iter, -EIO, &local_err);
         goto break_loop;
     }
 
@@ -589,10 +592,12 @@ static bool nbd_reply_chunk_iter_receive(NBDClientSession *s,
     }
 
     ret = nbd_co_receive_one_chunk(s, handle, iter->only_structured,
-                                   qiov, reply, payload, &local_err);
+                                   &request_ret, qiov, reply, payload,
+                                   &local_err);
     if (ret < 0) {
-        /* If it is a fatal error s->quit is set by nbd_co_receive_one_chunk */
-        nbd_iter_error(iter, s->quit, ret, &local_err);
+        nbd_iter_channel_error(iter, ret, &local_err);
+    } else if (request_ret < 0) {
+        nbd_iter_request_error(iter, request_ret);
     }
 
     /* Do not execute the body of NBD_FOREACH_REPLY_CHUNK for simple reply. */
@@ -629,7 +634,7 @@ break_loop:
 }
 
 static int nbd_co_receive_return_code(NBDClientSession *s, uint64_t handle,
-                                      Error **errp)
+                                      int *request_ret, Error **errp)
 {
     NBDReplyChunkIter iter;
 
@@ -638,12 +643,13 @@ static int nbd_co_receive_return_code(NBDClientSession *s, uint64_t handle,
     }
 
     error_propagate(errp, iter.err);
+    *request_ret = iter.request_ret;
     return iter.ret;
 }
 
 static int nbd_co_receive_cmdread_reply(NBDClientSession *s, uint64_t handle,
                                         uint64_t offset, QEMUIOVector *qiov,
-                                        Error **errp)
+                                        int *request_ret, Error **errp)
 {
     NBDReplyChunkIter iter;
     NBDReply reply;
@@ -668,7 +674,7 @@ static int nbd_co_receive_cmdread_reply(NBDClientSession *s, uint64_t handle,
                                                 offset, qiov, &local_err);
             if (ret < 0) {
                 s->quit = true;
-                nbd_iter_error(&iter, true, ret, &local_err);
+                nbd_iter_channel_error(&iter, ret, &local_err);
             }
             break;
         default:
@@ -678,7 +684,7 @@ static int nbd_co_receive_cmdread_reply(NBDClientSession *s, uint64_t handle,
                 error_setg(&local_err,
                            "Unexpected reply type: %d (%s) for CMD_READ",
                            chunk->type, nbd_reply_type_lookup(chunk->type));
-                nbd_iter_error(&iter, true, -EINVAL, &local_err);
+                nbd_iter_channel_error(&iter, -EINVAL, &local_err);
             }
         }
 
@@ -687,12 +693,14 @@ static int nbd_co_receive_cmdread_reply(NBDClientSession *s, uint64_t handle,
     }
 
     error_propagate(errp, iter.err);
+    *request_ret = iter.request_ret;
     return iter.ret;
 }
 
 static int nbd_co_receive_blockstatus_reply(NBDClientSession *s,
                                             uint64_t handle, uint64_t length,
-                                            NBDExtent *extent, Error **errp)
+                                            NBDExtent *extent,
+                                            int *request_ret, Error **errp)
 {
     NBDReplyChunkIter iter;
     NBDReply reply;
@@ -714,7 +722,7 @@ static int nbd_co_receive_blockstatus_reply(NBDClientSession *s,
             if (received) {
                 s->quit = true;
                 error_setg(&local_err, "Several BLOCK_STATUS chunks in reply");
-                nbd_iter_error(&iter, true, -EINVAL, &local_err);
+                nbd_iter_channel_error(&iter, -EINVAL, &local_err);
             }
             received = true;
 
@@ -723,7 +731,7 @@ static int nbd_co_receive_blockstatus_reply(NBDClientSession *s,
                                                 &local_err);
             if (ret < 0) {
                 s->quit = true;
-                nbd_iter_error(&iter, true, ret, &local_err);
+                nbd_iter_channel_error(&iter, ret, &local_err);
             }
             break;
         default:
@@ -733,7 +741,7 @@ static int nbd_co_receive_blockstatus_reply(NBDClientSession *s,
                            "Unexpected reply type: %d (%s) "
                            "for CMD_BLOCK_STATUS",
                            chunk->type, nbd_reply_type_lookup(chunk->type));
-                nbd_iter_error(&iter, true, -EINVAL, &local_err);
+                nbd_iter_channel_error(&iter, -EINVAL, &local_err);
             }
         }
 
@@ -748,14 +756,16 @@ static int nbd_co_receive_blockstatus_reply(NBDClientSession *s,
             iter.ret = -EIO;
         }
     }
+
     error_propagate(errp, iter.err);
+    *request_ret = iter.request_ret;
     return iter.ret;
 }
 
 static int nbd_co_request(BlockDriverState *bs, NBDRequest *request,
                           QEMUIOVector *write_qiov)
 {
-    int ret;
+    int ret, request_ret;
     Error *local_err = NULL;
     NBDClientSession *client = nbd_get_client_session(bs);
 
@@ -771,7 +781,8 @@ static int nbd_co_request(BlockDriverState *bs, NBDRequest *request,
         return ret;
     }
 
-    ret = nbd_co_receive_return_code(client, request->handle, &local_err);
+    ret = nbd_co_receive_return_code(client, request->handle,
+                                     &request_ret, &local_err);
     if (local_err) {
         trace_nbd_co_request_fail(request->from, request->len, request->handle,
                                   request->flags, request->type,
@@ -779,13 +790,13 @@ static int nbd_co_request(BlockDriverState *bs, NBDRequest *request,
                                   ret, error_get_pretty(local_err));
         error_free(local_err);
     }
-    return ret;
+    return ret ? ret : request_ret;
 }
 
 int nbd_client_co_preadv(BlockDriverState *bs, uint64_t offset,
                          uint64_t bytes, QEMUIOVector *qiov, int flags)
 {
-    int ret;
+    int ret, request_ret;
     Error *local_err = NULL;
     NBDClientSession *client = nbd_get_client_session(bs);
     NBDRequest request = {
@@ -806,7 +817,7 @@ int nbd_client_co_preadv(BlockDriverState *bs, uint64_t offset,
     }
 
     ret = nbd_co_receive_cmdread_reply(client, request.handle, offset, qiov,
-                                       &local_err);
+                                       &request_ret, &local_err);
     if (local_err) {
         trace_nbd_co_request_fail(request.from, request.len, request.handle,
                                   request.flags, request.type,
@@ -814,7 +825,7 @@ int nbd_client_co_preadv(BlockDriverState *bs, uint64_t offset,
                                   ret, error_get_pretty(local_err));
         error_free(local_err);
     }
-    return ret;
+    return ret ? ret : request_ret;
 }
 
 int nbd_client_co_pwritev(BlockDriverState *bs, uint64_t offset,
@@ -908,7 +919,7 @@ int coroutine_fn nbd_client_co_block_status(BlockDriverState *bs,
                                             int64_t *pnum, int64_t *map,
                                             BlockDriverState **file)
 {
-    int64_t ret;
+    int ret, request_ret;
     NBDExtent extent = { 0 };
     NBDClientSession *client = nbd_get_client_session(bs);
     Error *local_err = NULL;
@@ -933,7 +944,7 @@ int coroutine_fn nbd_client_co_block_status(BlockDriverState *bs,
     }
 
     ret = nbd_co_receive_blockstatus_reply(client, request.handle, bytes,
-                                           &extent, &local_err);
+                                           &extent, &request_ret, &local_err);
     if (local_err) {
         trace_nbd_co_request_fail(request.from, request.len, request.handle,
                                   request.flags, request.type,
@@ -941,8 +952,8 @@ int coroutine_fn nbd_client_co_block_status(BlockDriverState *bs,
                                   ret, error_get_pretty(local_err));
         error_free(local_err);
     }
-    if (ret < 0) {
-        return ret;
+    if (ret < 0 || request_ret < 0) {
+        return ret ? ret : request_ret;
     }
 
     assert(extent.length);
