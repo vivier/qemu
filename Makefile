@@ -992,6 +992,7 @@ docs/interop/qemu-qmp-ref.dvi docs/interop/qemu-qmp-ref.html \
     docs/interop/qemu-qmp-ref.txt docs/interop/qemu-qmp-ref.7: \
 	docs/interop/qemu-qmp-ref.texi docs/interop/qemu-qmp-qapi.texi
 
+$(filter %.1 %.7 %.8,$(DOCS)): scripts/texi2pod.pl
 
 ifdef CONFIG_WIN32
 
