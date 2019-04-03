@@ -813,6 +813,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Apr 03 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-163.el7
+- kvm-x86-cpu-Enable-CLDEMOTE-Demote-Cache-Line-cpu-featur.patch [bz#1537773]
+- kvm-vfio-pci-Lazy-PBA-emulation.patch [bz#1459077]
+- kvm-slirp-check-sscanf-result-when-emulating-ident.patch [bz#1689791]
+- Resolves: bz#1459077
+  ([Intel 7.7 Bug] QEMU version in RHEL7.4 beta does not support KVM passthrough with WFR card)
+- Resolves: bz#1537773
+  ([Intel 7.7 Feat] KVM Enabling SnowRidge new NIs - qemu-kvm)
+- Resolves: bz#1689791
+  (CVE-2019-9824 qemu-kvm: QEMU: Slirp: information leakage in tcp_emu() due to uninitialized stack variables [rhel-7])
+
 * Mon Jan 14 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-162.el7
 - kvm-i386-Deprecate-arch-facilities-and-make-it-block-liv.patch [bz#1658407]
 - kvm-Do-not-build-bluetooth-support.patch [bz#1654627]
