@@ -1005,6 +1005,35 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 
 %changelog
+* Thu Apr 11 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-21.el8
+- kvm-Remove-7-qcow2-and-luks-iotests-that-are-taking-25-s.patch [bz#1683473]
+- kvm-spapr-fix-out-of-bounds-write-in-spapr_populate_drme.patch [bz#1674438]
+- kvm-qcow2-include-LUKS-payload-overhead-in-qemu-img-meas.patch [bz#1655065]
+- kvm-iotests-add-LUKS-payload-overhead-to-178-qemu-img-me.patch [bz#1655065]
+- kvm-vnc-detect-and-optimize-pageflips.patch [bz#1666206]
+- kvm-Load-kvm-module-during-boot.patch [bz#1676907 bz#1685995]
+- kvm-hostmem-file-reject-invalid-pmem-file-sizes.patch [bz#1669053]
+- kvm-iotests-Fix-test-200-on-s390x-without-virtio-pci.patch [bz#1687582]
+- kvm-block-file-posix-do-not-fail-on-unlock-bytes.patch [bz#1652572]
+- Resolves: bz#1652572
+  (QEMU core dumped if stop nfs service during migration)
+- Resolves: bz#1655065
+  ([rhel.8.0][fast train]'qemu-img measure' size does not match the real allocated size for luks-inside-qcow2 image)
+- Resolves: bz#1666206
+  (vnc server should detect page-flips and avoid sending fullscreen updates then.)
+- Resolves: bz#1669053
+  (Guest call trace when boot with nvdimm device backed by /dev/dax)
+- Resolves: bz#1674438
+  (RHEL8.0 - Guest reboot fails after memory hotplug multiple times (kvm))
+- Resolves: bz#1676907
+  (/dev/kvm device exists but kernel module is not loaded on boot up causing VM start to fail in libvirt)
+- Resolves: bz#1683473
+  (Remove 7 qcow2 & luks iotests from rhel8 fast train build %check phase)
+- Resolves: bz#1685995
+  (/dev/kvm device exists but kernel module is not loaded on boot up causing VM start to fail in libvirt)
+- Resolves: bz#1687582
+  (QEMU IOTEST 200 fails with 'virtio-scsi-pci is not a valid device model name')
+
 * Fri Mar 15 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-20.el8
 - kvm-i386-Add-stibp-flag-name.patch [bz#1686260]
 - Resolves: bz#1686260
