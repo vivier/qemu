@@ -932,6 +932,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Apr 10 2019 Danilo de Paula <ddepaula@redhat.com>- 2.12.0-18.el7_6.5
+- kvm-target-i386-define-md-clear-bit-rhev.patch [bz#1693219]
+- Resolves: bz#1693219
+  (CVE-2018-12126 qemu-kvm-rhev: hardware: Microarchitectural Store Buffer Data Sampling [rhel-7.6.z])
+
 * Mon Apr 01 2019 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-18.el7_6.4
 - kvm-block-backend-Make-blk_inc-dec_in_flight-public.patch [bz#1693105]
 - kvm-virtio-blk-Increase-in_flight-for-request-restart-BH.patch [bz#1693105]
