@@ -896,6 +896,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Apr 18 2019 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.10.0-21.el7_5.8
+- kvm-hw-char-serial-Only-retry-if-qemu_chr_fe_write-retur.patch [bz#1640593]
+- kvm-hw-char-serial-retry-write-if-EAGAIN.patch [bz#1640593]
+- Resolves: bz#1640593
+  (qemu-kvm crash - possible cause - Assertion `!(s->lsr & 0x40)' failed. [rhel-7.5.z])
+
 * Tue Aug 28 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.10.0-21.el7_5.7
 - kvm-aio-posix-Don-t-count-ctx-notifier-as-progress-when-.patch [bz#1619128]
 - kvm-aio-Do-aio_notify_accept-only-during-blocking-aio_po.patch [bz#1619128]
