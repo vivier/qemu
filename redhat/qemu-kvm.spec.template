@@ -1005,6 +1005,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 
 %changelog
+* Tue Apr 23 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-23.el8
+- kvm-device_tree-Fix-integer-overflowing-in-load_device_t.patch [bz#1693173]
+- Resolves: bz#1693173
+  (CVE-2018-20815 qemu-kvm: QEMU: device_tree: heap buffer overflow while loading device tree blob [rhel-av-8])
+
 * Mon Apr 15 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-22.el8
 - kvm-i386-kvm-Disable-arch_capabilities-if-MSR-can-t-be-s.patch [bz#1687578]
 - kvm-i386-Make-arch_capabilities-migratable.patch [bz#1687578]
