@@ -1005,6 +1005,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 
 %changelog
+* Fri Apr 26 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-24.el8
+- kvm-x86-host-phys-bits-limit-option.patch [bz#1688915]
+- kvm-rhel-Set-host-phys-bits-limit-48-on-rhel-machine-typ.patch [bz#1688915]
+- Resolves: bz#1688915
+  ([Intel 8.0 Alpha] physical bits should  <= 48  when host with 5level paging &EPT5 and qemu command with "-cpu qemu64" parameters.)
+
 * Tue Apr 23 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-23.el8
 - kvm-device_tree-Fix-integer-overflowing-in-load_device_t.patch [bz#1693173]
 - Resolves: bz#1693173
