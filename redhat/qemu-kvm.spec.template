@@ -827,6 +827,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Apr 30 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-16.el7_4.19
+- kvm-target-i386-define-md-clear-bit.patch [bz#1698789]
+- Resolves: bz#1698789
+  (qemu-kvm-rhev: hardware: Microarchitectural Store Buffer Data Sampling)
+
 * Mon Jul 02 2018 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.18
 - kvm-i386-Define-the-Virt-SSBD-MSR-and-handling-of-it-CVE.patch [bz#1584371]
 - kvm-i386-define-the-AMD-virt-ssbd-CPUID-feature-bit-CVE-.patch [bz#1584371]
