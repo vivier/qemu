@@ -91,6 +91,7 @@ static int cap_ppc_pvr_compat;
 static int cap_ppc_safe_cache;
 static int cap_ppc_safe_bounds_check;
 static int cap_ppc_safe_indirect_branch;
+static int cap_ppc_count_cache_flush_assist;
 static int cap_ppc_nested_kvm_hv;
 
 static uint32_t debug_inst_opcode;
@@ -2391,6 +2392,14 @@ static int parse_cap_ppc_safe_indirect_branch(struct kvm_ppc_cpu_char c)
     return 0;
 }
 
+static int parse_cap_ppc_count_cache_flush_assist(struct kvm_ppc_cpu_char c)
+{
+    if (c.character & c.character_mask & H_CPU_CHAR_BCCTR_FLUSH_ASSIST) {
+        return 1;
+    }
+    return 0;
+}
+
 static void kvmppc_get_cpu_characteristics(KVMState *s)
 {
     struct kvm_ppc_cpu_char c;
@@ -2413,6 +2422,8 @@ static void kvmppc_get_cpu_characteristics(KVMState *s)
     cap_ppc_safe_cache = parse_cap_ppc_safe_cache(c);
     cap_ppc_safe_bounds_check = parse_cap_ppc_safe_bounds_check(c);
     cap_ppc_safe_indirect_branch = parse_cap_ppc_safe_indirect_branch(c);
+    cap_ppc_count_cache_flush_assist =
+        parse_cap_ppc_count_cache_flush_assist(c);
 }
 
 int kvmppc_get_cap_safe_cache(void)
@@ -2428,6 +2439,11 @@ int kvmppc_get_cap_safe_bounds_check(void)
 int kvmppc_get_cap_safe_indirect_branch(void)
 {
     return cap_ppc_safe_indirect_branch;
+}
+
+int kvmppc_get_cap_count_cache_flush_assist(void)
+{
+    return cap_ppc_count_cache_flush_assist;
 }
 
 bool kvmppc_has_cap_nested_kvm_hv(void)
