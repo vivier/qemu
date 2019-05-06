@@ -1014,6 +1014,17 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 
 %changelog
+* Mon May 06 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-25.el8
+- kvm-redhat-enable-tpmdev-passthrough.patch [bz#1688312]
+- kvm-exec-Only-count-mapped-memory-backends-for-qemu_getr.patch [bz#1680492]
+- kvm-Enable-libpmem-to-support-nvdimm.patch [bz#1705149]
+- Resolves: bz#1680492
+  (Qemu quits suddenly while system_reset after hot-plugging unsupported memory by compatible guest on P9 with 1G huge page set)
+- Resolves: bz#1688312
+  ([RFE] enable TPM passthrough at compile time (qemu-kvm))
+- Resolves: bz#1705149
+  (libpmem support is not enabled in qemu-kvm)
+
 * Fri Apr 26 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-24.el8
 - kvm-x86-host-phys-bits-limit-option.patch [bz#1688915]
 - kvm-rhel-Set-host-phys-bits-limit-48-on-rhel-machine-typ.patch [bz#1688915]
