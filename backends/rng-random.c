@@ -16,6 +16,7 @@
 #include "qapi/error.h"
 #include "qapi/qmp/qerror.h"
 #include "qemu/main-loop.h"
+#include "qemu/guest-random.h"
 
 struct RngRandom
 {
@@ -59,6 +60,19 @@ static void rng_random_request_entropy(RngBackend *b, RngRequest *req)
 {
     RngRandom *s = RNG_RANDOM(b);
 
+    if (s->fd == -1) {
+        while (!QSIMPLEQ_EMPTY(&s->parent.requests)) {
+            RngRequest *req = QSIMPLEQ_FIRST(&s->parent.requests);
+
+            qemu_guest_getrandom_nofail(req->data, req->size);
+
+            req->receive_entropy(req->opaque, req->data, req->size);
+
+            rng_backend_finalize_request(&s->parent, req);
+        }
+        return;
+    }
+
     if (QSIMPLEQ_EMPTY(&s->parent.requests)) {
         /* If there are no pending requests yet, we need to
          * install our fd handler. */
@@ -71,13 +85,13 @@ static void rng_random_opened(RngBackend *b, Error **errp)
     RngRandom *s = RNG_RANDOM(b);
 
     if (s->filename == NULL) {
-        error_setg(errp, QERR_INVALID_PARAMETER_VALUE,
-                   "filename", "a valid filename");
-    } else {
-        s->fd = qemu_open(s->filename, O_RDONLY | O_NONBLOCK);
-        if (s->fd == -1) {
-            error_setg_file_open(errp, errno, s->filename);
-        }
+        /* We will use getrandom() */
+        return;
+    }
+
+    s->fd = qemu_open(s->filename, O_RDONLY | O_NONBLOCK);
+    if (s->fd == -1) {
+        error_setg_file_open(errp, errno, s->filename);
     }
 }
 
@@ -112,7 +126,7 @@ static void rng_random_init(Object *obj)
                             rng_random_set_filename,
                             NULL);
 
-    s->filename = g_strdup("/dev/random");
+    s->filename = NULL;
     s->fd = -1;
 }
 
