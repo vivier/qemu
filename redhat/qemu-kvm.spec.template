@@ -952,6 +952,28 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon May 13 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-28.el7
+- kvm-x86-cpu-Enable-CLDEMOTE-Demote-Cache-Line-cpu-featur.patch [bz#1537776]
+- kvm-scsi-generic-prevent-guest-from-exceeding-SG_IO-limi.patch [bz#1693879]
+- kvm-tests-crypto-Use-the-IEC-binary-prefix-definitions.patch [bz#1666336]
+- kvm-crypto-expand-algorithm-coverage-for-cipher-benchmar.patch [bz#1666336]
+- kvm-crypto-remove-code-duplication-in-tweak-encrypt-decr.patch [bz#1666336]
+- kvm-crypto-introduce-a-xts_uint128-data-type.patch [bz#1666336]
+- kvm-crypto-convert-xts_tweak_encdec-to-use-xts_uint128-t.patch [bz#1666336]
+- kvm-crypto-convert-xts_mult_x-to-use-xts_uint128-type.patch [bz#1666336]
+- kvm-crypto-annotate-xts_tweak_encdec-as-inlineable.patch [bz#1666336]
+- kvm-crypto-refactor-XTS-cipher-mode-test-suite.patch [bz#1666336]
+- kvm-crypto-add-testing-for-unaligned-buffers-with-XTS-ci.patch [bz#1666336]
+- kvm-block-Fix-AioContext-switch-for-bs-drv-NULL.patch [bz#1631227]
+- Resolves: bz#1537776
+  ([Intel 7.7 Feat] KVM Enabling SnowRidge new NIs - qemu-kvm-rhev)
+- Resolves: bz#1631227
+  (Qemu Core dump when quit vm that's in status "paused(io-error)" with data plane enabled)
+- Resolves: bz#1666336
+  (severe performance impact using encrypted Cinder volume (QEMU luks))
+- Resolves: bz#1693879
+  (RHV VM pauses when 'dd' issued inside guest to a direct lun configured as virtio-scsi with scsi-passthrough)
+
 * Wed Apr 24 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-27.el7
 - kvm-tests-virtio-blk-test-Disable-auto-read-only.patch [bz#1685989]
 - kvm-block-Avoid-useless-local_err.patch [bz#1685989]
