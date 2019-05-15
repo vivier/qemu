@@ -1014,6 +1014,19 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 
 %changelog
+* Wed May 15 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-26.el8
+- kvm-target-ppc-spapr-Add-SPAPR_CAP_LARGE_DECREMENTER.patch [bz#1698711]
+- kvm-target-ppc-spapr-Add-workaround-option-to-SPAPR_CAP_.patch [bz#1698711]
+- kvm-target-ppc-spapr-Add-SPAPR_CAP_CCF_ASSIST.patch [bz#1698711]
+- kvm-target-ppc-tcg-make-spapr_caps-apply-cap-cfpc-sbbc-i.patch [bz#1698711]
+- kvm-target-ppc-spapr-Enable-mitigations-by-default-for-p.patch [bz#1698711]
+- kvm-slirp-ensure-there-is-enough-space-in-mbuf-to-null-t.patch [bz#1693076]
+- kvm-slirp-don-t-manipulate-so_rcv-in-tcp_emu.patch [bz#1693076]
+- Resolves: bz#1693076
+  (CVE-2019-6778 qemu-kvm: QEMU: slirp: heap buffer overflow in tcp_emu() [rhel-av-8])
+- Resolves: bz#1698711
+  (Enable Spectre / Meltdown mitigations by default in pseries-rhel8.0.0 machine type)
+
 * Mon May 06 2019 Danilo Cesar Lemes de Paula <ddepaula@redhat.com> - 3.1.0-25.el8
 - kvm-redhat-enable-tpmdev-passthrough.patch [bz#1688312]
 - kvm-exec-Only-count-mapped-memory-backends-for-qemu_getr.patch [bz#1680492]
