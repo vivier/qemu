@@ -196,7 +196,7 @@ static void ref405ep_init(MachineState *machine)
     target_ulong kernel_base, initrd_base;
     long kernel_size, initrd_size;
     int linux_boot;
-    int fl_idx, fl_sectors, len;
+    int len;
     DriveInfo *dinfo;
     MemoryRegion *sysmem = get_system_memory();
 
@@ -224,20 +224,16 @@ static void ref405ep_init(MachineState *machine)
                            &error_fatal);
     memory_region_add_subregion(sysmem, 0xFFF00000, sram);
     /* allocate and load BIOS */
-    fl_idx = 0;
 #ifdef USE_FLASH_BIOS
-    dinfo = drive_get(IF_PFLASH, 0, fl_idx);
+    dinfo = drive_get(IF_PFLASH, 0, 0);
     if (dinfo) {
-        BlockBackend *blk = blk_by_legacy_dinfo(dinfo);
-
-        bios_size = blk_getlength(blk);
-        fl_sectors = (bios_size + 65535) >> 16;
+        bios_size = 8 * MiB;
         pflash_cfi02_register((uint32_t)(-bios_size),
                               NULL, "ef405ep.bios", bios_size,
-                              blk, 65536, fl_sectors, 1,
+                              dinfo ? blk_by_legacy_dinfo(dinfo) : NULL,
+                              64 * KiB, bios_size / (64 * KiB), 1,
                               2, 0x0001, 0x22DA, 0x0000, 0x0000, 0x555, 0x2AA,
                               1);
-        fl_idx++;
     } else
 #endif
     {
@@ -470,7 +466,7 @@ static void taihu_405ep_init(MachineState *machine)
     target_ulong kernel_base, initrd_base;
     long kernel_size, initrd_size;
     int linux_boot;
-    int fl_idx, fl_sectors;
+    int fl_idx;
     DriveInfo *dinfo;
 
 #ifdef TARGET_PPCEMB
@@ -502,15 +498,11 @@ static void taihu_405ep_init(MachineState *machine)
 #if defined(USE_FLASH_BIOS)
     dinfo = drive_get(IF_PFLASH, 0, fl_idx);
     if (dinfo) {
-        BlockBackend *blk = blk_by_legacy_dinfo(dinfo);
-
-        bios_size = blk_getlength(blk);
-        /* XXX: should check that size is 2MB */
-        //        bios_size = 2 * 1024 * 1024;
-        fl_sectors = (bios_size + 65535) >> 16;
-        pflash_cfi02_register((uint32_t)(-bios_size),
+        bios_size = 2 * MiB;
+        pflash_cfi02_register(0xFFE00000,
                               NULL, "taihu_405ep.bios", bios_size,
-                              blk, 65536, fl_sectors, 1,
+                              dinfo ? blk_by_legacy_dinfo(dinfo) : NULL,
+                              64 * KiB, bios_size / (64 * KiB), 1,
                               4, 0x0001, 0x22DA, 0x0000, 0x0000, 0x555, 0x2AA,
                               1);
         fl_idx++;
@@ -541,14 +533,10 @@ static void taihu_405ep_init(MachineState *machine)
     /* Register Linux flash */
     dinfo = drive_get(IF_PFLASH, 0, fl_idx);
     if (dinfo) {
-        BlockBackend *blk = blk_by_legacy_dinfo(dinfo);
-
-        bios_size = blk_getlength(blk);
-        /* XXX: should check that size is 32MB */
-        bios_size = 32 * 1024 * 1024;
-        fl_sectors = (bios_size + 65535) >> 16;
+        bios_size = 32 * MiB;
         pflash_cfi02_register(0xfc000000, NULL, "taihu_405ep.flash", bios_size,
-                              blk, 65536, fl_sectors, 1,
+                              dinfo ? blk_by_legacy_dinfo(dinfo) : NULL,
+                              64 * KiB, bios_size / (64 * KiB), 1,
                               4, 0x0001, 0x22DA, 0x0000, 0x0000, 0x555, 0x2AA,
                               1);
         fl_idx++;
