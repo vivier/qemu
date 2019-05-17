@@ -75,8 +75,7 @@ static void connex_init(MachineState *machine)
 #endif
     if (!pflash_cfi01_register(0x00000000, "connext.rom", connex_rom,
                                dinfo ? blk_by_legacy_dinfo(dinfo) : NULL,
-                               sector_len, connex_rom / sector_len,
-                               2, 0, 0, 0, 0, be)) {
+                               sector_len, 2, 0, 0, 0, 0, be)) {
         error_report("Error registering flash memory");
         exit(1);
     }
@@ -112,8 +111,7 @@ static void verdex_init(MachineState *machine)
 #endif
     if (!pflash_cfi01_register(0x00000000, "verdex.rom", verdex_rom,
                                dinfo ? blk_by_legacy_dinfo(dinfo) : NULL,
-                               sector_len, verdex_rom / sector_len,
-                               2, 0, 0, 0, 0, be)) {
+                               sector_len, 2, 0, 0, 0, 0, be)) {
         error_report("Error registering flash memory");
         exit(1);
     }
