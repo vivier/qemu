@@ -280,12 +280,9 @@ void error_set_from_qdev_prop_error(Error **errp, int ret, DeviceState *dev,
  */
 void register_compat_prop(const char *driver, const char *property,
                           const char *value);
-/*
- * register_compat_props_array(): using register_compat_prop(), which
- * only registers internal global properties (which has lower priority
- * than user-provided global properties)
- */
-void register_compat_props_array(GlobalProperty *prop);
+
+void register_accel_compat_props(GlobalProperty *props);
+void register_machine_compat_prop(GlobalProperty *prop);
 
 /**
  * qdev_property_add_static:

@@ -1174,6 +1174,14 @@ void qdev_prop_set_ptr(DeviceState *dev, const char *name, void *value)
     *ptr = value;
 }
 
+static GList *machine_compat_props;
+static GList *accel_compat_props;
+
+void register_machine_compat_prop(GlobalProperty *prop)
+{
+    machine_compat_props = g_list_append(machine_compat_props, prop);
+}
+
 static GList *global_props;
 
 void qdev_prop_register_global(GlobalProperty *prop)
@@ -1195,10 +1203,17 @@ void register_compat_prop(const char *driver,
     qdev_prop_register_global(p);
 }
 
-void register_compat_props_array(GlobalProperty *prop)
+void register_accel_compat_props(GlobalProperty *props)
 {
-    for (; prop && prop->driver; prop++) {
-        register_compat_prop(prop->driver, prop->property, prop->value);
+    GlobalProperty *p, *prop;
+
+    for (p = props; p && p->driver; p++) {
+        prop = g_new0(GlobalProperty, 1);
+        prop->errp = &error_abort;
+        prop->driver = p->driver;
+        prop->property = p->property;
+        prop->value = p->value;
+        accel_compat_props = g_list_append(accel_compat_props, prop);
     }
 }
 
@@ -1245,11 +1260,9 @@ int qdev_prop_check_globals(void)
     return ret;
 }
 
-void qdev_prop_set_globals(DeviceState *dev)
+static void qdev_prop_set_globals_1(DeviceState *dev, GList *l)
 {
-    GList *l;
-
-    for (l = global_props; l; l = l->next) {
+    for (; l; l = l->next) {
         GlobalProperty *prop = l->data;
         Error *err = NULL;
 
@@ -1269,6 +1282,13 @@ void qdev_prop_set_globals(DeviceState *dev)
             }
         }
     }
+}
+
+void qdev_prop_set_globals(DeviceState *dev)
+{
+    qdev_prop_set_globals_1(dev, accel_compat_props);
+    qdev_prop_set_globals_1(dev, machine_compat_props);
+    qdev_prop_set_globals_1(dev, global_props);
 }
 
 /* --- 64bit unsigned int 'size' type --- */
