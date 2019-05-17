@@ -932,6 +932,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri May 17 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.6
+- kvm-device_tree-Fix-integer-overflowing-in-load_device_t.patch [bz#1693114]
+- kvm-scsi-generic-prevent-guest-from-exceeding-SG_IO-limi.patch [bz#1693879]
+- Resolves: bz#1693114
+  (CVE-2018-20815 qemu-kvm-rhev: QEMU: device_tree: heap buffer overflow while loading device tree blob [rhel-7.6.z])
+- Resolves: bz#1693879
+  (RHV VM pauses when 'dd' issued inside guest to a direct lun configured as virtio-scsi with scsi-passthrough)
+
 * Wed Apr 10 2019 Danilo de Paula <ddepaula@redhat.com>- 2.12.0-18.el7_6.5
 - kvm-target-i386-define-md-clear-bit-rhev.patch [bz#1693219]
 - Resolves: bz#1693219
