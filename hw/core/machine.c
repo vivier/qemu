@@ -839,9 +839,8 @@ static void machine_class_finalize(ObjectClass *klass, void *data)
     g_free(mc->name);
 }
 
-void machine_register_compat_props(MachineState *machine)
+void machine_register_compat_props(MachineClass *mc)
 {
-    MachineClass *mc = MACHINE_GET_CLASS(machine);
     int i;
     GlobalProperty *p;
 
