@@ -3052,17 +3052,6 @@ static void user_register_global_props(void)
                       global_init_func, NULL, NULL);
 }
 
-/*
- * Note: we should see that these properties are actually having a
- * priority: accel < machine < user. This means e.g. when user
- * specifies something in "-global", it'll always be used with highest
- * priority than either machine/accelerator compat properties.
- */
-static void register_global_properties(MachineState *ms)
-{
-    user_register_global_props();
-}
-
 int main(int argc, char **argv, char **envp)
 {
     int i;
@@ -4119,6 +4108,8 @@ int main(int argc, char **argv, char **envp)
      */
     loc_set_none();
 
+    user_register_global_props();
+
     replay_configure(icount_opts);
 
     /* Maximum number of CPUs limited for Red Hat Enterprise Linux */
@@ -4436,12 +4427,6 @@ int main(int argc, char **argv, char **envp)
     }
 
     configure_accelerator(current_machine);
-
-    /*
-     * Register all the global properties, including accel properties,
-     * machine properties, and user-specified ones.
-     */
-    register_global_properties(current_machine);
 
     /*
      * Migration object can only be created after global properties
