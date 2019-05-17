@@ -952,6 +952,69 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri May 17 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-29.el7
+- kvm-qemu-img-Report-bdrv_block_status-failures.patch [bz#1692018]
+- kvm-nbd-Tolerate-some-server-non-compliance-in-NBD_CMD_B.patch [bz#1692018]
+- kvm-nbd-Don-t-lose-server-s-error-to-NBD_CMD_BLOCK_STATU.patch [bz#1692018]
+- kvm-nbd-Permit-simple-error-to-NBD_CMD_BLOCK_STATUS.patch [bz#1692018]
+- kvm-qemu-img-Gracefully-shutdown-when-map-can-t-finish.patch [bz#1692018]
+- kvm-nbd-client-Work-around-server-BLOCK_STATUS-misalignm.patch [bz#1692018]
+- kvm-iotests-Add-241-to-test-NBD-on-unaligned-images.patch [bz#1692018]
+- kvm-nbd-client-Lower-min_block-for-block-status-unaligne.patch [bz#1692018]
+- kvm-nbd-client-Report-offsets-in-bdrv_block_status.patch [bz#1692018]
+- kvm-nbd-client-Reject-inaccessible-tail-of-inconsistent-.patch [bz#1692018]
+- kvm-nbd-client-Support-qemu-img-convert-from-unaligned-s.patch [bz#1692018]
+- kvm-block-Add-bdrv_get_request_alignment.patch [bz#1692018]
+- kvm-nbd-server-Advertise-actual-minimum-block-size.patch [bz#1692018]
+- kvm-nbd-client-Trace-server-noncompliance-on-structured-.patch [bz#1692018]
+- kvm-nbd-server-Fix-blockstatus-trace.patch [bz#1692018]
+- kvm-nbd-server-Trace-client-noncompliance-on-unaligned-r.patch [bz#1692018]
+- kvm-nbd-server-Don-t-fail-NBD_OPT_INFO-for-byte-aligned-.patch [bz#1692018]
+- kvm-nbd-client-Fix-error-message-for-server-with-unusabl.patch [bz#1692018]
+- kvm-iotest-Fix-241-to-run-in-generic-directory.patch [bz#1692018]
+- kvm-virtio-scsi-Move-BlockBackend-back-to-the-main-AioCo.patch [bz#1673397 bz#1673402]
+- kvm-scsi-disk-Acquire-the-AioContext-in-scsi_-_realize.patch [bz#1673397 bz#1673402]
+- kvm-virtio-scsi-Forbid-devices-with-different-iothreads-.patch [bz#1673397 bz#1673402]
+- kvm-monitor-move-init-global-earlier.patch [bz#1624009]
+- kvm-block-pflash_cfi02-Fix-memory-leak-and-potential-use.patch [bz#1624009]
+- kvm-pflash-Rename-pflash_t-to-PFlashCFI01-PFlashCFI02.patch [bz#1624009]
+- kvm-pflash_cfi01-Do-not-exit-on-guest-aborting-write-to-.patch [bz#1624009]
+- kvm-pflash_cfi01-Log-use-of-flawed-write-to-buffer.patch [bz#1624009]
+- kvm-pflash-Rename-CFI_PFLASH-to-PFLASH_CFI.patch [bz#1624009]
+- kvm-hw-Use-PFLASH_CFI0-1-2-and-TYPE_PFLASH_CFI0-1-2.patch [bz#1624009]
+- kvm-sam460ex-Don-t-size-flash-memory-to-match-backing-im.patch [bz#1624009]
+- kvm-ppc405_boards-Delete-stale-disabled-DEBUG_BOARD_INIT.patch [bz#1624009]
+- kvm-ppc405_boards-Don-t-size-flash-memory-to-match-backi.patch [bz#1624009]
+- kvm-r2d-Fix-flash-memory-size-sector-size-width-device-I.patch [bz#1624009]
+- kvm-mips_malta-Delete-disabled-broken-DEBUG_BOARD_INIT-c.patch [bz#1624009]
+- kvm-hw-mips-malta-Remove-fl_sectors-variable.patch [bz#1624009]
+- kvm-hw-mips-malta-Restrict-bios_size-variable-scope.patch [bz#1624009]
+- kvm-mips_malta-Clean-up-definition-of-flash-memory-size-.patch [bz#1624009]
+- kvm-pflash-Clean-up-after-commit-368a354f02b-part-1.patch [bz#1624009]
+- kvm-pflash-Clean-up-after-commit-368a354f02b-part-2.patch [bz#1624009]
+- kvm-qdev-Loosen-coupling-between-compat-and-other-global.patch [bz#1624009]
+- kvm-vl-Prepare-fix-of-latent-bug-with-global-and-onboard.patch [bz#1624009]
+- kvm-vl-Fix-latent-bug-with-global-and-onboard-devices.patch [bz#1624009]
+- kvm-sysbus-Fix-latent-bug-with-onboard-devices.patch [bz#1624009]
+- kvm-vl-Improve-legibility-of-BlockdevOptions-queue.patch [bz#1624009]
+- kvm-vl-Factor-configure_blockdev-out-of-main.patch [bz#1624009]
+- kvm-vl-Create-block-backends-before-setting-machine-prop.patch [bz#1624009]
+- kvm-pflash_cfi01-Add-pflash_cfi01_get_blk-helper.patch [bz#1624009]
+- kvm-pc_sysfw-Remove-unused-PcSysFwDevice.patch [bz#1624009]
+- kvm-pc_sysfw-Pass-PCMachineState-to-pc_system_firmware_i.patch [bz#1624009]
+- kvm-pc-Support-firmware-configuration-with-blockdev.patch [bz#1624009]
+- kvm-docs-interop-firmware.json-Prefer-machine-to-if-pfla.patch [bz#1624009]
+- kvm-Revert-migration-move-only_migratable-to-MigrationSt.patch [bz#1624009]
+- kvm-migration-Support-adding-migration-blockers-earlier.patch [bz#1624009]
+- Resolves: bz#1624009
+  (allow backing of pflash via -blockdev)
+- Resolves: bz#1673397
+  ([RHEL.7] qemu-kvm core dumped after hotplug the deleted disk with iothread parameter)
+- Resolves: bz#1673402
+  (Qemu core dump when start guest with two disks using same drive)
+- Resolves: bz#1692018
+  (qemu-img: Protocol error: simple reply when structured reply chunk was expected)
+
 * Mon May 13 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-28.el7
 - kvm-x86-cpu-Enable-CLDEMOTE-Demote-Cache-Line-cpu-featur.patch [bz#1537776]
 - kvm-scsi-generic-prevent-guest-from-exceeding-SG_IO-limi.patch [bz#1693879]
