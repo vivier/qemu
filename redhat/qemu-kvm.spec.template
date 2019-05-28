@@ -932,6 +932,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue May 28 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.6
+- kvm-slirp-check-sscanf-result-when-emulating-ident.patch [bz#1669070]
+- kvm-slirp-fix-big-little-endian-conversion-in-ident-prot.patch [bz#1669070]
+- kvm-slirp-ensure-there-is-enough-space-in-mbuf-to-null-t.patch [bz#1669070]
+- kvm-slirp-don-t-manipulate-so_rcv-in-tcp_emu.patch [bz#1669070]
+- Resolves: bz#1669070
+  (CVE-2019-6778 qemu-kvm-rhev: QEMU: slirp: heap buffer overflow in tcp_emu() [rhel-7.6.z])
+
 * Fri May 17 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.6
 - kvm-device_tree-Fix-integer-overflowing-in-load_device_t.patch [bz#1693114]
 - kvm-scsi-generic-prevent-guest-from-exceeding-SG_IO-limi.patch [bz#1693879]
