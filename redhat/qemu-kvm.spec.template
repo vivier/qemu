@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Jun 05 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-166.el7
+- kvm-seccomp-set-the-seccomp-filter-to-all-threads.patch [bz#1618503]
+- Resolves: bz#1618503
+  (qemu-kvm: Qemu: seccomp: blacklist is not applied to all threads [rhel-7])
+
 * Tue May 28 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-165.el7
 - kvm-Fix-eax-for-cpuid-leaf-0x40000000.patch [bz#1709495]
 - kvm-slirp-fix-big-little-endian-conversion-in-ident-prot.patch [bz#1669068]
