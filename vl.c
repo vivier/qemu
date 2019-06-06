@@ -2926,8 +2926,7 @@ static int machine_set_property(void *opaque,
  */
 static bool object_create_initial(const char *type)
 {
-    if (g_str_equal(type, "rng-egd") ||
-        g_str_has_prefix(type, "pr-manager-")) {
+    if (g_str_equal(type, "rng-egd")) {
         return false;
     }
 
