@@ -73,6 +73,14 @@ else
   rhel_target=rhel
 fi
 
+have_mpath=enable
+have_werror=enable
+if [ -n "$(uname -r | grep -e "\.fc[3-9][0-9]*\.")" ]; then
+  have_gluster=disable
+  have_mpath=disable
+  have_werror=disable
+fi
+
 ./configure \
     --prefix=${_prefix} \
     --libdir=${_libdir} \
@@ -122,7 +130,6 @@ fi
     --disable-vte \
     --enable-vnc-png \
     --enable-vnc-sasl \
-    --enable-werror \
     --disable-xen \
     --disable-xfsctl \
     --enable-gnutls \
@@ -145,11 +152,12 @@ fi
     --enable-vhost-net \
     --enable-vhost-vsock \
     --enable-vnc \
-    --enable-mpath \
     --disable-virglrenderer \
     --disable-xen-pci-passthrough \
     --enable-tcg \
     --disable-crypto-afalg \
+    --${have_werror}-werror\
+    --${have_mpath}-mpath \
     --${have_fdt}-fdt \
     --${have_gluster}-glusterfs \
     --${have_guest_agent}-guest-agent \
