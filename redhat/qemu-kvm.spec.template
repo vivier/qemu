@@ -952,6 +952,29 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 11 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-32.el7
+- kvm-rtl8139-fix-possible-out-of-bound-access.patch [bz#1636727 bz#1636780]
+- kvm-net-ignore-packet-size-greater-than-INT_MAX.patch [bz#1636779 bz#1636780]
+- kvm-net-drop-too-large-packet-early.patch [bz#1636779 bz#1636780]
+- kvm-Introduce-new-no_guest_reset-parameter-for-usb-host-.patch [bz#1710861]
+- kvm-usb-call-reset-handler-before-updating-state.patch [bz#1710861]
+- kvm-usb-host-skip-reset-for-untouched-devices.patch [bz#1710861]
+- kvm-usb-host-avoid-libusb_set_configuration-calls.patch [bz#1710861]
+- kvm-blockdev-fix-missed-target-unref-for-drive-backup.patch [bz#1703916]
+- kvm-vl-Fix-drive-blockdev-persistent-reservation-managem.patch [bz#1714160]
+- Resolves: bz#1636727
+  (CVE-2018-17958 qemu-kvm: Qemu: rtl8139: integer overflow leads to buffer overflow [rhel-7])
+- Resolves: bz#1636779
+  (CVE-2018-17963 qemu-kvm: Qemu: net: ignore packets with large size [rhel-7])
+- Resolves: bz#1636780
+  (CVE-2018-17963 qemu-kvm-rhev: Qemu: net: ignore packets with large size [rhel-7])
+- Resolves: bz#1703916
+  (Qemu core dump when quit vm after forbidden to do backup with a read-only bitmap)
+- Resolves: bz#1710861
+  (Detached device when trying to upgrade USB device firmware when in doing USB Passthrough via QEMU)
+- Resolves: bz#1714160
+  (Guest with 'reservations' for a disk start failed)
+
 * Tue Jun 04 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-31.el7
 - kvm-seccomp-set-the-seccomp-filter-to-all-threads.patch [bz#1618504]
 - Resolves: bz#1618504
