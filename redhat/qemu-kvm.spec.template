@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Jun 12 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7
+- Reverting kvm-seccomp-set-the-seccomp-filter-to-all-threads.patch [bz#1618503]
+- Resolves: bz#1618503
+  (qemu-kvm: Qemu: seccomp: blacklist is not applied to all threads [rhel-7])
+
 * Wed Jun 05 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-166.el7
 - kvm-seccomp-set-the-seccomp-filter-to-all-threads.patch [bz#1618503]
 - Resolves: bz#1618503
