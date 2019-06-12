@@ -2,8 +2,8 @@ include Makefile.common
 include Makefile.local
 
 
-rh-brew rh-local rh-srpm: RHEV=1
-rh-brew rh-local: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+rh-env-prep rh-brew rh-local rh-srpm: RHEV=1
+rh-env-prep rh-brew rh-local: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
 rh-brew: BUILD_TARGET=rhevh-rhel-7.7-candidate
 rh-brew-rhel rh-srpm-rhel: RHEV=0
 rh-brew-rhel: SRPM_NAME=$(NAME)-ma-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
@@ -38,7 +38,7 @@ ifneq ($(NOLOCALVERSION),1)
     LOCALVERSION=$(shell cat ../localversion 2>/dev/null)
   endif
   ifeq ($(LOCALVERSION),)
-    LOCALVERSION:=.$(shell id -u -n)$(shell date +"%Y%m%d%H%M")
+    LOCALVERSION:=.$(shell id -u -n | tr -dc '[:alnum:]')$(shell date +"%Y%m%d%H%M")
   else
     LOCALVERSION:=.$(LOCALVERSION)
   endif
