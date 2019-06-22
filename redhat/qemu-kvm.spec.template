@@ -932,6 +932,10 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Sat Jun 22 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.4
+- kvm-s390x-cpumodel-ignore-csske-for-expansion.patch [bz#1720262]
+- Resolves: bz#1720262
+
 * Fri May 17 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.3
 - kvm-device_tree-Fix-integer-overflowing-in-load_device_t.patch [bz#1693112]
 - Resolves: bz#1693112
