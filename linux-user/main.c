@@ -628,8 +628,9 @@ int main(int argc, char **argv, char **envp)
     int target_argc;
     int i;
     int ret;
-    int execfd;
+    int binfmt_flags, execfd;
     unsigned long max_reserved_va;
+    bool preserve_argv0;
 
     error_init(argv[0]);
     module_call_init(MODULE_INIT_TRACE);
@@ -682,6 +683,9 @@ int main(int argc, char **argv, char **envp)
 
     init_qemu_uname_release();
 
+    /*
+     * Manage binfmt-misc open-binary flag
+     */
     execfd = qemu_getauxval(AT_EXECFD);
     if (execfd == 0) {
         execfd = open(exec_path, O_RDONLY);
@@ -689,6 +693,36 @@ int main(int argc, char **argv, char **envp)
             printf("Error while loading %s: %s\n", exec_path, strerror(errno));
             _exit(EXIT_FAILURE);
         }
+    }
+
+    /*
+     * get binfmt_misc flags
+     */
+
+    binfmt_flags = qemu_getauxval(AT_FLAGS);
+
+     /*
+      * argv0 with an empty string will set argv[optind + 1]
+      * as target_argv[0]
+      */
+#ifdef CONFIG_FORCE_PRESERVE_ARGV0
+    preserve_argv0 = true;
+#else
+    /* MISC_FMT_PRESERVE_ARGV0 */
+    if (binfmt_flags & (1 << 31)) {
+        preserve_argv0 = true;
+    } else {
+        /* in case kernel doesn't provide binfmt_misc flags */
+        preserve_argv0 = (argv0 != NULL && argv0[0] == 0);
+    }
+#endif
+    /*
+     * Manage binfmt-misc preserve-arg[0] flag
+     *    argv[optind]     full path to the binary
+     *    argv[optind + 1] original argv[0]
+     */
+    if (optind + 1 < argc && preserve_argv0) {
+        optind++;
     }
 
     if (cpu_model == NULL) {
@@ -795,7 +829,7 @@ int main(int argc, char **argv, char **envp)
      * argv[0] pointer with the given one.
      */
     i = 0;
-    if (argv0 != NULL) {
+    if (argv0 != NULL && argv0[0] != 0) {
         target_argv[i++] = strdup(argv0);
     }
     for (; i < target_argc; i++) {
