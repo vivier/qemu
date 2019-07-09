@@ -647,6 +647,9 @@ int main(int argc, char **argv, char **envp)
 
     init_qemu_uname_release();
 
+    /*
+     * Manage binfmt-misc open-binary flag
+     */
     execfd = qemu_getauxval(AT_EXECFD);
     if (execfd == 0) {
         execfd = open(exec_path, O_RDONLY);
@@ -654,6 +657,19 @@ int main(int argc, char **argv, char **envp)
             printf("Error while loading %s: %s\n", exec_path, strerror(errno));
             _exit(EXIT_FAILURE);
         }
+    }
+
+    /*
+     * Manage binfmt-misc preserve-arg[0] flag
+     *    argv[optind]     full path to the binary
+     *    argv[optind + 1] original argv[0]
+     */
+    if (optind + 1 < argc && argv0 != NULL && argv0[0] == 0) {
+        /*
+         * argv0 with an empty string will set argv[optind + 1]
+         * as target_argv[0]
+         */
+        optind++;
     }
 
     if (cpu_model == NULL) {
@@ -760,7 +776,7 @@ int main(int argc, char **argv, char **envp)
      * argv[0] pointer with the given one.
      */
     i = 0;
-    if (argv0 != NULL) {
+    if (argv0 != NULL && argv0[0] != 0) {
         target_argv[i++] = strdup(argv0);
     }
     for (; i < target_argc; i++) {
