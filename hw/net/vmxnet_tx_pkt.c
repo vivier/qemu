@@ -437,7 +437,7 @@ static void vmxnet_tx_pkt_do_sw_csum(struct VmxnetTxPkt *pkt)
     csum_cntr += eth_calc_pseudo_hdr_csum(iphdr, csl);
 
     /* Put the checksum obtained into the packet */
-    csum = cpu_to_be16(net_checksum_finish(csum_cntr));
+    csum = cpu_to_be16(net_checksum_finish_nozero(csum_cntr));
     iov_from_buf(iov, iov_len, csum_offset, &csum, sizeof csum);
 }
 
