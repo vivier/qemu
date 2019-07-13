@@ -437,11 +437,6 @@ static inline uint32_t be32_to_cpupu(const uint32_t *p)
     return ldl_be_p(p);
 }
 
-static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
-{
-    stw_be_p(p, v);
-}
-
 static inline void cpu_to_be32wu(uint32_t *p, uint32_t v)
 {
     stl_be_p(p, v);
