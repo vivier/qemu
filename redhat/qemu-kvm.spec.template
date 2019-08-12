@@ -952,6 +952,27 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Aug 12 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-33.el7_7.1
+- kvm-i386-Add-new-MSR-indices-for-IA32_PRED_CMD-and-IA32_.patch [bz#1730603]
+- kvm-i386-Add-CPUID-bit-and-feature-words-for-IA32_ARCH_C.patch [bz#1730603]
+- kvm-Add-support-to-KVM_GET_MSR_FEATURE_INDEX_LIST-an.patch [bz#1730603]
+- kvm-x86-Data-structure-changes-to-support-MSR-based-feat.patch [bz#1730603]
+- kvm-x86-define-a-new-MSR-based-feature-word-FEATURE_WORD.patch [bz#1730603]
+- kvm-Use-KVM_GET_MSR_INDEX_LIST-for-MSR_IA32_ARCH_CAP.patch [bz#1730603]
+- kvm-i386-kvm-Disable-arch_capabilities-if-MSR-can-t-be-s.patch [bz#1730603]
+- kvm-i386-Make-arch_capabilities-migratable.patch [bz#1730603]
+- kvm-qxl-check-release-info-object.patch [bz#1732338]
+- kvm-ccid-Fix-dwProtocols-advertisement-of-T-0.patch [bz#1729880]
+- kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1734752]
+- Resolves: bz#1729880
+  (ccid: Fix incorrect dwProtocol advertisement of T=0 [rhel-7.7.z])
+- Resolves: bz#1730603
+  ([Intel 7.8 Bug] [KVM][CLX] CPUID_7_0_EDX_ARCH_CAPABILITIES is not enabled in VM qemu-kvm-rhev [rhel-7.7.z])
+- Resolves: bz#1732338
+  (CVE-2019-12155 qemu-kvm-rhev: QEMU: qxl: null pointer dereference while releasing spice resources [rhel-7] [rhel-7.7.z])
+- Resolves: bz#1734752
+  (CVE-2019-14378 qemu-kvm-rhev: QEMU: slirp: heap buffer overflow during packet reassembly [rhel-7.7.z])
+
 * Thu Jun 20 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-33.el7
 - kvm-vhost_net-don-t-set-backend-for-the-uninitialized-vi.patch [bz#1608226]
 - Resolves: bz#1608226
