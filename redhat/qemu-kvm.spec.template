@@ -813,6 +813,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Aug 20 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-168.el7
+- kvm-qxl-check-release-info-object.patch [bz#1712703]
+- kvm-bswap.h-Remove-cpu_to_be16wu.patch [bz#1270166]
+- kvm-net-Transmit-zero-UDP-checksum-as-0xFFFF.patch [bz#1270166]
+- kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1734749]
+- Resolves: bz#1270166
+  (UDP packet checksum is not converted from 0x0000 to 0xffff with Qemu e1000 emulation.)
+- Resolves: bz#1712703
+  (CVE-2019-12155 qemu-kvm: QEMU: qxl: null pointer dereference while releasing spice resources [rhel-7])
+- Resolves: bz#1734749
+  (CVE-2019-14378 qemu-kvm: QEMU: slirp: heap buffer overflow during packet reassembly [rhel-7.8])
+
 * Wed Jun 12 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7
 - Reverting kvm-seccomp-set-the-seccomp-filter-to-all-threads.patch [bz#1618503]
 - Resolves: bz#1618503
