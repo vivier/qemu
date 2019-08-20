@@ -952,6 +952,29 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 20 2019 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.2
+- kvm-block-Remove-error-messages-in-bdrv_make_zero.patch [bz#1743322]
+- kvm-block-Add-BDRV_REQ_NO_FALLBACK.patch [bz#1743322]
+- kvm-block-Advertise-BDRV_REQ_NO_FALLBACK-in-filter-drive.patch [bz#1743322]
+- kvm-file-posix-Fix-write_zeroes-with-unmap-on-block-devi.patch [bz#1743322]
+- kvm-file-posix-Factor-out-raw_thread_pool_submit.patch [bz#1743322]
+- kvm-file-posix-Avoid-aio_worker-for-QEMU_AIO_WRITE_ZEROE.patch [bz#1743322]
+- kvm-file-posix-Support-BDRV_REQ_NO_FALLBACK-for-zero-wri.patch [bz#1743322]
+- kvm-qemu-img-Use-BDRV_REQ_NO_FALLBACK-for-pre-zeroing.patch [bz#1743322]
+- kvm-qemu-io-Add-write-n-for-BDRV_REQ_NO_FALLBACK.patch [bz#1743322]
+- kvm-target-i386-add-MDS-NO-feature.patch [bz#1716726 bz#1743633]
+- kvm-vl-add-qemu_add_vm_change_state_handler_prio.patch [bz#1741937]
+- kvm-qdev-add-qdev_add_vm_change_state_handler.patch [bz#1741937]
+- kvm-virtio-scsi-restart-DMA-after-iothread.patch [bz#1741937]
+- Resolves: bz#1716726
+  ([Intel 7.7 FEAT] MDS_NO exposure to guest - qemu-kvm-rhev)
+- Resolves: bz#1741937
+  (QEMU gets stuck on resume/cont call from libvirt [rhel-7.7.z])
+- Resolves: bz#1743322
+  ([v2v] Migration performance regression [rhel-7.7.z])
+- Resolves: bz#1743633
+  ([Intel 7.7 FEAT] MDS_NO exposure to guest - qemu-kvm-rhev [rhel-7.7.z])
+
 * Mon Aug 12 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-33.el7_7.1
 - kvm-i386-Add-new-MSR-indices-for-IA32_PRED_CMD-and-IA32_.patch [bz#1730603]
 - kvm-i386-Add-CPUID-bit-and-feature-words-for-IA32_ARCH_C.patch [bz#1730603]
