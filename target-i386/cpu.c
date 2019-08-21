@@ -199,6 +199,17 @@ static const char *cpuid_xsave_feature_name[] = {
     NULL, NULL, NULL, NULL,
 };
 
+static const char *cpuid_apm_edx_feature_name[] = {
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    "invtsc", NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
 #define I486_FEATURES (CPUID_FP87 | CPUID_VME | CPUID_PSE)
 #define PENTIUM_FEATURES (I486_FEATURES | CPUID_DE | CPUID_TSC | \
           CPUID_MSR | CPUID_MCE | CPUID_CX8 | CPUID_MMX | CPUID_APIC)
@@ -258,6 +269,7 @@ static const char *cpuid_xsave_feature_name[] = {
           CPUID_7_0_EBX_RDSEED */
 #define TCG_7_0_ECX_FEATURES 0
 #define TCG_7_0_EDX_FEATURES 0
+#define TCG_APM_FEATURES 0
 
 
 typedef struct FeatureWordInfo {
@@ -325,6 +337,12 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .cpuid_needs_ecx = true, .cpuid_ecx = 0,
         .cpuid_reg = R_EDX,
         .tcg_features = TCG_7_0_EDX_FEATURES,
+    },
+    [FEAT_8000_0007_EDX] = {
+        .feat_names = cpuid_apm_edx_feature_name,
+        .cpuid_eax = 0x80000007,
+        .cpuid_reg = R_EDX,
+        .tcg_features = TCG_APM_FEATURES,
     },
     [FEAT_8000_0008_EBX] = {
         .feat_names = cpuid_80000008_ebx_feature_name,
@@ -1750,6 +1768,8 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
 
     /* arch-facilities: deprecated (see comment on x86_cpu_realizefn()) */
     x86_cpu_def->features[FEAT_7_0_EDX] &= ~CPUID_7_0_EDX_ARCH_CAPABILITIES;
+    /* invtsc: not migratable, so not enabled by default */
+    x86_cpu_def->features[FEAT_8000_0007_EDX] &= ~CPUID_APM_INVTSC;
 
 #endif /* CONFIG_KVM */
 }
@@ -2804,6 +2824,12 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *ebx = 0x42004200;
         *ecx = 0x02008140;
         *edx = 0;
+        break;
+    case 0x80000007:
+        *eax = 0;
+        *ebx = 0;
+        *ecx = 0;
+        *edx = env->features[FEAT_8000_0007_EDX];
         break;
     case 0x80000008:
         /* virtual & phys address size in low 2 bytes. */
