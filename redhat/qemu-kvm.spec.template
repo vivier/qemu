@@ -952,6 +952,17 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Sep 02 2019 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.3
+- kvm-file-posix-Handle-undetectable-alignment.patch [bz#1745443]
+- kvm-qemu-img-Enable-BDRV_REQ_MAY_UNMAP-in-convert.patch [bz#1743322]
+- kvm-i386-halt-poll-control-MSR-support.patch [bz#1746282]
+- Resolves: bz#1743322
+  ([v2v] Migration performance regression [rhel-7.7.z])
+- Resolves: bz#1745443
+  (qemu, qemu-img fail to detect alignment with XFS and Gluster/XFS on 4k block device [rhel-7.7.z])
+- Resolves: bz#1746282
+  (qemu-kvm: backport cpuidle-haltpoll support [rhel-7.7.z])
+
 * Tue Aug 20 2019 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.2
 - kvm-block-Remove-error-messages-in-bdrv_make_zero.patch [bz#1743322]
 - kvm-block-Add-BDRV_REQ_NO_FALLBACK.patch [bz#1743322]
