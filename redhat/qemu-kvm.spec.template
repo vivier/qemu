@@ -813,6 +813,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Sep 04 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-169.el7
+- kvm-target-i386-Support-invariant-tsc-flag.patch [bz#1626871]
+- kvm-target-i386-block-migration-and-savevm-if-invariant-.patch [bz#1626871]
+- kvm-i386-Don-t-copy-host-virtual-address-limit.patch [bz#1706658]
+- Resolves: bz#1626871
+  ([RFE] request for using TscInvariant feature with qemu-kvm.)
+- Resolves: bz#1706658
+  ([Intel 7.8 Bug] qemu-kvm fail with "err:kvm_init_vcpu() invalidate argumant" on ICX platform)
+
 * Tue Aug 20 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-168.el7
 - kvm-qxl-check-release-info-object.patch [bz#1712703]
 - kvm-bswap.h-Remove-cpu_to_be16wu.patch [bz#1270166]
