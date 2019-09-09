@@ -72,6 +72,7 @@ typedef struct MirrorBlockJob {
     int max_iov;
     bool initial_zeroing_ongoing;
     bool prepared;
+    bool in_drain;
 } MirrorBlockJob;
 
 typedef struct MirrorOp {
@@ -551,6 +552,7 @@ static int mirror_exit_common(Job *job)
 
         /* The mirror job has no requests in flight any more, but we need to
          * drain potential other users of the BDS before changing the graph. */
+        assert(s->in_drain);
         bdrv_drained_begin(target_bs);
         bdrv_replace_node(to_replace, target_bs, &local_err);
         bdrv_drained_end(target_bs);
@@ -587,6 +589,7 @@ static int mirror_exit_common(Job *job)
     blk_insert_bs(bjob->blk, mirror_top_bs, &error_abort);
 
     bdrv_drained_end(src);
+    s->in_drain = false;
     bdrv_unref(mirror_top_bs);
     bdrv_unref(src);
 
@@ -860,10 +863,12 @@ static int coroutine_fn mirror_run(Job *job, Error **errp)
              */
             trace_mirror_before_drain(s, cnt);
 
+            s->in_drain = true;
             bdrv_drained_begin(bs);
             cnt = bdrv_get_dirty_count(s->dirty_bitmap);
             if (cnt > 0 || mirror_flush(s) < 0) {
                 bdrv_drained_end(bs);
+                s->in_drain = false;
                 continue;
             }
 
@@ -911,6 +916,7 @@ immediate_exit:
     bdrv_dirty_iter_free(s->dbi);
 
     if (need_drain) {
+        s->in_drain = true;
         bdrv_drained_begin(bs);
     }
 
@@ -979,6 +985,16 @@ static void mirror_pause(Job *job)
 static bool mirror_drained_poll(BlockJob *job)
 {
     MirrorBlockJob *s = container_of(job, MirrorBlockJob, common);
+
+    /* If the job isn't paused nor cancelled, we can't be sure that it won't
+     * issue more requests. We make an exception if we've reached this point
+     * from one of our own drain sections, to avoid a deadlock waiting for
+     * ourselves.
+     */
+    if (!s->common.job.paused && !s->common.job.cancelled && !s->in_drain) {
+        return true;
+    }
+
     return !!s->in_flight;
 }
 
