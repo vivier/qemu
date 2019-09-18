@@ -938,6 +938,43 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 17 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-35.el7
+- kvm-i386-Add-new-MSR-indices-for-IA32_PRED_CMD-and-IA32_.patch [bz#1709972]
+- kvm-i386-Add-CPUID-bit-and-feature-words-for-IA32_ARCH_C.patch [bz#1709972]
+- kvm-Add-support-to-KVM_GET_MSR_FEATURE_INDEX_LIST-an.patch [bz#1709972]
+- kvm-x86-Data-structure-changes-to-support-MSR-based-feat.patch [bz#1709972]
+- kvm-x86-define-a-new-MSR-based-feature-word-FEATURE_WORD.patch [bz#1709972]
+- kvm-Use-KVM_GET_MSR_INDEX_LIST-for-MSR_IA32_ARCH_CAP.patch [bz#1709972]
+- kvm-i386-kvm-Disable-arch_capabilities-if-MSR-can-t-be-s.patch [bz#1709972]
+- kvm-i386-Make-arch_capabilities-migratable.patch [bz#1709972]
+- kvm-block-Remove-error-messages-in-bdrv_make_zero.patch [bz#1648622]
+- kvm-block-Add-BDRV_REQ_NO_FALLBACK.patch [bz#1648622]
+- kvm-block-Advertise-BDRV_REQ_NO_FALLBACK-in-filter-drive.patch [bz#1648622]
+- kvm-file-posix-Fix-write_zeroes-with-unmap-on-block-devi.patch [bz#1648622]
+- kvm-file-posix-Factor-out-raw_thread_pool_submit.patch [bz#1648622]
+- kvm-file-posix-Avoid-aio_worker-for-QEMU_AIO_WRITE_ZEROE.patch [bz#1648622]
+- kvm-file-posix-Support-BDRV_REQ_NO_FALLBACK-for-zero-wri.patch [bz#1648622]
+- kvm-qemu-img-Use-BDRV_REQ_NO_FALLBACK-for-pre-zeroing.patch [bz#1648622]
+- kvm-qemu-io-Add-write-n-for-BDRV_REQ_NO_FALLBACK.patch [bz#1648622]
+- kvm-qxl-check-release-info-object.patch [bz#1712704]
+- kvm-ccid-Fix-dwProtocols-advertisement-of-T-0.patch [bz#1721522]
+- kvm-vl-add-qemu_add_vm_change_state_handler_prio.patch [bz#1673546]
+- kvm-qdev-add-qdev_add_vm_change_state_handler.patch [bz#1673546]
+- kvm-virtio-scsi-restart-DMA-after-iothread.patch [bz#1673546]
+- kvm-block-Drain-source-node-in-bdrv_replace_node.patch [bz#1711643]
+- Resolves: bz#1648622
+  ([v2v] Migration performance regression)
+- Resolves: bz#1673546
+  (QEMU gets stuck on resume/cont call from libvirt)
+- Resolves: bz#1709972
+  ([Intel 7.8 Bug] [KVM][CLX] CPUID_7_0_EDX_ARCH_CAPABILITIES is not enabled in VM qemu-kvm-rhev)
+- Resolves: bz#1711643
+  (qemu aborts in blockCommit: qemu-kvm: block.c:3486: bdrv_replace_node: Assertion `!({ _Static_assert(!(sizeof(*&from->in_flight) > 8), "not expecting: " "sizeof(*&from->in_flight) > ATOMIC_REG_SIZE"); __atomic_load_n(&from->in_flight, 0); })' failed.)
+- Resolves: bz#1712704
+  (CVE-2019-12155 qemu-kvm-rhev: QEMU: qxl: null pointer dereference while releasing spice resources [rhel-7])
+- Resolves: bz#1721522
+  (ccid: Fix incorrect dwProtocol advertisement of T=0)
+
 * Thu Sep 05 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-34.el7
 - kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1734753 bz#1735653]
 - Resolves: bz#1734753
