@@ -253,6 +253,7 @@ int kvm_check_extension(KVMState *s, unsigned int extension);
 
 uint32_t kvm_arch_get_supported_cpuid(KVMState *env, uint32_t function,
                                       uint32_t index, int reg);
+uint32_t kvm_arch_get_supported_msr_feature(KVMState *s, uint32_t index);
 void kvm_cpu_synchronize_state(CPUArchState *env);
 
 /* generic hooks - to be moved/refactored once there are more users */
