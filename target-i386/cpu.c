@@ -34,7 +34,6 @@
 #include "qapi-visit.h"
 #include "qapi/visitor.h"
 #include "sysemu/arch_init.h"
-#include "migration/migration.h"
 
 #include "hw/hw.h"
 #if defined(CONFIG_KVM)
@@ -1819,13 +1818,6 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
         x86_cpu_def->features[w] = x86_cpu_get_supported_feature_word(w);
     }
 
-    /*
-     * Features that won't be enabled automatically by "-cpu host" even if
-     * reported by GET_SUPPORTED_CPUID:
-     */
-
-    /* arch-facilities: deprecated (see comment on x86_cpu_realizefn()) */
-    x86_cpu_def->features[FEAT_7_0_EDX] &= ~CPUID_7_0_EDX_ARCH_CAPABILITIES;
     /* invtsc: not migratable, so not enabled by default */
     x86_cpu_def->features[FEAT_8000_0007_EDX] &= ~CPUID_APM_INVTSC;
 
