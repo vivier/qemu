@@ -938,6 +938,20 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 24 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-36.el7
+- kvm-Using-ip_deq-after-m_free-might-read-pointers-from-a.patch [bz#1749723]
+- kvm-block-create-Do-not-abort-if-a-block-driver-is-not-a.patch [bz#1746224]
+- kvm-migration-Do-not-re-read-the-clock-on-pre_save-in-ca.patch [bz#1743508]
+- kvm-mirror-Confirm-we-re-quiesced-only-if-the-job-is-pau.patch [bz#1665256]
+- Resolves: bz#1665256
+  (Live storage migration fails with: TimeoutError: Timed out during operation: cannot acquire state change lock (held by monitor=remoteDispatchConnectGetAllDomainStats) and the VM becomes 'Not Responding')
+- Resolves: bz#1743508
+  (ISST-LTE:RHV4.3 on RHEL7.6 kvm host:Power8:Tuleta-L:lotg7: call traces dumped on guest while performing guest migration (qemu-kvm-rhev))
+- Resolves: bz#1746224
+  (qemu coredump: qemu-kvm: block/create.c:68: qmp_blockdev_create: Assertion `drv' failed)
+- Resolves: bz#1749723
+  (CVE-2019-15890 qemu-kvm-ma: QEMU: Slirp: use-after-free during packet reassembly [rhel-7])
+
 * Tue Sep 17 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-35.el7
 - kvm-i386-Add-new-MSR-indices-for-IA32_PRED_CMD-and-IA32_.patch [bz#1709972]
 - kvm-i386-Add-CPUID-bit-and-feature-words-for-IA32_ARCH_C.patch [bz#1709972]
