@@ -938,6 +938,20 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Sep 26 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-37.el7
+- kvm-i386-halt-poll-control-MSR-support.patch [bz#1734502]
+- kvm-target-i386-add-MDS-NO-feature.patch [bz#1716726]
+- kvm-file-posix-Handle-undetectable-alignment.patch [bz#1743365]
+- kvm-qemu-img-Enable-BDRV_REQ_MAY_UNMAP-in-convert.patch [bz#1648622]
+- Resolves: bz#1648622
+  ([v2v] Migration performance regression)
+- Resolves: bz#1716726
+  ([Intel 7.8 FEAT] MDS_NO exposure to guest - qemu-kvm-rhev)
+- Resolves: bz#1734502
+  (qemu-kvm: backport cpuidle-haltpoll support)
+- Resolves: bz#1743365
+  (qemu, qemu-img fail to detect alignment with XFS and Gluster/XFS on 4k block device)
+
 * Tue Sep 24 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-36.el7
 - kvm-Using-ip_deq-after-m_free-might-read-pointers-from-a.patch [bz#1749723]
 - kvm-block-create-Do-not-abort-if-a-block-driver-is-not-a.patch [bz#1746224]
