@@ -80,6 +80,7 @@ static bool has_msr_mtrr;
 static bool has_msr_xss;
 static bool has_msr_spec_ctrl;
 static bool has_msr_virt_ssbd;
+static bool has_msr_arch_capabs;
 
 static bool has_msr_architectural_pmu;
 static uint32_t num_architectural_pmu_counters;
@@ -888,6 +889,10 @@ static int kvm_get_supported_msrs(KVMState *s)
                     has_msr_virt_ssbd = true;
                     continue;
                 }
+                if (kvm_msr_list->indices[i] == MSR_IA32_ARCH_CAPABILITIES) {
+                    has_msr_arch_capabs = true;
+                    continue;
+                }
             }
         }
 
@@ -1326,14 +1331,9 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
         }
     }
     /* If host supports feature MSR, write down. */
-    if (kvm_feature_msrs) {
-        int i;
-        for (i = 0; i < kvm_feature_msrs->nmsrs; i++)
-            if (kvm_feature_msrs->indices[i] == MSR_IA32_ARCH_CAPABILITIES) {
-                kvm_msr_entry_set(&msrs[n++], MSR_IA32_ARCH_CAPABILITIES,
-                              env->features[FEAT_ARCH_CAPABILITIES]);
-                break;
-            }
+    if (has_msr_arch_capabs) {
+        kvm_msr_entry_set(&msrs[n++], MSR_IA32_ARCH_CAPABILITIES,
+                          env->features[FEAT_ARCH_CAPABILITIES]);
     }
     /*
      * The following MSRs have side effects on the guest or are too heavy
@@ -1924,6 +1924,9 @@ static int kvm_get_msrs(X86CPU *cpu)
             break;
         case MSR_VIRT_SSBD:
             env->virt_ssbd = msrs[i].data;
+            break;
+        case MSR_IA32_ARCH_CAPABILITIES:
+            env->features[FEAT_ARCH_CAPABILITIES] = msrs[i].data;
             break;
         }
     }

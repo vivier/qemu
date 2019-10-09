@@ -1065,6 +1065,7 @@ typedef struct CPUX86State {
 
     uint64_t spec_ctrl;
     uint64_t virt_ssbd;
+    uint64_t virt_arch_capabs;
 
     TPRAccess tpr_access_type;
 } CPUX86State;
