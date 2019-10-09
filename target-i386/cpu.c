@@ -199,6 +199,17 @@ static const char *cpuid_xsave_feature_name[] = {
     NULL, NULL, NULL, NULL,
 };
 
+static const char *cpuid_arch_capabilities_feature_name[] = {
+    "rdctl-no", "ibrs-all", "rsba", "skip-l1dfl-vmentry",
+    "ssb-no", NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
 #define I486_FEATURES (CPUID_FP87 | CPUID_VME | CPUID_PSE)
 #define PENTIUM_FEATURES (I486_FEATURES | CPUID_DE | CPUID_TSC | \
           CPUID_MSR | CPUID_MCE | CPUID_CX8 | CPUID_MMX | CPUID_APIC)
@@ -373,6 +384,18 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
             .eax = 0xd,
             .needs_ecx = true, .ecx = 1,
             .reg = R_EAX,
+        },
+    },
+    /*Below are MSR exposed features*/
+    [FEAT_ARCH_CAPABILITIES] = {
+        .type = MSR_FEATURE_WORD,
+        .feat_names = cpuid_arch_capabilities_feature_name,
+        .msr = {
+            .index = MSR_IA32_ARCH_CAPABILITIES,
+            .cpuid_dep = {
+                FEAT_7_0_EDX,
+                CPUID_7_0_EDX_ARCH_CAPABILITIES
+            }
         },
     },
 };
