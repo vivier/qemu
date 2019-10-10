@@ -2978,7 +2978,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             if (kvm_enabled()) {
                 uint32_t _eax;
                 host_cpuid(0x80000000, 0, &_eax, NULL, NULL, NULL);
-                if (_eax >= 0x80000008)
+                if (_eax >= 0x80000008) {
                     host_cpuid(0x80000008, 0, &_eax, NULL, NULL, NULL);
                     /*
                      * Override physical size only, as RHEL-7 KVM only supports
@@ -2986,6 +2986,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                      */
                     *eax &= ~0xff;
                     *eax |= _eax & 0xff;
+                }
             }
         } else {
             if (env->features[FEAT_1_EDX] & CPUID_PSE36) {
