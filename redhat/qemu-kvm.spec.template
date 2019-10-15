@@ -938,6 +938,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Oct 15 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-38.el7
+- kvm-usb-drop-unnecessary-usb_device_post_load-checks.patch [bz#1724048]
+- kvm-i386-Add-new-model-of-Cascadelake-Server.patch [bz#1638472]
+- kvm-i386-Disable-OSPKE-on-Cascadelake-Server.patch [bz#1638472]
+- kvm-i386-remove-the-INTEL_PT-CPUID-bit-from-Cascadelake-.patch [bz#1638472]
+- Resolves: bz#1638472
+  ([Intel 7.8 Feat] qemu-kvm-rhev Introduce Cascade Lake (CLX) cpu model)
+- Resolves: bz#1724048
+  (Fail to migrate a rhel6.10-mt7.6 guest with dimm device)
+
 * Thu Sep 26 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-37.el7
 - kvm-i386-halt-poll-control-MSR-support.patch [bz#1734502]
 - kvm-target-i386-add-MDS-NO-feature.patch [bz#1716726]
