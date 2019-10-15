@@ -813,6 +813,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Oct 15 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-171.el7
+- kvm-i386-Add-new-model-of-Cascadelake-Server.patch [bz#1638471]
+- kvm-i386-Disable-OSPKE-on-Cascadelake-Server.patch [bz#1638471]
+- kvm-i386-remove-the-INTEL_PT-CPUID-bit-from-Cascadelake-.patch [bz#1638471]
+- kvm-Add-missing-brackets-to-CPUID-0x80000008-code.patch [bz#1760607]
+- Resolves: bz#1638471
+  ([Intel 7.8 Feat] qemu-kvm Introduce Cascade Lake (CLX) cpu model)
+- Resolves: bz#1760607
+  (Corrupted EAX values due to missing brackets at CPUID[0x800000008] code)
+
 * Wed Oct 02 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-170.el7
 - kvm-Using-ip_deq-after-m_free-might-read-pointers-from-a.patch [bz#1749735]
 - kvm-target-i386-Merge-feature-filtering-checking-functio.patch [bz#1709971]
