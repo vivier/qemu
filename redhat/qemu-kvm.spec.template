@@ -813,6 +813,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon Nov 04 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-160.el7_6.4
+- kvm-target-i386-Merge-feature-filtering-checking-functio.patch [bz#1730605]
+- kvm-target-i386-Isolate-KVM-specific-code-on-CPU-feature.patch [bz#1730605]
+- kvm-i386-Add-new-MSR-indices-for-IA32_PRED_CMD-and-IA32_.patch [bz#1730605]
+- kvm-i386-Add-CPUID-bit-and-feature-words-for-IA32_ARCH_C.patch [bz#1730605]
+- kvm-Add-support-to-KVM_GET_MSR_FEATURE_INDEX_LIST-an.patch [bz#1730605]
+- kvm-x86-Data-structure-changes-to-support-MSR-based-feat.patch [bz#1730605]
+- kvm-x86-define-a-new-MSR-based-feature-word-FEATURE_WORD.patch [bz#1730605]
+- kvm-Use-KVM_GET_MSR_INDEX_LIST-for-MSR_IA32_ARCH_CAP.patch [bz#1730605]
+- kvm-i386-kvm-Disable-arch_capabilities-if-MSR-can-t-be-s.patch [bz#1730605]
+- kvm-Remove-arch-capabilities-deprecation.patch [bz#1730605]
+- Resolves: bz#1730605
+  ([Intel 7.8 Bug] [KVM][CLX] CPUID_7_0_EDX_ARCH_CAPABILITIES is not enabled in VM qemu-kvm [rhel-7.6.z])
+
 * Tue May 28 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-160.el7_6.3
 - kvm-slirp-check-sscanf-result-when-emulating-ident.patch [bz#1669067]
 - kvm-slirp-fix-big-little-endian-conversion-in-ident-prot.patch [bz#1669067]
