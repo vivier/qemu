@@ -952,6 +952,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Nov 04 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-33.el7_7.5
+- kvm-mirror-Confirm-we-re-quiesced-only-if-the-job-is-pau.patch [bz#1755340]
+- kvm-mc146818rtc-fix-timer-interrupt-reinjection.patch [bz#1767624]
+- Resolves: bz#1755340
+  (Live storage migration fails with: TimeoutError: Timed out during operation: cannot acquire state change lock (held by monitor=remoteDispatchConnectGetAllDomainStats) and the VM becomes 'Not Responding' [rhel-7.7.z])
+- Resolves: bz#1767624
+  (After host update, older windows clients have large time drift (7.7.z))
+
 * Tue Sep 10 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-33.el7_7.4
 - kvm-block-Drain-source-node-in-bdrv_replace_node.patch [bz#1750322]
 - Resolves: bz#1750322
