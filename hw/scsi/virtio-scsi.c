@@ -20,6 +20,7 @@
 #include "qemu/error-report.h"
 #include "qemu/iov.h"
 #include "sysemu/block-backend.h"
+#include "sysemu/blockdev.h"
 #include "hw/scsi/scsi.h"
 #include "scsi/constants.h"
 #include "hw/virtio/virtio-bus.h"
@@ -839,6 +840,9 @@ static void virtio_scsi_hotunplug(HotplugHandler *hotplug_dev, DeviceState *dev,
     VirtIODevice *vdev = VIRTIO_DEVICE(hotplug_dev);
     VirtIOSCSI *s = VIRTIO_SCSI(vdev);
     SCSIDevice *sd = SCSI_DEVICE(dev);
+    AioContext *ctx = s->ctx ?: qemu_get_aio_context();
+    BlockDriverState *bs;
+    DriveInfo *dinfo;
 
     if (virtio_vdev_has_feature(vdev, VIRTIO_SCSI_F_HOTPLUG)) {
         virtio_scsi_acquire(s);
@@ -848,13 +852,31 @@ static void virtio_scsi_hotunplug(HotplugHandler *hotplug_dev, DeviceState *dev,
         virtio_scsi_release(s);
     }
 
-    if (s->ctx) {
+    /*
+     * This SCSIDevice goes away after calling qdev_simple_device_unplug_cb(),
+     * so get a reference to the underlying BDS here to be able to switch
+     * its AioContext afterwards.
+     */
+    bs = blk_bs(sd->conf.blk);
+
+    /*
+     * Drives attached to a legacy device will get auto deleted while
+     * unplugging the latter, so we don't need to switch their context.
+     * Get a reference to dinfo here, which is only NULL for non-legacy
+     * devices, and use it to avoid doing the switch for drives attached
+     * to legacy devices.
+     */
+    dinfo = blk_legacy_dinfo(sd->conf.blk);
+
+    aio_disable_external(ctx);
+    qdev_simple_device_unplug_cb(hotplug_dev, dev, errp);
+    aio_enable_external(ctx);
+
+    if (s->ctx && bs && !dinfo) {
         virtio_scsi_acquire(s);
-        blk_set_aio_context(sd->conf.blk, qemu_get_aio_context());
+        bdrv_set_aio_context(bs, qemu_get_aio_context());
         virtio_scsi_release(s);
     }
-
-    qdev_simple_device_unplug_cb(hotplug_dev, dev, errp);
 }
 
 static struct SCSIBusInfo virtio_scsi_scsi_info = {
