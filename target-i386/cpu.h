@@ -307,7 +307,11 @@
 #define MSR_IA32_SPEC_CTRL              0x48
 #define MSR_VIRT_SSBD                   0xc001011f
 #define MSR_IA32_PRED_CMD               0x49
+
 #define MSR_IA32_ARCH_CAPABILITIES      0x10a
+#define ARCH_CAP_TSX_CTRL_MSR		(1<<7)
+
+#define MSR_IA32_TSX_CTRL		0x122
 #define MSR_IA32_TSCDEADLINE            0x6e0
 
 #define MSR_P6_PERFCTR0                 0xc1
@@ -1062,6 +1066,7 @@ typedef struct CPUX86State {
     uint64_t xss;
 
     uint32_t pkru;
+    uint32_t tsx_ctrl;
 
     uint64_t spec_ctrl;
     uint64_t virt_ssbd;
