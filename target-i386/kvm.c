@@ -79,6 +79,7 @@ static bool has_msr_hv_tsc;
 static bool has_msr_mtrr;
 static bool has_msr_xss;
 static bool has_msr_spec_ctrl;
+static bool has_msr_tsx_ctrl;
 static bool has_msr_virt_ssbd;
 static bool has_msr_arch_capabs;
 
@@ -894,6 +895,10 @@ static int kvm_get_supported_msrs(KVMState *s)
                     has_msr_spec_ctrl = true;
                     continue;
                 }
+                if (kvm_msr_list->indices[i] == MSR_IA32_TSX_CTRL) {
+                    has_msr_tsx_ctrl = true;
+                    continue;
+                }
                 if (kvm_msr_list->indices[i] == MSR_VIRT_SSBD) {
                     has_msr_virt_ssbd = true;
                     continue;
@@ -1316,6 +1321,9 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
     if (has_msr_spec_ctrl) {
         kvm_msr_entry_set(&msrs[n++], MSR_IA32_SPEC_CTRL, env->spec_ctrl);
     }
+    if (has_msr_tsx_ctrl) {
+        kvm_msr_entry_set(&msrs[n++], MSR_IA32_TSX_CTRL, env->tsx_ctrl);
+    }
     if (has_msr_virt_ssbd) {
         kvm_msr_entry_set(&msrs[n++], MSR_VIRT_SSBD, env->virt_ssbd);
     }
@@ -1685,6 +1693,9 @@ static int kvm_get_msrs(X86CPU *cpu)
     if (has_msr_spec_ctrl) {
         msrs[n++].index = MSR_IA32_SPEC_CTRL;
     }
+    if (has_msr_tsx_ctrl) {
+        msrs[n++].index = MSR_IA32_TSX_CTRL;
+    }
     if (has_msr_virt_ssbd) {
         msrs[n++].index = MSR_VIRT_SSBD;
     }
@@ -1930,6 +1941,9 @@ static int kvm_get_msrs(X86CPU *cpu)
             break;
         case MSR_IA32_SPEC_CTRL:
             env->spec_ctrl = msrs[i].data;
+            break;
+        case MSR_IA32_TSX_CTRL:
+            env->tsx_ctrl = msrs[i].data;
             break;
         case MSR_VIRT_SSBD:
             env->virt_ssbd = msrs[i].data;
