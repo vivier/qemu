@@ -201,7 +201,7 @@ static const char *cpuid_xsave_feature_name[] = {
 static const char *cpuid_arch_capabilities_feature_name[] = {
     "rdctl-no", "ibrs-all", "rsba", "skip-l1dfl-vmentry",
     "ssb-no", NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
+    "taa-no", NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
