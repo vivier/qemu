@@ -938,6 +938,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Dec 03 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-39.el7
+- kvm-virtio-scsi-fixed-virtio_scsi_ctx_check-failed-when-.patch [bz#1764120]
+- Resolves: bz#1764120
+  ([Data plane]virtio_scsi_ctx_check: Assertion `blk_get_aio_context(d->conf.blk) == s->ctx' failed when unplug a device that running block stream on it)
+
 * Tue Oct 15 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-38.el7
 - kvm-usb-drop-unnecessary-usb_device_post_load-checks.patch [bz#1724048]
 - kvm-i386-Add-new-model-of-Cascadelake-Server.patch [bz#1638472]
