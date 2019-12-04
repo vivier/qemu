@@ -190,12 +190,14 @@ static uint32_t rtc_periodic_clock_ticks(RTCState *s)
  * is just due to period adjustment.
  */
 static void
-periodic_timer_update(RTCState *s, int64_t current_time, uint32_t old_period)
+periodic_timer_update(RTCState *s, int64_t current_time, uint32_t old_period, bool period_change)
 {
     uint32_t period;
     int64_t cur_clock, next_irq_clock, lost_clock = 0;
 
     period = rtc_periodic_clock_ticks(s);
+    s->period = period;
+
     if (!period) {
         s->irq_coalesced = 0;
         timer_del(s->periodic_timer);
@@ -210,7 +212,7 @@ periodic_timer_update(RTCState *s, int64_t current_time, uint32_t old_period)
      * if the periodic timer's update is due to period re-configuration,
      * we should count the clock since last interrupt.
      */
-    if (old_period) {
+    if (old_period && period_change) {
         int64_t last_periodic_clock, next_periodic_clock;
 
         next_periodic_clock = muldiv64(s->next_periodic_time,
@@ -237,7 +239,6 @@ periodic_timer_update(RTCState *s, int64_t current_time, uint32_t old_period)
     if (s->lost_tick_policy == LOST_TICK_POLICY_SLEW) {
         uint32_t old_irq_coalesced = s->irq_coalesced;
 
-        s->period = period;
         lost_clock += old_irq_coalesced * old_period;
         s->irq_coalesced = lost_clock / s->period;
         lost_clock %= s->period;
@@ -267,7 +268,7 @@ static void rtc_periodic_timer(void *opaque)
 {
     RTCState *s = opaque;
 
-    periodic_timer_update(s, s->next_periodic_time, 0);
+    periodic_timer_update(s, s->next_periodic_time, s->period, false);
     s->cmos_data[RTC_REG_C] |= REG_C_PF;
     if (s->cmos_data[RTC_REG_B] & REG_B_PIE) {
         s->cmos_data[RTC_REG_C] |= REG_C_IRQF;
@@ -533,7 +534,7 @@ static void cmos_ioport_write(void *opaque, hwaddr addr,
 
             if (update_periodic_timer) {
                 periodic_timer_update(s, qemu_clock_get_ns(rtc_clock),
-                                      old_period);
+                                      old_period, true);
             }
 
             check_update_timer(s);
@@ -572,7 +573,7 @@ static void cmos_ioport_write(void *opaque, hwaddr addr,
 
             if (update_periodic_timer) {
                 periodic_timer_update(s, qemu_clock_get_ns(rtc_clock),
-                                      old_period);
+                                      old_period, true);
             }
 
             check_update_timer(s);
@@ -816,6 +817,7 @@ static int rtc_post_load(void *opaque, int version_id)
         s->offset = 0;
         check_update_timer(s);
     }
+    s->period = rtc_periodic_clock_ticks(s);
 
     /* The periodic timer is deterministic in record/replay mode,
      * so there is no need to update it after loading the vmstate.
@@ -825,7 +827,7 @@ static int rtc_post_load(void *opaque, int version_id)
         uint64_t now = qemu_clock_get_ns(rtc_clock);
         if (now < s->next_periodic_time ||
             now > (s->next_periodic_time + get_max_clock_jump())) {
-            periodic_timer_update(s, qemu_clock_get_ns(rtc_clock), 0);
+            periodic_timer_update(s, qemu_clock_get_ns(rtc_clock), s->period, false);
         }
     }
 
@@ -893,7 +895,7 @@ static void rtc_notify_clock_reset(Notifier *notifier, void *data)
     int64_t now = *(int64_t *)data;
 
     rtc_set_date_from_host(ISA_DEVICE(s));
-    periodic_timer_update(s, now, 0);
+    periodic_timer_update(s, now, s->period, false);
     check_update_timer(s);
 
     if (s->lost_tick_policy == LOST_TICK_POLICY_SLEW) {
