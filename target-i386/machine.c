@@ -778,6 +778,24 @@ static const VMStateDescription vmstate_msr_virt_ssbd = {
     }
 };
 
+static bool msr_tsx_ctrl_needed(void *opaque)
+{
+    X86CPU *cpu = opaque;
+    CPUX86State *env = &cpu->env;
+
+    return env->features[FEAT_ARCH_CAPABILITIES] & ARCH_CAP_TSX_CTRL_MSR;
+}
+
+static const VMStateDescription vmstate_msr_tsx_ctrl = {
+    .name = "cpu/msr_tsx_ctrl",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .fields = (VMStateField[]) {
+        VMSTATE_UINT32(env.tsx_ctrl, X86CPU),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 VMStateDescription vmstate_x86_cpu = {
     .name = "cpu",
     .version_id = 12,
@@ -938,6 +956,9 @@ VMStateDescription vmstate_x86_cpu = {
         }, {
             .vmsd = &vmstate_msr_virt_ssbd,
             .needed = virt_ssbd_needed,
+        }, {
+            .vmsd = &vmstate_msr_tsx_ctrl,
+            .needed = msr_tsx_ctrl_needed,
         } , {
             /* empty */
         }
