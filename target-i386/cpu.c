@@ -212,7 +212,7 @@ static const char *cpuid_apm_edx_feature_name[] = {
 static const char *cpuid_arch_capabilities_feature_name[] = {
     "rdctl-no", "ibrs-all", "rsba", "skip-l1dfl-vmentry",
     "ssb-no", "mds-no", NULL, NULL,
-    NULL, NULL, NULL, NULL,
+    "taa-no", NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
