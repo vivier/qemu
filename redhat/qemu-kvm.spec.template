@@ -938,6 +938,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Dec 04 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-40.el7
+- kvm-vhost-fix-vhost_log-size-overflow-during-migration.patch [bz#1775251]
+- Resolves: bz#1775251
+  (qemu-kvm crashes when Windows VM is migrated with multiqueue)
+
 * Tue Dec 03 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-39.el7
 - kvm-virtio-scsi-fixed-virtio_scsi_ctx_check-failed-when-.patch [bz#1764120]
 - Resolves: bz#1764120
