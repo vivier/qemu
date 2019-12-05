@@ -813,6 +813,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Thu Dec 05 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-172.el7
+- kvm-target-i386-Export-TAA_NO-bit-to-guests.patch [bz#1771961]
+- kvm-target-i386-add-support-for-MSR_IA32_TSX_CTRL.patch [bz#1771961]
+- Resolves: bz#1771961
+  (CVE-2019-11135 qemu-kvm: hw: TSX Transaction Asynchronous Abort (TAA) [rhel-7.8])
+
 * Tue Oct 15 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-171.el7
 - kvm-i386-Add-new-model-of-Cascadelake-Server.patch [bz#1638471]
 - kvm-i386-Disable-OSPKE-on-Cascadelake-Server.patch [bz#1638471]
