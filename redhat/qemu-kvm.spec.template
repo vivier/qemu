@@ -813,6 +813,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Dec 10 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7_7.3
+- kvm-target-i386-Export-TAA_NO-bit-to-guests.patch [bz#1771960]
+- kvm-target-i386-add-support-for-MSR_IA32_TSX_CTRL.patch [bz#1771960]
+- Resolves: bz#1771960
+  (CVE-2019-11135 qemu-kvm: hw: TSX Transaction Asynchronous Abort (TAA) [rhel-7.7.z])
+
 * Thu Oct 24 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7_7.2
 - kvm-target-i386-Merge-feature-filtering-checking-functio.patch [bz#1730606]
 - kvm-target-i386-Isolate-KVM-specific-code-on-CPU-feature.patch [bz#1730606]
