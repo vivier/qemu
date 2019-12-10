@@ -938,6 +938,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Dec 10 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-41.el7
+- kvm-mc146818rtc-fix-timer-interrupt-reinjection.patch [bz#1639098]
+- kvm-Revert-mc146818rtc-fix-timer-interrupt-reinjection.patch [bz#1639098]
+- kvm-mc146818rtc-fix-timer-interrupt-reinjection-again.patch [bz#1639098]
+- Resolves: bz#1639098
+  (After host update, older windows clients have large time drift)
+
 * Wed Dec 04 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-40.el7
 - kvm-vhost-fix-vhost_log-size-overflow-during-migration.patch [bz#1775251]
 - Resolves: bz#1775251
