@@ -952,6 +952,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Jan 06 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.8
+- kvm-target-i386-Export-TAA_NO-bit-to-guests.patch [bz#1779529]
+- kvm-target-i386-add-support-for-MSR_IA32_TSX_CTRL.patch [bz#1779529]
+- Resolves: bz#1779529
+  (CVE-2019-11135 qemu-kvm-rhev: hw: TSX Transaction Asynchronous Abort (TAA) [rhel-7.7.z])
+
 * Fri Dec 06 2019 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.7
 - kvm-vhost-fix-vhost_log-size-overflow-during-migration.patch [bz#1779100]
 - kvm-mc146818rtc-fix-timer-interrupt-reinjection2.patch [bz#1767624]
