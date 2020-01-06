@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon Jan 06 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7_7.4
+- kvm-target-i386-add-MDS-NO-feature.patch [bz#1755333]
+- Resolves: bz#1755333
+  ([Intel 7.8 FEAT] MDS_NO exposure to guest - qemu-kvm [rhel-7.7.z])
+
 * Tue Dec 10 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7_7.3
 - kvm-target-i386-Export-TAA_NO-bit-to-guests.patch [bz#1771960]
 - kvm-target-i386-add-support-for-MSR_IA32_TSX_CTRL.patch [bz#1771960]
