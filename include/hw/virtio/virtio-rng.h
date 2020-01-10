@@ -26,13 +26,14 @@ struct VirtIORNGConf {
     RngBackend *rng;
     uint64_t max_bytes;
     uint32_t period_ms;
+    uint64_t host_features;
 };
 
 typedef struct VirtIORNG {
     VirtIODevice parent_obj;
 
-    /* Only one vq - guest puts buffer(s) on it when it needs entropy */
     VirtQueue *request_vq;
+    VirtQueue *ctrl_vq;
 
     VirtIORNGConf conf;
 

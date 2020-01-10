@@ -128,9 +128,76 @@ static void virtio_rng_handle_input(VirtIODevice *vdev, VirtQueue *vq)
     virtio_rng_process(vrng);
 }
 
-static uint64_t get_features(VirtIODevice *vdev, uint64_t f, Error **errp)
+static virtio_rng_ctrl_ack virtio_rng_flush(VirtIORNG *vrng)
 {
-    return f;
+    VirtQueueElement *elem;
+    VirtIODevice *vdev = VIRTIO_DEVICE(vrng);
+
+    trace_virtio_rng_flush(vrng);
+    while (!virtio_queue_empty(vrng->request_vq)) {
+        elem = virtqueue_pop(vrng->request_vq, sizeof(VirtQueueElement));
+        if (!elem) {
+            break;
+        }
+        trace_virtio_rng_flush_popped(vrng);
+        virtqueue_push(vrng->request_vq, elem, 0);
+        trace_virtio_rng_flush_pushed(vrng);
+        g_free(elem);
+    }
+    virtio_notify(vdev, vrng->request_vq);
+
+    return VIRTIO_RNG_OK;
+}
+
+static void virtio_rng_handle_ctrl(VirtIODevice *vdev, VirtQueue *vq)
+{
+    VirtIORNG *vrng = VIRTIO_RNG(vdev);
+    VirtQueueElement *elem;
+    virtio_rng_ctrl_ack status = VIRTIO_RNG_ERR;
+    struct virtio_rng_ctrl_hdr ctrl;
+    size_t s;
+
+    trace_virtio_rng_ctrl(vrng);
+    for (;;) {
+        elem = virtqueue_pop(vq, sizeof(VirtQueueElement));
+        if (!elem) {
+            break;
+        }
+        trace_virtio_rng_ctrl_popped(vrng);
+
+        if (iov_size(elem->in_sg, elem->in_num) < sizeof(status) ||
+            iov_size(elem->out_sg, elem->out_num) < sizeof(ctrl)) {
+            virtio_error(vdev, "virtio-rng ctrl missing headers");
+            virtqueue_detach_element(vq, elem, 0);
+            g_free(elem);
+            break;
+        }
+
+        s = iov_to_buf(elem->out_sg, elem->out_num, 0, &ctrl, sizeof(ctrl));
+        if (s != sizeof(ctrl)) {
+            status = VIRTIO_RNG_ERR;
+        } else if (ctrl.cmd == VIRTIO_RNG_CMD_FLUSH) {
+            status = virtio_rng_flush(vrng);
+        }
+
+        s = iov_from_buf(elem->in_sg, elem->in_num, 0, &status, sizeof(status));
+        assert(s == sizeof(status));
+
+        virtqueue_push(vq, elem, sizeof(status));
+        trace_virtio_rng_ctrl_pushed(vrng);
+        virtio_notify(vdev, vq);
+        g_free(elem);
+    }
+}
+
+static uint64_t virtio_rng_get_features(VirtIODevice *vdev, uint64_t features,
+                                        Error **errp)
+{
+    VirtIORNG *vrng = VIRTIO_RNG(vdev);
+
+    features |= vrng->conf.host_features;
+
+    return features;
 }
 
 static void virtio_rng_vm_state_change(void *opaque, int running,
@@ -218,6 +285,9 @@ static void virtio_rng_device_realize(DeviceState *dev, Error **errp)
     virtio_init(vdev, "virtio-rng", VIRTIO_ID_RNG, 0);
 
     vrng->request_vq = virtio_add_queue(vdev, 8, virtio_rng_handle_input);
+    if (virtio_has_feature(vrng->conf.host_features, VIRTIO_RNG_F_CTRL_VQ)) {
+        vrng->ctrl_vq = virtio_add_queue(vdev, 8, virtio_rng_handle_ctrl);
+    }
     vrng->quota_remaining = vrng->conf.max_bytes;
     vrng->rate_limit_timer = timer_new_ms(QEMU_CLOCK_VIRTUAL,
                                                check_rate_limit, vrng);
@@ -235,6 +305,9 @@ static void virtio_rng_device_unrealize(DeviceState *dev)
     qemu_del_vm_change_state_handler(vrng->vmstate);
     timer_del(vrng->rate_limit_timer);
     timer_free(vrng->rate_limit_timer);
+    if (virtio_has_feature(vrng->conf.host_features, VIRTIO_RNG_F_CTRL_VQ)) {
+        virtio_delete_queue(vrng->ctrl_vq);
+    }
     virtio_delete_queue(vrng->request_vq);
     virtio_cleanup(vdev);
 }
@@ -258,6 +331,8 @@ static Property virtio_rng_properties[] = {
     DEFINE_PROP_UINT64("max-bytes", VirtIORNG, conf.max_bytes, INT64_MAX),
     DEFINE_PROP_UINT32("period", VirtIORNG, conf.period_ms, 1 << 16),
     DEFINE_PROP_LINK("rng", VirtIORNG, conf.rng, TYPE_RNG_BACKEND, RngBackend *),
+    DEFINE_PROP_BIT64("ctrl-queue", VirtIORNG, conf.host_features,
+                      VIRTIO_RNG_F_CTRL_VQ, true),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -271,7 +346,7 @@ static void virtio_rng_class_init(ObjectClass *klass, void *data)
     set_bit(DEVICE_CATEGORY_MISC, dc->categories);
     vdc->realize = virtio_rng_device_realize;
     vdc->unrealize = virtio_rng_device_unrealize;
-    vdc->get_features = get_features;
+    vdc->get_features = virtio_rng_get_features;
     vdc->set_status = virtio_rng_set_status;
 }
 

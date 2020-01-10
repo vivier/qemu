@@ -39,6 +39,12 @@ virtio_rng_popped(void *rng) "rng %p: elem popped"
 virtio_rng_pushed(void *rng, size_t len) "rng %p: %zd bytes pushed"
 virtio_rng_request(void *rng, size_t size, unsigned quota) "rng %p: %zd bytes requested, %u bytes quota left"
 virtio_rng_vm_state_change(void *rng, int running, int state) "rng %p: state change to running %d state %d"
+virtio_rng_ctrl(void *rng) "rng %p"
+virtio_rng_ctrl_popped(void *rng) "rng %p"
+virtio_rng_ctrl_pushed(void *rng) "rng %p"
+virtio_rng_flush(void *rng) "rng %p"
+virtio_rng_flush_popped(void *rng) "rng %p"
+virtio_rng_flush_pushed(void *rng) "rng %p"
 
 # virtio-balloon.c
 #
