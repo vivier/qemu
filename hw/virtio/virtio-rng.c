@@ -25,7 +25,7 @@
 static bool is_guest_ready(VirtIORNG *vrng)
 {
     VirtIODevice *vdev = VIRTIO_DEVICE(vrng);
-    if (virtio_queue_ready(vrng->vq)
+    if (virtio_queue_ready(vrng->request_vq)
         && (vdev->status & VIRTIO_CONFIG_S_DRIVER_OK)) {
         return true;
     }
@@ -69,7 +69,7 @@ static void chr_read(void *opaque, const void *buf, size_t size)
 
     offset = 0;
     while (offset < size) {
-        elem = virtqueue_pop(vrng->vq, sizeof(VirtQueueElement));
+        elem = virtqueue_pop(vrng->request_vq, sizeof(VirtQueueElement));
         if (!elem) {
             break;
         }
@@ -78,13 +78,13 @@ static void chr_read(void *opaque, const void *buf, size_t size)
                            0, buf + offset, size - offset);
         offset += len;
 
-        virtqueue_push(vrng->vq, elem, len);
+        virtqueue_push(vrng->request_vq, elem, len);
         trace_virtio_rng_pushed(vrng, len);
         g_free(elem);
     }
-    virtio_notify(vdev, vrng->vq);
+    virtio_notify(vdev, vrng->request_vq);
 
-    if (!virtio_queue_empty(vrng->vq)) {
+    if (!virtio_queue_empty(vrng->request_vq)) {
         /* If we didn't drain the queue, call virtio_rng_process
          * to take care of asking for more data as appropriate.
          */
@@ -112,7 +112,7 @@ static void virtio_rng_process(VirtIORNG *vrng)
     } else {
         quota = MIN((uint64_t)vrng->quota_remaining, (uint64_t)UINT32_MAX);
     }
-    size = get_request_size(vrng->vq, quota);
+    size = get_request_size(vrng->request_vq, quota);
 
     trace_virtio_rng_request(vrng, size, quota);
 
@@ -122,7 +122,7 @@ static void virtio_rng_process(VirtIORNG *vrng)
     }
 }
 
-static void handle_input(VirtIODevice *vdev, VirtQueue *vq)
+static void virtio_rng_handle_input(VirtIODevice *vdev, VirtQueue *vq)
 {
     VirtIORNG *vrng = VIRTIO_RNG(vdev);
     virtio_rng_process(vrng);
@@ -217,7 +217,7 @@ static void virtio_rng_device_realize(DeviceState *dev, Error **errp)
 
     virtio_init(vdev, "virtio-rng", VIRTIO_ID_RNG, 0);
 
-    vrng->vq = virtio_add_queue(vdev, 8, handle_input);
+    vrng->request_vq = virtio_add_queue(vdev, 8, virtio_rng_handle_input);
     vrng->quota_remaining = vrng->conf.max_bytes;
     vrng->rate_limit_timer = timer_new_ms(QEMU_CLOCK_VIRTUAL,
                                                check_rate_limit, vrng);
@@ -235,7 +235,7 @@ static void virtio_rng_device_unrealize(DeviceState *dev)
     qemu_del_vm_change_state_handler(vrng->vmstate);
     timer_del(vrng->rate_limit_timer);
     timer_free(vrng->rate_limit_timer);
-    virtio_del_queue(vdev, 0);
+    virtio_delete_queue(vrng->request_vq);
     virtio_cleanup(vdev);
 }
 
