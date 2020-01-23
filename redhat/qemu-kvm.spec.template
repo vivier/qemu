@@ -938,6 +938,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Jan 23 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-43.el7
+- kvm-tcp_emu-Fix-oob-access.patch [bz#1791563 bz#1791570]
+- kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1791563 bz#1791570]
+- kvm-slirp-use-correct-size-while-emulating-commands.patch [bz#1791563 bz#1791570]
+- Resolves: bz#1791563
+  (CVE-2020-7039 qemu-kvm-rhev: QEMU: slirp: OOB buffer access while emulating tcp protocols in tcp_emu() [rhel-7.8])
+- Resolves: bz#1791570
+  (CVE-2020-7039 qemu-kvm-ma: QEMU: slirp: OOB buffer access while emulating tcp protocols in tcp_emu() [rhel-7.8])
+
 * Mon Jan 06 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-42.el7
 - kvm-target-i386-Export-TAA_NO-bit-to-guests.patch [bz#1779530]
 - kvm-target-i386-add-support-for-MSR_IA32_TSX_CTRL.patch [bz#1779530]
