@@ -516,7 +516,7 @@ tcp_tos(struct socket *so)
 	while(tcptos[i].tos) {
 		if ((tcptos[i].fport && (ntohs(so->so_fport) == tcptos[i].fport)) ||
 		    (tcptos[i].lport && (ntohs(so->so_lport) == tcptos[i].lport))) {
-			so->so_emu = tcptos[i].emu;
+			so->so_emu = 0; /* disabled */
 			return tcptos[i].tos;
 		}
 		i++;
@@ -526,7 +526,7 @@ tcp_tos(struct socket *so)
 	for (emup = tcpemu; emup; emup = emup->next) {
 		if ((emup->fport && (ntohs(so->so_fport) == emup->fport)) ||
 		    (emup->lport && (ntohs(so->so_lport) == emup->lport))) {
-			so->so_emu = emup->emu;
+			so->so_emu = 0; /* disabled */
 			return emup->tos;
 		}
 	}
