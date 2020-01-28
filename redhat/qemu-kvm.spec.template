@@ -813,6 +813,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Jan 28 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-160.el7_6.5
+- kvm-target-i386-Export-TAA_NO-bit-to-guests.patch [bz#1771959]
+- kvm-target-i386-add-support-for-MSR_IA32_TSX_CTRL.patch [bz#1771959]
+- kvm-target-i386-add-MDS-NO-feature.patch [bz#1755332]
+- Resolves: bz#1755332
+  ([Intel 7.8 FEAT] MDS_NO exposure to guest - qemu-kvm [rhel-7.6.z])
+- Resolves: bz#1771959
+  (CVE-2019-11135 qemu-kvm: hw: TSX Transaction Asynchronous Abort (TAA) [rhel-7.6.z])
+
 * Mon Nov 04 2019 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-160.el7_6.4
 - kvm-target-i386-Merge-feature-filtering-checking-functio.patch [bz#1730605]
 - kvm-target-i386-Isolate-KVM-specific-code-on-CPU-feature.patch [bz#1730605]
