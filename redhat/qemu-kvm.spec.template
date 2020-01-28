@@ -932,6 +932,28 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jan 28 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.8
+- kvm-i386-halt-poll-control-MSR-support.patch [bz#1746281]
+- kvm-i386-Add-new-MSR-indices-for-IA32_PRED_CMD-and-IA32_.patch [bz#1730601]
+- kvm-i386-Add-CPUID-bit-and-feature-words-for-IA32_ARCH_C.patch [bz#1730601]
+- kvm-Add-support-to-KVM_GET_MSR_FEATURE_INDEX_LIST-an.patch [bz#1730601]
+- kvm-x86-Data-structure-changes-to-support-MSR-based-feat.patch [bz#1730601]
+- kvm-x86-define-a-new-MSR-based-feature-word-FEATURE_WORD.patch [bz#1730601]
+- kvm-Use-KVM_GET_MSR_INDEX_LIST-for-MSR_IA32_ARCH_CAP.patch [bz#1730601]
+- kvm-i386-kvm-Disable-arch_capabilities-if-MSR-can-t-be-s.patch [bz#1730601]
+- kvm-i386-Make-arch_capabilities-migratable.patch [bz#1730601]
+- kvm-target-i386-add-MDS-NO-feature.patch [bz#1743632]
+- kvm-target-i386-Export-TAA_NO-bit-to-guests.patch [bz#1779528]
+- kvm-target-i386-add-support-for-MSR_IA32_TSX_CTRL.patch [bz#1779528]
+- Resolves: bz#1730601
+  ([Intel 7.6.z Bug] [KVM][CLX] CPUID_7_0_EDX_ARCH_CAPABILITIES is not enabled in VM qemu-kvm-rhev [rhel-7.6.z])
+- Resolves: bz#1743632
+  ([Intel 7.7 FEAT] MDS_NO exposure to guest - qemu-kvm-rhev [rhel-7.6.z])
+- Resolves: bz#1746281
+  (qemu-kvm: backport cpuidle-haltpoll support [rhel-7.6.z])
+- Resolves: bz#1779528
+  (CVE-2019-11135 qemu-kvm-rhev: hw: TSX Transaction Asynchronous Abort (TAA) [rhel-7.6.z])
+
 * Tue May 28 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.6
 - kvm-slirp-check-sscanf-result-when-emulating-ident.patch [bz#1669070]
 - kvm-slirp-fix-big-little-endian-conversion-in-ident-prot.patch [bz#1669070]
