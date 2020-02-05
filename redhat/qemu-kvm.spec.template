@@ -938,6 +938,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Feb 05 2020 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.12.0-44.el7
+- kvm-iscsi-Avoid-potential-for-get_status-overflow.patch [bz#1794499 bz#1794505]
+- kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1794499 bz#1794505]
+- Resolves: bz#1794499
+  (CVE-2020-1711 qemu-kvm-rhev: QEMU: block: iscsi: OOB heap access via an unexpected response of iSCSI Server [rhel-7.8])
+- Resolves: bz#1794505
+  (CVE-2020-1711 qemu-kvm-ma: QEMU: block: iscsi: OOB heap access via an unexpected response of iSCSI Server [rhel-7.8])
+
 * Thu Jan 23 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-43.el7
 - kvm-tcp_emu-Fix-oob-access.patch [bz#1791563 bz#1791570]
 - kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1791563 bz#1791570]
