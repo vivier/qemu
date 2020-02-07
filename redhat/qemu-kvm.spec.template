@@ -813,6 +813,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Feb 07 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7_7.5
+- kvm-tcp_emu-Fix-oob-access.patch [bz#1791559]
+- kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1791559]
+- kvm-slirp-use-correct-size-while-emulating-commands.patch [bz#1791559]
+- Resolves: bz#1791559
+  (CVE-2020-7039 qemu-kvm: QEMU: slirp: OOB buffer access while emulating tcp protocols in tcp_emu() [rhel-7.7.z])
+
 * Mon Jan 06 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7_7.4
 - kvm-target-i386-add-MDS-NO-feature.patch [bz#1755333]
 - Resolves: bz#1755333
