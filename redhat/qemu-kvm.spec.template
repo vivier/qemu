@@ -938,6 +938,17 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Feb 07 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-33.el7_7.2
+- kvm-tcp_emu-Fix-oob-access.patch [bz#1791569]
+- kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1791569]
+- kvm-slirp-use-correct-size-while-emulating-commands.patch [bz#1791569]
+- kvm-iscsi-Avoid-potential-for-get_status-overflow.patch [bz#1794504]
+- kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1794504]
+- Resolves: bz#1791569
+  (CVE-2020-7039 qemu-kvm-ma: QEMU: slirp: OOB buffer access while emulating tcp protocols in tcp_emu() [rhel-7.7.z])
+- Resolves: bz#1794504
+  (CVE-2020-1711 qemu-kvm-ma: QEMU: block: iscsi: OOB heap access via an unexpected response of iSCSI Server [rhel-7.7.z])
+
 * Mon Aug 12 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-33.el7_7.1
 - kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1735652]
 - Resolves: bz#1735652
