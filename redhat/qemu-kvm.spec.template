@@ -932,6 +932,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Feb 11 2020  Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.5
+- kvm-iscsi-Avoid-potential-for-get_status-overflow.patch [bz#1798025]
+- kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1798025]
+- Resolves: bz#1798025
+  (CVE-2020-1711 qemu-kvm-ma: QEMU: block: iscsi: OOB heap access via an unexpected response of iSCSI Server [rhel-7.6.z])
+
 * Sat Jun 22 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.4
 - kvm-s390x-cpumodel-ignore-csske-for-expansion.patch [bz#1720262]
 - Resolves: bz#1720262
