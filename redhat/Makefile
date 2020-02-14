@@ -4,8 +4,8 @@ include Makefile.test
 
 LOCVERFILE:=../localversion
 LANG=C
-BUILD_DEFAULT_TARGET = rhel-7.6-candidate
-BUILD_SCRATCH_TARGET = rhel-7.6-candidate
+BUILD_DEFAULT_TARGET = rhel-7.8-candidate
+BUILD_SCRATCH_TARGET = rhel-7.8-candidate
 
 #ifeq ($(shell git diff --quiet HEAD && git describe --exact-match 2>/dev/null && echo ok),)
 BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
@@ -38,7 +38,7 @@ endif
 endif
 
 PKGRELEASE=$(PREBUILD)$(BUILD)
-PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST)$(BUILDID)
+PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST).$(ZRELEASE)$(BUILDID)
 PKG_FULL_NVR = $(PKGNAME)-$(PKG_FULL_VR)
 
 RPMBUILD_DEFS = --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)"
@@ -121,7 +121,7 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 	@cp $(TARBALL) $(SOURCES)/$(TARFILE)
 	@cp *.patch $(SOURCES)
 	@cp bridge.conf $(SOURCES)
-	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(RHEV_FLAG) $(BUILDID) 
+	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(RHEV_FLAG) $(ZRELEASE) $(BUILDID)
 	@cp $(SOURCES)/$(SPECFILE) $(SOURCES)/../SPECS
 	@cp $(TESTPATCH) $(SOURCES)/$(COMMON_NAME)-test.patch
 	@cp ../sysconfigs/target/target-x86_64.conf $(SOURCES)
