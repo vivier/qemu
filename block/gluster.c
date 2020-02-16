@@ -20,6 +20,11 @@
 #include "qemu/sockets.h"
 #include "qemu/uri.h"
 
+#ifdef CONFIG_GLUSTERFS_FTRUNCATE_HAS_STAT
+# define glfs_ftruncate(fd, offset) glfs_ftruncate(fd, offset, NULL, NULL)
+#endif
+
+
 typedef struct GlusterAIOCB {
     BlockDriverAIOCB common;
     int64_t size;
