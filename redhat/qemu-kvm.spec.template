@@ -813,6 +813,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Feb 21 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7_7.6
+- kvm-util-add-slirp_fmt-helpers.patch [bz#1798969]
+- kvm-tcp_emu-fix-unsafe-snprintf-usages.patch [bz#1798969]
+- Resolves: bz#1798969
+  (CVE-2020-8608 qemu-kvm: QEMU: Slirp: potential OOB access due to unsafe snprintf() usages [rhel-7.7.z])
+
 * Fri Feb 07 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-167.el7_7.5
 - kvm-tcp_emu-Fix-oob-access.patch [bz#1791559]
 - kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1791559]
