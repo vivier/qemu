@@ -938,6 +938,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Feb 21 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.10
+- kvm-util-add-slirp_fmt-helpers.patch [bz#1798971]
+- kvm-tcp_emu-fix-unsafe-snprintf-usages.patch [bz#1798971]
+- Resolves: bz#1798971
+  (CVE-2020-8608 qemu-kvm-rhev: QEMU: Slirp: potential OOB access due to unsafe snprintf() usages [rhel-7.7.z])
+
 * Fri Feb 07 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.9
 - kvm-tcp_emu-Fix-oob-access.patch [bz#1791562]
 - kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1791562]
