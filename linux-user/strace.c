@@ -768,6 +768,7 @@ print_syscall_ret_newselect(const struct syscallname *name, abi_long ret)
 }
 #endif
 
+#ifdef TARGET_NR_adjtimex
 /* special meanings of adjtimex()' non-negative return values */
 #define TARGET_TIME_OK       0   /* clock synchronized, no leap second */
 #define TARGET_TIME_INS      1   /* insert leap second */
@@ -813,6 +814,7 @@ print_syscall_ret_adjtimex(const struct syscallname *name, abi_long ret)
 
     qemu_log("\n");
 }
+#endif
 
 UNUSED static struct flags access_flags[] = {
     FLAG_GENERIC(F_OK),
