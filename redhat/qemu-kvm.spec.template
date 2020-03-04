@@ -938,6 +938,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Mar 04 2020 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.12.0-44.el7_8.1
+- kvm-util-add-slirp_fmt-helpers.patch [bz#1798974]
+- kvm-tcp_emu-fix-unsafe-snprintf-usages.patch [bz#1798974]
+- Resolves: bz#1798974
+  (CVE-2020-8608 qemu-kvm-ma: QEMU: Slirp: potential OOB access due to unsafe snprintf() usages [rhel-7.8.z])
+
 * Wed Feb 05 2020 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.12.0-44.el7
 - kvm-iscsi-Avoid-potential-for-get_status-overflow.patch [bz#1794499 bz#1794505]
 - kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1794499 bz#1794505]
