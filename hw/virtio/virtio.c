@@ -3839,6 +3839,92 @@ VirtioInfoList *qmp_query_virtio(Error **errp)
     return list;
 }
 
+static VirtIODevice *virtio_device_find(const char *path)
+{
+    VirtIODevice *vdev;
+
+    QTAILQ_FOREACH(vdev, &virtio_list, next) {
+        DeviceState *dev = DEVICE(vdev);
+
+        if (strcmp(dev->canonical_path, path) != 0) {
+            continue;
+        }
+        return vdev;
+    }
+
+    return NULL;
+}
+
+VirtQueueStatus *qmp_virtio_queue_status(const char *path, uint16_t idx,
+                                         Error **errp)
+{
+    VirtIODevice *vdev;
+    VirtQueueStatus *status;
+
+    vdev = virtio_device_find(path);
+    if (vdev == NULL) {
+        error_setg(errp, "Path %s is not a VirtIO device", path);
+        return NULL;
+    }
+
+    if (idx >= VIRTIO_QUEUE_MAX || !virtio_queue_get_num(vdev, idx)) {
+        error_setg(errp, "Invalid virtqueue number %d", idx);
+        return NULL;
+    }
+
+    status = g_new0(VirtQueueStatus, 1);
+    status->queue_index = vdev->vq[idx].queue_index;
+    status->inuse = vdev->vq[idx].inuse;
+    status->vring_num = vdev->vq[idx].vring.num;
+    status->vring_num_default = vdev->vq[idx].vring.num_default;
+    status->vring_align = vdev->vq[idx].vring.align;
+    status->vring_desc = vdev->vq[idx].vring.desc;
+    status->vring_avail = vdev->vq[idx].vring.avail;
+    status->vring_used = vdev->vq[idx].vring.used;
+    status->last_avail_idx = vdev->vq[idx].last_avail_idx;
+    status->shadow_avail_idx = vdev->vq[idx].shadow_avail_idx;
+    status->used_idx = vdev->vq[idx].used_idx;
+    status->signalled_used = vdev->vq[idx].signalled_used;
+    status->signalled_used_valid = vdev->vq[idx].signalled_used_valid;
+
+    return status;
+}
+
+VirtioStatus *qmp_virtio_status(const char* path, Error **errp)
+{
+    VirtIODevice *vdev;
+    VirtioStatus *status;
+
+    vdev = virtio_device_find(path);
+    if (vdev == NULL) {
+        error_setg(errp, "Path %s is not a VirtIO device", path);
+        return NULL;
+    }
+
+    status = g_new0(VirtioStatus, 1);
+    status->guest_features = vdev->guest_features;
+    status->host_features = vdev->host_features;
+    status->backend_features = vdev->backend_features;
+    status->device_id = vdev->device_id;
+
+    switch (vdev->device_endian) {
+    case VIRTIO_DEVICE_ENDIAN_LITTLE:
+        status->device_endian = g_strdup("little");
+        break;
+    case VIRTIO_DEVICE_ENDIAN_BIG:
+        status->device_endian = g_strdup("big");
+        break;
+    case VIRTIO_DEVICE_ENDIAN_UNKNOWN:
+    default:
+        status->device_endian = g_strdup("unknown");
+        break;
+    }
+
+    status->num_vqs = virtio_get_num_queues(vdev);
+
+    return status;
+}
+
 static const TypeInfo virtio_device_info = {
     .name = TYPE_VIRTIO_DEVICE,
     .parent = TYPE_DEVICE,
