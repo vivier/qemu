@@ -33,6 +33,38 @@
 { 'command': 'query-virtio', 'returns': ['VirtioInfo'] }
 
 ##
+# @VirtQueueStatus:
+#
+##
+
+{ 'struct': 'VirtQueueStatus',
+  'data': {
+    'queue_index': 'uint16',
+    'inuse': 'uint32',
+    'vring_num': 'int',
+    'vring_num_default': 'int',
+    'vring_align': 'int',
+    'vring_desc': 'uint64',
+    'vring_avail': 'uint64',
+    'vring_used': 'uint64',
+    'last_avail_idx': 'uint16',
+    'shadow_avail_idx': 'uint16',
+    'used_idx': 'uint16',
+    'signalled_used': 'uint16',
+    'signalled_used_valid': 'uint16'
+  }
+}
+
+##
+# @virtio-queue-status:
+##
+
+{ 'command': 'virtio-queue-status',
+  'data': { 'path': 'str', 'queue': 'uint16' },
+  'returns': 'VirtQueueStatus'
+}
+
+##
 # @VirtioStatus:
 #
 ##
