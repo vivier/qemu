@@ -264,6 +264,11 @@ int seccomp_start(void)
         goto seccomp_return;
     }
 
+    rc = seccomp_attr_set(ctx, SCMP_FLTATR_CTL_TSYNC, 1);
+    if (rc != 0) {
+        goto seccomp_return;
+    }
+
     for (i = 0; i < ARRAY_SIZE(seccomp_whitelist); i++) {
         rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, seccomp_whitelist[i].num, 0);
         if (rc < 0) {
