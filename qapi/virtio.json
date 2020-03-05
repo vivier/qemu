@@ -31,3 +31,29 @@
 ##
 
 { 'command': 'query-virtio', 'returns': ['VirtioInfo'] }
+
+##
+# @VirtioStatus:
+#
+##
+
+{ 'struct': 'VirtioStatus',
+  'data': {
+    'device_id': 'int',
+    'device_endian': 'str',
+    'guest_features': 'uint64',
+    'host_features': 'uint64',
+    'backend_features': 'uint64',
+    'num_vqs': 'uint16'
+  }
+}
+
+##
+# @virtio-status:
+#
+##
+
+{ 'command': 'virtio-status',
+  'data': { 'path': 'str' },
+  'returns': 'VirtioStatus'
+}
