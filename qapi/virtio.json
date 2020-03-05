@@ -1,0 +1,33 @@
+##
+# = Virtio devices
+##
+
+##
+# @VirtioInfo:
+#
+# Information about a given VirtIODevice
+#
+# @type: VirtIO device type.
+#
+# @path: VirtIO device canonical path.
+#
+# Since: 5.0
+##
+{ 'struct': 'VirtioInfo',
+  'data': {
+    'path': 'str',
+    'type': 'str'
+  }
+}
+
+##
+# @query-virtio:
+#
+# Return the list of all VirtIO devices
+#
+# Returns: list of @VirtioInfo
+#
+# Since: 5.0
+##
+
+{ 'command': 'query-virtio', 'returns': ['VirtioInfo'] }
