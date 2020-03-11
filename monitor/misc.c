@@ -231,6 +231,11 @@ static void hmp_info_help(Monitor *mon, const QDict *qdict)
     help_cmd(mon, "info");
 }
 
+static void hmp_virtio_help(Monitor *mon, const QDict *qdict)
+{
+    help_cmd(mon, "virtio");
+}
+
 static void monitor_init_qmp_commands(void)
 {
     /*
@@ -1679,6 +1684,11 @@ int monitor_fd_param(Monitor *mon, const char *fdname, Error **errp)
 /* Please update hmp-commands.hx when adding or changing commands */
 static HMPCommand hmp_info_cmds[] = {
 #include "hmp-commands-info.h"
+    { NULL, NULL, },
+};
+
+static HMPCommand hmp_virtio_cmds[] = {
+#include "hmp-commands-virtio.h"
     { NULL, NULL, },
 };
 
