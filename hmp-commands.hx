@@ -1945,5 +1945,21 @@ ETEXI
     },
 
 STEXI
+ETEXI
+
+    {
+        .name       = "virtio",
+        .args_type  = "name:S?",
+        .params     = "[cmd]",
+        .help       = "show various information about virtio",
+        .cmd        = hmp_virtio_help,
+        .sub_table  = hmp_virtio_cmds,
+        .flags      = "p",
+    },
+
+STEXI
+@item virtio [@var{cmd}]
+@findex virtio
+Execute virtio command @var{cmd}.
 @end table
 ETEXI
