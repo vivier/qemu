@@ -4,10 +4,10 @@ include Makefile.local
 
 rh-env-prep rh-brew rh-local rh-srpm: RHEV=1
 rh-env-prep rh-brew rh-local: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
-rh-brew: BUILD_TARGET=rhevh-rhel-7.8-candidate
+rh-brew: BUILD_TARGET=rhevh-rhel-7.9-candidate
 rh-brew-rhel rh-srpm-rhel: RHEV=0
 rh-brew-rhel: SRPM_NAME=$(NAME)-ma-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
-rh-brew-rhel: BUILD_TARGET=rhel-7.8-candidate
+rh-brew-rhel: BUILD_TARGET=rhel-7.9-candidate
 
 REDHAT:=$(shell pwd)
 SCRIPTS:=$(REDHAT)/scripts

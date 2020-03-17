@@ -938,6 +938,26 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Mar 17 2020 Jon Maloy <jmaloy@redhat.com> - 2.12.0-45.el7
+- kvm-gluster-Handle-changed-glfs_ftruncate-signature.patch [bz#1802216]
+- kvm-gluster-the-glfs_io_cbk-callback-function-pointer-ad.patch [bz#1802216]
+- kvm-target-i386-kvm-initialize-feature-MSRs-very-early.patch [bz#1791653]
+- kvm-target-i386-add-a-ucode-rev-property.patch [bz#1791653]
+- kvm-target-i386-kvm-initialize-microcode-revision-from-K.patch [bz#1791653]
+- kvm-target-i386-fix-TCG-UCODE_REV-access.patch [bz#1791653]
+- kvm-target-i386-check-for-availability-of-MSR_IA32_UCODE.patch [bz#1791653]
+- kvm-target-i386-enable-monitor-and-ucode-revision-with-c.patch [bz#1791653]
+- kvm-clean-up-callback-when-del-virtqueue.patch [bz#1721403]
+- kvm-virtio-add-ability-to-delete-vq-through-a-pointer.patch [bz#1721403]
+- kvm-virtio-reset-region-cache-when-on-queue-deletion.patch [bz#1721403]
+- kvm-virtio-net-delete-also-control-queue-when-TX-RX-dele.patch [bz#1721403]
+- Resolves: bz#1721403
+  (After hot unplug virtio-net and vfio nic, hot plug vfio-pci device fails in Win2019 guest)
+- Resolves: bz#1791653
+  (Backport: Passthrough host CPU microcode version to KVM guest if using CPU passthrough to RHEL 7.7/7.8)
+- Resolves: bz#1802216
+  (Add support for newer glusterfs)
+
 * Wed Feb 05 2020 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.12.0-44.el7
 - kvm-iscsi-Avoid-potential-for-get_status-overflow.patch [bz#1794499 bz#1794505]
 - kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1794499 bz#1794505]
