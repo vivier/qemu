@@ -813,6 +813,22 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Thu Mar 19 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-174.el7
+- kvm-util-add-slirp_fmt-helpers2.patch [bz#1800515]
+- kvm-tcp_emu-fix-unsafe-snprintf-usages2.patch [bz#1800515]
+- kvm-slirp-disable-tcp_emu.patch [bz#1791679]
+- kvm-gluster-Handle-changed-glfs_ftruncate-signature.patch [bz#1802215]
+- kvm-gluster-the-glfs_io_cbk-callback-function-pointer-ad.patch [bz#1802215]
+- kvm-seccomp-set-the-seccomp-filter-to-all-threads.patch [bz#1618503]
+- Resolves: bz#1618503
+  (qemu-kvm: Qemu: seccomp: blacklist is not applied to all threads [rhel-7])
+- Resolves: bz#1791679
+  (QEMU: Slirp: disable emulation of tcp programs like ftp IRC etc. [rhel-7])
+- Resolves: bz#1800515
+  (CVE-2020-8608 qemu-kvm: QEMU: Slirp: potential OOB access due to unsafe snprintf() usages [rhel-7.9])
+- Resolves: bz#1802215
+  (Add support for newer glusterfs)
+
 * Thu Jan 23 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-173.el7
 - kvm-tcp_emu-Fix-oob-access.patch [bz#1791560]
 - kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1791560]
