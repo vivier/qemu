@@ -98,7 +98,8 @@
 { 'struct': 'VirtioRingDesc',
   'data': {
     'addr': 'uint64',
-    'len': 'uint32'
+    'len': 'uint32',
+    'flags': 'uint16'
   }
 }
 

@@ -58,6 +58,21 @@ STEXI
 Display status of a given virtio queue
 ETEXI
 
+    {
+        .name       = "queue-element",
+        .args_type  = "path:s,queue:i,index:i?",
+        .params     = "path queue [index]",
+        .help       = "Display element of a given virtio queue",
+        .cmd        = hmp_virtio_queue_element,
+        .flags      = "p",
+    },
+
+STEXI
+@item virtio queue-status
+@findex virtio queue-status
+Display status of a given virtio queue
+ETEXI
+
 STEXI
 @end table
 ETEXI

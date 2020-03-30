@@ -4027,9 +4027,8 @@ VirtioQueueElement *qmp_virtio_queue_element(const char* path, uint16_t queue,
     vq = &vdev->vq[queue];
 
     if (virtio_vdev_has_feature(vdev, VIRTIO_F_RING_PACKED)) {
-        element = g_new0(VirtioQueueElement, 1);
-        element->descs = g_new0(VirtioRingDescList, 1);
-        element->descs->value = g_new0(VirtioRingDesc, 1);
+        error_setg(errp, "Packed ring not supported");
+        return NULL;
     } else {
         unsigned int head, i, max;
         VRingMemoryRegionCaches *caches;
@@ -4086,11 +4085,45 @@ VirtioQueueElement *qmp_virtio_queue_element(const char* path, uint16_t queue,
         element->descs->value = g_new0(VirtioRingDesc, 1);
         element->descs->value->addr = desc.addr;
         element->descs->value->len = desc.len;
+        element->descs->value->flags = desc.flags;
     }
 
     return element;
 }
 
+void hmp_virtio_queue_element(Monitor *mon, const QDict *qdict)
+{
+    Error *err = NULL;
+    const char *path = qdict_get_try_str(qdict, "path");
+    int queue = qdict_get_int(qdict, "queue");
+    int index = qdict_get_try_int(qdict, "index", -1);
+    VirtioQueueElement *element;
+    VirtioRingDescList *list;
+
+    element = qmp_virtio_queue_element(path, queue, index != -1, index, &err);
+    if (err != NULL) {
+        hmp_handle_error(mon, err);
+        return;
+    }
+
+    monitor_printf(mon, "index:  %d\n", element->index);
+    monitor_printf(mon, "ndescs: %d\n", element->ndescs);
+    monitor_printf(mon, "descs:  ");
+
+    list = element->descs;
+    while (list) {
+        monitor_printf(mon, "addr 0x%"PRIx64" len %d %s", list->value->addr,
+                       list->value->len, list->value->flags &
+                       VRING_DESC_F_WRITE ? "(write-only)" : "(read-only)");
+        list = list->next;
+        if (list) {
+            monitor_printf(mon, ", ");
+        }
+    }
+    monitor_printf(mon, "\n");
+
+    qapi_free_VirtioQueueElement(element);
+}
 
 static const TypeInfo virtio_device_info = {
     .name = TYPE_VIRTIO_DEVICE,
