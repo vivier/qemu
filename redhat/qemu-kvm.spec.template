@@ -902,6 +902,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Mar 31 2020 Jon Maloy <jmaloy@redhat.com> - ma-2.10.0-21.el7_5.5
+- kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1798024]
+- Resolves: bz#1798024
+  (CVE-2020-1711 qemu-kvm-ma: QEMU: block: iscsi: OOB heap access via an unexpected response of iSCSI Server [rhel-7.5.z])
+
 * Tue Aug 21 2018 Miroslav Rezanina <mrezanin@redhat.com> - ma-2.10.0-21.el7_5.4
 - kvm-slirp-correct-size-computation-while-concatenating-m.patch [bz#1586247]
 - kvm-slirp-reformat-m_inc-routine.patch [bz#1586247]
