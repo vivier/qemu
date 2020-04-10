@@ -68,6 +68,17 @@
 { 'command': 'query-virtio', 'returns': ['VirtioInfo'] }
 
 ##
+# @VirtioStatusEndianness:
+#
+# Enumeration of endianness for VirtioDevice
+#
+# Since: 5.1
+##
+{ 'enum': 'VirtioStatusEndianness',
+  'data': [ 'unknown', 'little', 'big' ]
+}
+
+##
 # @VirtioStatus:
 #
 # @device-id: VirtIODevice status
@@ -89,7 +100,7 @@
 { 'struct': 'VirtioStatus',
   'data': {
     'device-id': 'int',
-    'device-endian': 'str',
+    'device-endian': 'VirtioStatusEndianness',
     'guest-features': 'uint64',
     'host-features': 'uint64',
     'backend-features': 'uint64',

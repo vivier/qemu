@@ -3967,14 +3967,13 @@ VirtioStatus *qmp_virtio_status(const char* path, Error **errp)
 
     switch (vdev->device_endian) {
     case VIRTIO_DEVICE_ENDIAN_LITTLE:
-        status->device_endian = g_strdup("little");
+        status->device_endian = VIRTIO_STATUS_ENDIANNESS_LITTLE;
         break;
     case VIRTIO_DEVICE_ENDIAN_BIG:
-        status->device_endian = g_strdup("big");
+        status->device_endian = VIRTIO_STATUS_ENDIANNESS_BIG;
         break;
-    case VIRTIO_DEVICE_ENDIAN_UNKNOWN:
     default:
-        status->device_endian = g_strdup("unknown");
+        status->device_endian = VIRTIO_STATUS_ENDIANNESS_UNKNOWN;
         break;
     }
 
@@ -4002,7 +4001,8 @@ void hmp_virtio_status(Monitor *mon, const QDict *qdict)
                    s->host_features);
     monitor_printf(mon, "  Backend features: 0x%016"PRIx64"\n",
                    s->backend_features);
-    monitor_printf(mon, "  Endianness:       %s\n", s->device_endian);
+    monitor_printf(mon, "  Endianness:       %s\n",
+                   VirtioStatusEndianness_str(s->device_endian));
     monitor_printf(mon, "  VirtQueues:       %d\n", s->num_vqs);
 
     qapi_free_VirtioStatus(s);
@@ -4038,22 +4038,8 @@ VirtioQueueElement *qmp_virtio_queue_element(const char* path, uint16_t queue,
         VRingDesc desc;
 
         RCU_READ_LOCK_GUARD();
-        if (virtio_queue_empty_rcu(vq)) {
-            error_setg(errp, "Queue is empty");
-            return NULL;
-        }
-        /*
-         * Needed after virtio_queue_empty(), see comment in
-         * virtqueue_num_heads().
-         */
-        smp_rmb();
 
         max = vq->vring.num;
-
-        if (vq->inuse >= vq->vring.num) {
-            error_setg(errp, "Queue size exceeded");
-            return NULL;
-        }
 
         if (!has_index) {
             head = vring_avail_ring(vq, vq->last_avail_idx % vq->vring.num);
