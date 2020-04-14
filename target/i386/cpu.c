@@ -4890,7 +4890,9 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
             g_free(name);
             goto out;
         }
+    }
 
+    if (cpu->max_features && accel_uses_host_cpuid()) {
         if (kvm_enabled() && cpu->ucode_rev == 0) {
             cpu->ucode_rev = kvm_arch_get_supported_msr_feature(kvm_state,
                                                                 MSR_IA32_UCODE_REV);
