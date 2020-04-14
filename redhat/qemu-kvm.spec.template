@@ -932,6 +932,24 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Apr 14 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-18.el7_6.10
+- kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1805591]
+- kvm-slirp-use-correct-size-while-emulating-commands.patch [bz#1805591]
+- kvm-util-add-slirp_fmt-helpers.patch [bz#1800443]
+- kvm-tcp_emu-fix-unsafe-snprintf-usages.patch [bz#1800443]
+- kvm-target-i386-kvm-initialize-feature-MSRs-very-early.patch [bz#1804577]
+- kvm-target-i386-add-a-ucode-rev-property.patch [bz#1804577]
+- kvm-target-i386-kvm-initialize-microcode-revision-from-K.patch [bz#1804577]
+- kvm-target-i386-fix-TCG-UCODE_REV-access.patch [bz#1804577]
+- kvm-target-i386-check-for-availability-of-MSR_IA32_UCODE.patch [bz#1804577]
+- kvm-target-i386-enable-monitor-and-ucode-revision-with-c.patch [bz#1804577]
+- Resolves: bz#1800443
+  (CVE-2020-8608 qemu-kvm-rhev: QEMU: Slirp: potential OOB access due to unsafe snprintf() usages [rhel-7.6.z])
+- Resolves: bz#1804577
+  (Backport: Passthrough host CPU microcode version to KVM guest if using CPU passthrough to RHEL 7.7/7.8 [rhel-7.6.z])
+- Resolves: bz#1805591
+  (CVE-2020-7039 qemu-kvm-rhev: QEMU: slirp: OOB buffer access while emulating tcp protocols in tcp_emu() [rhel-7.6.z])
+
 * Tue Feb 11 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.8
 - kvm-iscsi-Avoid-potential-for-get_status-overflow.patch [bz#1798018]
 - kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1798018]
