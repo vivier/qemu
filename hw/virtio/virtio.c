@@ -32,8 +32,29 @@
 #include "monitor/hmp.h"
 #include "monitor/monitor.h"
 #include "qapi/qmp/qdict.h"
+#include "config-devices.h"
 
 static QTAILQ_HEAD(, VirtIODevice) virtio_list;
+
+static qmp_virtio_feature_map_t transport_map[] = {
+#define FEATURE_ENTRY(name) \
+    { VIRTIO_F_##name, VIRTIO_TRANSPORT_FEATURE_##name }
+    FEATURE_ENTRY(NOTIFY_ON_EMPTY),
+    FEATURE_ENTRY(ANY_LAYOUT),
+    FEATURE_ENTRY(VERSION_1),
+    FEATURE_ENTRY(IOMMU_PLATFORM),
+    FEATURE_ENTRY(RING_PACKED),
+    FEATURE_ENTRY(ORDER_PLATFORM),
+    FEATURE_ENTRY(SR_IOV),
+    FEATURE_ENTRY(BAD_FEATURE),
+#undef FEATURE_ENTRY
+#define FEATURE_ENTRY(name) \
+    { VIRTIO_RING_F_##name, VIRTIO_TRANSPORT_FEATURE_##name }
+    FEATURE_ENTRY(INDIRECT_DESC),
+    FEATURE_ENTRY(EVENT_IDX),
+#undef FEATURE_ENTRY
+    { -1, -1 }
+};
 
 /*
  * The alignment to use between consumer and producer parts of vring.
@@ -3948,6 +3969,90 @@ void hmp_virtio_queue_status(Monitor *mon, const QDict *qdict)
     qapi_free_VirtQueueStatus(s);
 }
 
+#define CONVERT_FEATURES(type, map)                \
+    ({                                           \
+        type *list = NULL;                         \
+        type *node;                                \
+        for (i = 0; map[i].virtio_bit != -1; i++) {\
+            bit = 1ULL << map[i].virtio_bit;       \
+            if ((bitmap & bit) == 0) {             \
+                continue;                          \
+            }                                      \
+            node = g_new0(type, 1);                \
+            node->value = map[i].qapi_virtio_enum; \
+            node->next = list;                     \
+            list = node;                           \
+            bitmap ^= bit;                         \
+        }                                          \
+        list;                                      \
+    })
+
+static VirtioStatusFeatures *qmp_decode_features(const char *name,
+                                                 uint64_t bitmap)
+{
+    VirtioStatusFeatures *features;
+    uint64_t bit;
+    int i;
+
+    features = g_new0(VirtioStatusFeatures, 1);
+
+    /* transport features */
+    features->transport = CONVERT_FEATURES(VirtioTransportFeatureList, \
+                                           transport_map);
+
+    /* device features */
+    features->device = g_new0(VirtioDeviceFeatures, 1);
+    features->device->type = qapi_enum_parse(&VirtioDeviceFeaturesKind_lookup,
+                                             name, -1, NULL);
+    switch (features->device->type) {
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_SERIAL:
+        features->device->u.virtio_serial.data =
+                          CONVERT_FEATURES(VirtioSerialFeatureList, serial_map);
+        break;
+#ifdef CONFIG_VIRTIO_BLK
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_BLK:
+        features->device->u.virtio_blk.data =
+                                CONVERT_FEATURES(VirtioBlkFeatureList, blk_map);
+        break;
+#endif
+#ifdef CONFIG_VIRTIO_GPU
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_GPU:
+        features->device->u.virtio_gpu.data =
+                                CONVERT_FEATURES(VirtioGpuFeatureList, gpu_map);
+        break;
+#endif
+#ifdef CONFIG_VIRTIO_NET
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_NET:
+        features->device->u.virtio_net.data =
+                                CONVERT_FEATURES(VirtioNetFeatureList, net_map);
+        break;
+#endif
+#ifdef CONFIG_VIRTIO_SCSI
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_SCSI:
+        features->device->u.virtio_scsi.data =
+                              CONVERT_FEATURES(VirtioScsiFeatureList, scsi_map);
+        break;
+#endif
+#ifdef CONFIG_VIRTIO_BALLOON
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_BALLOON:
+        features->device->u.virtio_balloon.data =
+                        CONVERT_FEATURES(VirtioBalloonFeatureList, balloon_map);
+        break;
+#endif
+#ifdef CONFIG_VIRTIO_IOMMU
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_IOMMU:
+        features->device->u.virtio_iommu.data =
+                            CONVERT_FEATURES(VirtioIommuFeatureList, iommu_map);
+        break;
+#endif
+    default:
+        g_assert_not_reached();
+    }
+    features->unknown = bitmap;
+
+    return features;
+}
+
 VirtioStatus *qmp_virtio_status(const char* path, Error **errp)
 {
     VirtIODevice *vdev;
@@ -3960,9 +4065,12 @@ VirtioStatus *qmp_virtio_status(const char* path, Error **errp)
     }
 
     status = g_new0(VirtioStatus, 1);
-    status->guest_features = vdev->guest_features;
-    status->host_features = vdev->host_features;
-    status->backend_features = vdev->backend_features;
+    status->guest_features = qmp_decode_features(vdev->name,
+                                                 vdev->guest_features);
+    status->host_features = qmp_decode_features(vdev->name,
+                                                vdev->host_features);
+    status->backend_features = qmp_decode_features(vdev->name,
+                                                   vdev->backend_features);
     status->device_id = vdev->device_id;
 
     switch (vdev->device_endian) {
@@ -3982,6 +4090,66 @@ VirtioStatus *qmp_virtio_status(const char* path, Error **errp)
     return status;
 }
 
+#define DUMP_FEATURES(type, field)                                         \
+    do {                                                                   \
+        type##FeatureList *list = features->device->u.field.data;          \
+        if (list) {                                                        \
+            monitor_printf(mon, "                    ");                   \
+            while (list) {                                                 \
+                monitor_printf(mon, "%s", type##Feature_str(list->value)); \
+                list = list->next;                                         \
+                if (list != NULL) {                                        \
+                    monitor_printf(mon, ", ");                             \
+                }                                                          \
+            }                                                              \
+            monitor_printf(mon, "\n");                                     \
+        }                                                                  \
+    } while (0)
+
+static void hmp_virtio_dump_features(Monitor *mon,
+                                     VirtioStatusFeatures *features)
+{
+    VirtioTransportFeatureList *transport_list = features->transport;
+    while (transport_list) {
+        monitor_printf(mon, "%s",
+                       VirtioTransportFeature_str(transport_list->value));
+        transport_list = transport_list->next;
+        if (transport_list != NULL) {
+            monitor_printf(mon, ", ");
+        }
+    }
+    monitor_printf(mon, "\n");
+    switch (features->device->type) {
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_SERIAL:
+        DUMP_FEATURES(VirtioSerial, virtio_serial);
+        break;
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_BLK:
+        DUMP_FEATURES(VirtioBlk, virtio_blk);
+        break;
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_GPU:
+        DUMP_FEATURES(VirtioGpu, virtio_gpu);
+        break;
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_NET:
+        DUMP_FEATURES(VirtioNet, virtio_net);
+        break;
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_SCSI:
+        DUMP_FEATURES(VirtioScsi, virtio_scsi);
+        break;
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_BALLOON:
+        DUMP_FEATURES(VirtioBalloon, virtio_balloon);
+        break;
+    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_IOMMU:
+        DUMP_FEATURES(VirtioIommu, virtio_iommu);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+    if (features->unknown) {
+        monitor_printf(mon, "                    unknown(0x%016"PRIx64")\n", \
+                       features->unknown);
+    }
+}
+
 void hmp_virtio_status(Monitor *mon, const QDict *qdict)
 {
     Error *err = NULL;
@@ -3995,12 +4163,12 @@ void hmp_virtio_status(Monitor *mon, const QDict *qdict)
 
     monitor_printf(mon, "%s:\n", path);
     monitor_printf(mon, "  Device Id:        %"PRId64"\n", s->device_id);
-    monitor_printf(mon, "  Guest features:   0x%016"PRIx64"\n",
-                   s->guest_features);
-    monitor_printf(mon, "  Host features:    0x%016"PRIx64"\n",
-                   s->host_features);
-    monitor_printf(mon, "  Backend features: 0x%016"PRIx64"\n",
-                   s->backend_features);
+    monitor_printf(mon, "  Guest features:   ");
+    hmp_virtio_dump_features(mon, s->guest_features);
+    monitor_printf(mon, "  Host features:    ");
+    hmp_virtio_dump_features(mon, s->host_features);
+    monitor_printf(mon, "  Backend features: ");
+    hmp_virtio_dump_features(mon, s->backend_features);
     monitor_printf(mon, "  Endianness:       %s\n",
                    VirtioStatusEndianness_str(s->device_endian));
     monitor_printf(mon, "  VirtQueues:       %d\n", s->num_vqs);
