@@ -98,6 +98,7 @@ static bool has_msr_tsx_ctrl;
 static bool has_msr_virt_ssbd;
 static bool has_msr_smi_count;
 static bool has_msr_arch_capabs;
+static bool has_msr_ucode_rev;
 
 static uint32_t has_architectural_pmu_version;
 static uint32_t num_architectural_pmu_gp_counters;
@@ -1354,6 +1355,9 @@ static int kvm_get_supported_msrs(KVMState *s)
                 case MSR_IA32_ARCH_CAPABILITIES:
                     has_msr_arch_capabs = true;
                     break;
+                case MSR_IA32_UCODE_REV:
+                    has_msr_ucode_rev = true;
+                    break;
                 }
             }
         }
@@ -1828,8 +1832,7 @@ static void kvm_init_msrs(X86CPU *cpu)
                           env->features[FEAT_ARCH_CAPABILITIES]);
     }
 
-    if (kvm_arch_get_supported_msr_feature(kvm_state,
-                                           MSR_IA32_UCODE_REV)) {
+    if (has_msr_ucode_rev) {
         kvm_msr_entry_add(cpu, MSR_IA32_UCODE_REV, cpu->ucode_rev);
     }
 
