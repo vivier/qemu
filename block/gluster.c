@@ -571,7 +571,12 @@ static const AIOCBInfo gluster_aiocb_info = {
     .cancel = qemu_gluster_aio_cancel,
 };
 
-static void gluster_finish_aiocb(struct glfs_fd *fd, ssize_t ret, void *arg)
+static void gluster_finish_aiocb(struct glfs_fd *fd, ssize_t ret,
+#ifdef CONFIG_GLUSTERFS_IOCB_HAS_STAT
+                                 struct glfs_stat *pre, struct glfs_stat *post,
+#endif
+                                 void *arg)
+
 {
     GlusterAIOCB *acb = (GlusterAIOCB *)arg;
     BlockDriverState *bs = acb->common.bs;
