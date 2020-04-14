@@ -938,6 +938,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Apr 14 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.11
+- kvm-target-i386-kvm-initialize-feature-MSRs-very-early.patch [bz#1804579]
+- kvm-target-i386-add-a-ucode-rev-property.patch [bz#1804579]
+- kvm-target-i386-kvm-initialize-microcode-revision-from-K.patch [bz#1804579]
+- kvm-target-i386-fix-TCG-UCODE_REV-access.patch [bz#1804579]
+- kvm-target-i386-check-for-availability-of-MSR_IA32_UCODE.patch [bz#1804579]
+- kvm-target-i386-enable-monitor-and-ucode-revision-with-c.patch [bz#1804579]
+- Resolves: bz#1804579
+  (Backport: Passthrough host CPU microcode version to KVM guest if using CPU passthrough to RHEL 7.7/7.8 [rhel-7.7.z])
+
 * Fri Feb 21 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-33.el7_7.10
 - kvm-util-add-slirp_fmt-helpers.patch [bz#1798971]
 - kvm-tcp_emu-fix-unsafe-snprintf-usages.patch [bz#1798971]
