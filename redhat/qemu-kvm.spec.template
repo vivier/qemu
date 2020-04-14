@@ -813,6 +813,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Apr 14 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-173.el7.2
+- kvm-gluster-Handle-changed-glfs_ftruncate-signature.patch [bz#1822235]
+- kvm-gluster-the-glfs_io_cbk-callback-function-pointer-ad.patch [bz#1822235]
+- Resolves: bz#1822235
+  (Add support for newer glusterfs [rhel-7.8.z])
+
 * Wed Mar 04 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-173.el7_8.1
 - kvm-util-add-slirp_fmt-helpers.patch [bz#1798970]
 - kvm-tcp_emu-fix-unsafe-snprintf-usages.patch [bz#1798970]
