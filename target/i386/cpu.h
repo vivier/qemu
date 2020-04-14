@@ -353,6 +353,8 @@ typedef enum X86Seg {
 #define MSR_IA32_SPEC_CTRL              0x48
 #define MSR_VIRT_SSBD                   0xc001011f
 #define MSR_IA32_PRED_CMD               0x49
+#define MSR_IA32_UCODE_REV              0x8b
+
 #define MSR_IA32_ARCH_CAPABILITIES      0x10a
 #define ARCH_CAP_TSX_CTRL_MSR		(1<<7)
 
@@ -1369,6 +1371,8 @@ struct X86CPU {
     /*< public >*/
 
     CPUX86State env;
+
+    uint64_t ucode_rev;
 
     bool hyperv_vapic;
     bool hyperv_relaxed_timing;
