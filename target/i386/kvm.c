@@ -419,7 +419,7 @@ uint32_t kvm_arch_get_supported_cpuid(KVMState *s, uint32_t function,
     return ret;
 }
 
-uint32_t kvm_arch_get_supported_msr_feature(KVMState *s, uint32_t index)
+uint64_t kvm_arch_get_supported_msr_feature(KVMState *s, uint32_t index)
 {
     struct {
         struct kvm_msrs info;
@@ -1826,6 +1826,11 @@ static void kvm_init_msrs(X86CPU *cpu)
     if (has_msr_arch_capabs) {
         kvm_msr_entry_add(cpu, MSR_IA32_ARCH_CAPABILITIES,
                           env->features[FEAT_ARCH_CAPABILITIES]);
+    }
+
+    if (kvm_arch_get_supported_msr_feature(kvm_state,
+                                           MSR_IA32_UCODE_REV)) {
+        kvm_msr_entry_add(cpu, MSR_IA32_UCODE_REV, cpu->ucode_rev);
     }
 
     assert(kvm_buf_set_msrs(cpu) == 0);

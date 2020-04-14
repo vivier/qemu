@@ -4883,11 +4883,18 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
     Error *local_err = NULL;
     static bool ht_warned;
 
-    if (xcc->host_cpuid_required && !accel_uses_host_cpuid()) {
-        char *name = x86_cpu_class_get_model_name(xcc);
-        error_setg(&local_err, "CPU model '%s' requires KVM", name);
-        g_free(name);
-        goto out;
+    if (xcc->host_cpuid_required) {
+        if (!accel_uses_host_cpuid()) {
+            char *name = x86_cpu_class_get_model_name(xcc);
+            error_setg(&local_err, "CPU model '%s' requires KVM", name);
+            g_free(name);
+            goto out;
+        }
+
+        if (kvm_enabled() && cpu->ucode_rev == 0) {
+            cpu->ucode_rev = kvm_arch_get_supported_msr_feature(kvm_state,
+                                                                MSR_IA32_UCODE_REV);
+        }
     }
 
     if (cpu->ucode_rev == 0) {
