@@ -65,6 +65,8 @@
  * 255 kvm_msr_entry structs */
 #define MSR_BUF_SIZE 4096
 
+static void kvm_init_msrs(X86CPU *cpu);
+
 const KVMCapabilityInfo kvm_arch_required_capabilities[] = {
     KVM_CAP_INFO(SET_TSS_ADDR),
     KVM_CAP_INFO(EXT_CPUID),
@@ -1175,6 +1177,8 @@ int kvm_arch_init_vcpu(CPUState *cs)
         has_msr_tsc_aux = false;
     }
 
+    kvm_init_msrs(cpu);
+
     return 0;
 
  fail:
@@ -1797,11 +1801,40 @@ static int kvm_put_msr_feature_control(X86CPU *cpu)
     return 0;
 }
 
+static int kvm_buf_set_msrs(X86CPU *cpu)
+{
+    int ret = kvm_vcpu_ioctl(CPU(cpu), KVM_SET_MSRS, cpu->kvm_msr_buf);
+    if (ret < 0) {
+        return ret;
+    }
+
+    if (ret < cpu->kvm_msr_buf->nmsrs) {
+        struct kvm_msr_entry *e = &cpu->kvm_msr_buf->entries[ret];
+        error_report("error: failed to set MSR 0x%" PRIx32 " to 0x%" PRIx64,
+                     (uint32_t)e->index, (uint64_t)e->data);
+    }
+
+    assert(ret == cpu->kvm_msr_buf->nmsrs);
+    return 0;
+}
+
+static void kvm_init_msrs(X86CPU *cpu)
+{
+    CPUX86State *env = &cpu->env;
+
+    kvm_msr_buf_reset(cpu);
+    if (has_msr_arch_capabs) {
+        kvm_msr_entry_add(cpu, MSR_IA32_ARCH_CAPABILITIES,
+                          env->features[FEAT_ARCH_CAPABILITIES]);
+    }
+
+    assert(kvm_buf_set_msrs(cpu) == 0);
+}
+
 static int kvm_put_msrs(X86CPU *cpu, int level)
 {
     CPUX86State *env = &cpu->env;
     int i;
-    int ret;
 
     kvm_msr_buf_reset(cpu);
 
@@ -1855,12 +1888,6 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
         kvm_msr_entry_add(cpu, MSR_LSTAR, env->lstar);
     }
 #endif
-
-    /* If host supports feature MSR, write down. */
-    if (has_msr_arch_capabs) {
-        kvm_msr_entry_add(cpu, MSR_IA32_ARCH_CAPABILITIES,
-                          env->features[FEAT_ARCH_CAPABILITIES]);
-    }
 
     /*
      * The following MSRs have side effects on the guest or are too heavy
@@ -2040,19 +2067,7 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
         }
     }
 
-    ret = kvm_vcpu_ioctl(CPU(cpu), KVM_SET_MSRS, cpu->kvm_msr_buf);
-    if (ret < 0) {
-        return ret;
-    }
-
-    if (ret < cpu->kvm_msr_buf->nmsrs) {
-        struct kvm_msr_entry *e = &cpu->kvm_msr_buf->entries[ret];
-        error_report("error: failed to set MSR 0x%" PRIx32 " to 0x%" PRIx64,
-                     (uint32_t)e->index, (uint64_t)e->data);
-    }
-
-    assert(ret == cpu->kvm_msr_buf->nmsrs);
-    return 0;
+    return kvm_buf_set_msrs(cpu);
 }
 
 
