@@ -408,6 +408,19 @@
 }
 
 ##
+# @VirtioRingDescFlags:
+#
+# An enumeration of the virtio ring descriptor flags
+#
+# Since: 5.1
+#
+##
+
+{ 'enum': 'VirtioRingDescFlags',
+  'data': [ 'next', 'write', 'indirect', 'avail', 'used' ]
+}
+
+##
 # @VirtioRingDesc:
 #
 # @addr: guest physical address of the descriptor data
@@ -424,7 +437,7 @@
   'data': {
     'addr': 'uint64',
     'len': 'uint32',
-    'flags': 'uint16'
+    'flags': [ 'VirtioRingDescFlags' ]
   }
 }
 

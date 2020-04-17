@@ -4176,6 +4176,36 @@ void hmp_virtio_status(Monitor *mon, const QDict *qdict)
     qapi_free_VirtioStatus(s);
 }
 
+static VirtioRingDescFlagsList *qmp_decode_vring_desc_flags(uint16_t flags)
+{
+    VirtioRingDescFlagsList *list = NULL;
+    VirtioRingDescFlagsList *node;
+    int i;
+    struct {
+        uint16_t flag;
+        VirtioRingDescFlags value;
+    } map[] = {
+        { VRING_DESC_F_NEXT, VIRTIO_RING_DESC_FLAGS_NEXT },
+        { VRING_DESC_F_WRITE, VIRTIO_RING_DESC_FLAGS_WRITE },
+        { VRING_DESC_F_INDIRECT, VIRTIO_RING_DESC_FLAGS_INDIRECT },
+        { 1 << VRING_PACKED_DESC_F_AVAIL, VIRTIO_RING_DESC_FLAGS_AVAIL },
+        { 1 << VRING_PACKED_DESC_F_USED, VIRTIO_RING_DESC_FLAGS_USED },
+        { 0, -1 }
+    };
+
+    for (i = 0; map[i].flag; i++) {
+        if ((map[i].flag & flags) == 0) {
+            continue;
+        }
+        node = g_malloc0(sizeof(VirtioRingDescFlagsList));
+        node->value = map[i].value;
+        node->next = list;
+        list = node;
+    }
+
+    return list;
+}
+
 VirtioQueueElement *qmp_virtio_queue_element(const char* path, uint16_t queue,
                                              bool has_index, uint16_t index,
                                              Error **errp)
@@ -4256,7 +4286,7 @@ VirtioQueueElement *qmp_virtio_queue_element(const char* path, uint16_t queue,
             node->value = g_new0(VirtioRingDesc, 1);
             node->value->addr = desc.addr;
             node->value->len = desc.len;
-            node->value->flags = desc.flags;
+            node->value->flags = qmp_decode_vring_desc_flags(desc.flags);
             node->next = list;
             list = node;
 
@@ -4295,9 +4325,20 @@ void hmp_virtio_queue_element(Monitor *mon, const QDict *qdict)
 
     list = element->descs;
     while (list) {
-        monitor_printf(mon, "addr 0x%"PRIx64" len %d %s", list->value->addr,
-                       list->value->len, list->value->flags &
-                       VRING_DESC_F_WRITE ? "(write-only)" : "(read-only)");
+        monitor_printf(mon, "addr 0x%"PRIx64" len %d", list->value->addr,
+                       list->value->len);
+        if (list->value->flags) {
+            VirtioRingDescFlagsList *flag = list->value->flags;
+            monitor_printf(mon, " (");
+            while (flag) {
+                monitor_printf(mon, "%s", VirtioRingDescFlags_str(flag->value));
+                flag = flag->next;
+                if (flag) {
+                    monitor_printf(mon, ", ");
+                }
+            }
+            monitor_printf(mon, ")");
+        }
         list = list->next;
         if (list) {
             monitor_printf(mon, ", ");
