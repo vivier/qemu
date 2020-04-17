@@ -827,6 +827,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Apr 17 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-16.el7_4.20
+- kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1798015]
+- Resolves: bz#1798015
+  (CVE-2020-1711 qemu-kvm-rhev: QEMU: block: iscsi: OOB heap access via an unexpected response of iSCSI Server [rhel-7.4.z])
+
 * Tue Apr 30 2019 Miroslav Rezanina <mrezanin@redhat.com> - 2.9.0-16.el7_4.19
 - kvm-target-i386-define-md-clear-bit.patch [bz#1698789]
 - Resolves: bz#1698789
