@@ -938,6 +938,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Apr 27 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-47.el7
+- kvm-file-posix-Use-max-transfer-length-segment-count-onl.patch [bz#1819253]
+- Resolves: bz#1819253
+  (Fix overzealous I/O request splitting performance regression)
+
 * Tue Apr 07 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-46.el7
 - kvm-seccomp-set-the-seccomp-filter-to-all-threads.patch [bz#1618504 bz#1622976]
 - Resolves: bz#1618504
