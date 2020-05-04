@@ -932,6 +932,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon May 04 2020 Jon Maloy <jmaloy@redhat.com> - ma-2.12.0-18.el7_6.6
+- kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1825860]
+- Resolves: bz#1825860
+  (CVE-2019-14378 qemu-kvm-ma: QEMU: slirp: heap buffer overflow during packet reassembly [rhel-7.6.z])
+
 * Tue Feb 11 2020  Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-18.el7_6.5
 - kvm-iscsi-Avoid-potential-for-get_status-overflow.patch [bz#1798025]
 - kvm-iscsi-Cap-block-count-from-GET-LBA-STATUS-CVE-2020-1.patch [bz#1798025]
