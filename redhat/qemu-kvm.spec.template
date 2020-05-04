@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon May 04 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-160.el7_6.6
+- kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1825854]
+- Resolves: bz#1825854
+  (CVE-2019-14378 qemu-kvm: QEMU: slirp: heap buffer overflow during packet reassembly [rhel-7.6.z])
+
 * Tue Jan 28 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-160.el7_6.5
 - kvm-target-i386-Export-TAA_NO-bit-to-guests.patch [bz#1771959]
 - kvm-target-i386-add-support-for-MSR_IA32_TSX_CTRL.patch [bz#1771959]
