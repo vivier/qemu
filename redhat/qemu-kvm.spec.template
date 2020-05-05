@@ -932,6 +932,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue May 05 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-18.el7_6.11
+- kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1825857]
+- Resolves: bz#1825857
+  (CVE-2019-14378 qemu-kvm-rhev: QEMU: slirp: heap buffer overflow during packet reassembly [rhel-7.6.z])
+
 * Tue Apr 14 2020 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.12.0-18.el7_6.10
 - kvm-slirp-use-correct-size-while-emulating-IRC-commands.patch [bz#1805591]
 - kvm-slirp-use-correct-size-while-emulating-commands.patch [bz#1805591]
