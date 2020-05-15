@@ -3989,68 +3989,79 @@ void hmp_x_debug_virtio_queue_status(Monitor *mon, const QDict *qdict)
         list;                                      \
     })
 
-static VirtioStatusFeatures *qmp_decode_features(const char *name,
+static VirtioDeviceFeatures *qmp_decode_features(const char *name,
                                                  uint64_t bitmap)
 {
-    VirtioStatusFeatures *features;
+    VirtioDeviceFeatures *features;
     uint64_t bit;
     int i;
 
-    features = g_new0(VirtioStatusFeatures, 1);
+    features = g_new0(VirtioDeviceFeatures, 1);
 
     /* transport features */
     features->transport = CONVERT_FEATURES(VirtioTransportFeatureList, \
                                            transport_map);
 
     /* device features */
-    features->device = g_new0(VirtioDeviceFeatures, 1);
-    features->device->type = qapi_enum_parse(&VirtioDeviceFeaturesKind_lookup,
-                                             name, -1, NULL);
-    switch (features->device->type) {
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_SERIAL:
-        features->device->u.virtio_serial.data =
+    features->type = qapi_enum_parse(&VirtioType_lookup,
+                                     name, -1, NULL);
+    switch (features->type) {
+    case VIRTIO_TYPE_VIRTIO_SERIAL:
+        features->u.virtio_serial.features =
                           CONVERT_FEATURES(VirtioSerialFeatureList, serial_map);
         break;
 #ifdef CONFIG_VIRTIO_BLK
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_BLK:
-        features->device->u.virtio_blk.data =
+    case VIRTIO_TYPE_VIRTIO_BLK:
+        features->u.virtio_blk.features =
                                 CONVERT_FEATURES(VirtioBlkFeatureList, blk_map);
         break;
 #endif
 #ifdef CONFIG_VIRTIO_GPU
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_GPU:
-        features->device->u.virtio_gpu.data =
+    case VIRTIO_TYPE_VIRTIO_GPU:
+        features->u.virtio_gpu.features =
                                 CONVERT_FEATURES(VirtioGpuFeatureList, gpu_map);
         break;
 #endif
 #ifdef CONFIG_VIRTIO_NET
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_NET:
-        features->device->u.virtio_net.data =
+    case VIRTIO_TYPE_VIRTIO_NET:
+        features->u.virtio_net.features =
                                 CONVERT_FEATURES(VirtioNetFeatureList, net_map);
         break;
 #endif
 #ifdef CONFIG_VIRTIO_SCSI
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_SCSI:
-        features->device->u.virtio_scsi.data =
+    case VIRTIO_TYPE_VIRTIO_SCSI:
+        features->u.virtio_scsi.features =
                               CONVERT_FEATURES(VirtioScsiFeatureList, scsi_map);
         break;
 #endif
 #ifdef CONFIG_VIRTIO_BALLOON
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_BALLOON:
-        features->device->u.virtio_balloon.data =
+    case VIRTIO_TYPE_VIRTIO_BALLOON:
+        features->u.virtio_balloon.features =
                         CONVERT_FEATURES(VirtioBalloonFeatureList, balloon_map);
         break;
 #endif
 #ifdef CONFIG_VIRTIO_IOMMU
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_IOMMU:
-        features->device->u.virtio_iommu.data =
+    case VIRTIO_TYPE_VIRTIO_IOMMU:
+        features->u.virtio_iommu.features =
                             CONVERT_FEATURES(VirtioIommuFeatureList, iommu_map);
         break;
 #endif
+    /* No features */
+    case VIRTIO_TYPE_VIRTIO_9P:
+    case VIRTIO_TYPE_VIRTIO_INPUT:
+    case VIRTIO_TYPE_VHOST_USER_FS:
+    case VIRTIO_TYPE_VHOST_VSOCK:
+    case VIRTIO_TYPE_VIRTIO_CRYPTO:
+    case VIRTIO_TYPE_VIRTIO_PMEM:
+    case VIRTIO_TYPE_VIRTIO_RNG:
+        break;
     default:
         g_assert_not_reached();
     }
-    features->unknown = bitmap;
+    features->has_unknown_features = bitmap != 0;
+    if (features->has_unknown_features) {
+        features->unknown_features = bitmap;
+    }
 
     return features;
 }
@@ -4094,7 +4105,7 @@ VirtioStatus *qmp_x_debug_virtio_status(const char* path, Error **errp)
 
 #define DUMP_FEATURES(type, field)                                         \
     do {                                                                   \
-        type##FeatureList *list = features->device->u.field.data;          \
+        type##FeatureList *list = features->u.field.features;              \
         if (list) {                                                        \
             monitor_printf(mon, "                    ");                   \
             while (list) {                                                 \
@@ -4109,7 +4120,7 @@ VirtioStatus *qmp_x_debug_virtio_status(const char* path, Error **errp)
     } while (0)
 
 static void hmp_virtio_dump_features(Monitor *mon,
-                                     VirtioStatusFeatures *features)
+                                     VirtioDeviceFeatures *features)
 {
     VirtioTransportFeatureList *transport_list = features->transport;
     while (transport_list) {
@@ -4121,34 +4132,35 @@ static void hmp_virtio_dump_features(Monitor *mon,
         }
     }
     monitor_printf(mon, "\n");
-    switch (features->device->type) {
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_SERIAL:
+    switch (features->type) {
+    case VIRTIO_TYPE_VIRTIO_SERIAL:
         DUMP_FEATURES(VirtioSerial, virtio_serial);
         break;
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_BLK:
+    case VIRTIO_TYPE_VIRTIO_BLK:
         DUMP_FEATURES(VirtioBlk, virtio_blk);
         break;
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_GPU:
+    case VIRTIO_TYPE_VIRTIO_GPU:
         DUMP_FEATURES(VirtioGpu, virtio_gpu);
         break;
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_NET:
+    case VIRTIO_TYPE_VIRTIO_NET:
         DUMP_FEATURES(VirtioNet, virtio_net);
         break;
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_SCSI:
+    case VIRTIO_TYPE_VIRTIO_SCSI:
         DUMP_FEATURES(VirtioScsi, virtio_scsi);
         break;
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_BALLOON:
+    case VIRTIO_TYPE_VIRTIO_BALLOON:
         DUMP_FEATURES(VirtioBalloon, virtio_balloon);
         break;
-    case VIRTIO_DEVICE_FEATURES_KIND_VIRTIO_IOMMU:
+    case VIRTIO_TYPE_VIRTIO_IOMMU:
         DUMP_FEATURES(VirtioIommu, virtio_iommu);
         break;
     default:
         g_assert_not_reached();
     }
-    if (features->unknown) {
-        monitor_printf(mon, "                    unknown(0x%016"PRIx64")\n", \
-                       features->unknown);
+    if (features->has_unknown_features) {
+        monitor_printf(mon, "                    "
+                            "unknown-features(0x%016"PRIx64")\n",
+                       features->unknown_features);
     }
 }
 

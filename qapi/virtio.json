@@ -113,7 +113,8 @@
 ##
 
 { 'enum': 'VirtioBlkFeature',
-  'data': [ 'size-max', 'seg-max', 'geometry', 'ro', 'blk-size', 'topology',              'mq', 'discard', 'write-zeroes', 'barrier', 'scsi', 'flush',
+  'data': [ 'size-max', 'seg-max', 'geometry', 'ro', 'blk-size', 'topology',
+            'mq', 'discard', 'write-zeroes', 'barrier', 'scsi', 'flush',
             'config-wce' ]
 }
 
@@ -185,41 +186,143 @@
 }
 
 ##
+# @VirtioDeviceFeaturesBase:
+#
+# The common fields that apply to all Virtio devices
+#
+# @type: virtio device type
+# @transport: the list of transport features of the virtio device
+# @unknown-features: virtio device features bitmap that have not been decoded
+#
+# Since: 5.1
+##
+
+{ 'struct': 'VirtioDeviceFeaturesBase',
+  'data': {
+    'type': 'VirtioType',
+    'transport': [ 'VirtioTransportFeature' ],
+    '*unknown-features': 'uint64'
+  }
+}
+
+##
+# @VirtioDeviceFeaturesOptionsSerial:
+#
+# The options that apply to Virtio serial device
+#
+# @features: List of the device features
+#
+# Since: 5.1
+##
+
+{ 'struct': 'VirtioDeviceFeaturesOptionsSerial',
+  'data': { 'features': [ 'VirtioSerialFeature' ] }
+}
+
+##
+# @VirtioDeviceFeaturesOptionsBlk:
+#
+# The options that apply to Virtio block device
+#
+# @features: List of the device features
+#
+# Since: 5.1
+##
+
+{ 'struct': 'VirtioDeviceFeaturesOptionsBlk',
+  'data': { 'features': [ 'VirtioBlkFeature' ] }
+}
+
+##
+# @VirtioDeviceFeaturesOptionsGpu:
+#
+# The options that apply to Virtio GPU device
+#
+# @features: List of the device features
+#
+# Since: 5.1
+##
+
+{ 'struct': 'VirtioDeviceFeaturesOptionsGpu',
+  'data': { 'features': [ 'VirtioGpuFeature' ] }
+}
+
+##
+# @VirtioDeviceFeaturesOptionsNet:
+#
+# The options that apply to Virtio net device
+#
+# @features: List of the device features
+#
+# Since: 5.1
+##
+
+{ 'struct': 'VirtioDeviceFeaturesOptionsNet',
+  'data': { 'features': [ 'VirtioNetFeature' ] }
+}
+
+##
+# @VirtioDeviceFeaturesOptionsScsi:
+#
+# The options that apply to Virtio SCSI device
+#
+# @features: List of the device features
+#
+# Since: 5.1
+##
+
+{ 'struct': 'VirtioDeviceFeaturesOptionsScsi',
+  'data': { 'features': [ 'VirtioScsiFeature' ] }
+}
+
+##
+# @VirtioDeviceFeaturesOptionsBalloon:
+#
+# The options that apply to Virtio balloon device
+#
+# @features: List of the device features
+#
+# Since: 5.1
+##
+
+{ 'struct': 'VirtioDeviceFeaturesOptionsBalloon',
+  'data': { 'features': [ 'VirtioBalloonFeature' ] }
+}
+
+##
+# @VirtioDeviceFeaturesOptionsIommu:
+#
+# The options that apply to Virtio IOMMU device
+#
+# @features: List of the device features
+#
+# Since: 5.1
+##
+
+{ 'struct': 'VirtioDeviceFeaturesOptionsIommu',
+  'data': { 'features': [ 'VirtioIommuFeature' ] }
+}
+
+##
 # @VirtioDeviceFeatures:
 #
-# An union to define the list of features for a virtio device
+# A union to define the list of features for a virtio device
 #
 # Since: 5.1
 ##
 
 { 'union': 'VirtioDeviceFeatures',
+  'base': 'VirtioDeviceFeaturesBase',
+  'discriminator': 'type',
   'data': {
-    'virtio-serial': [ 'VirtioSerialFeature' ],
-    'virtio-blk': [ 'VirtioBlkFeature' ],
-    'virtio-gpu': [ 'VirtioGpuFeature' ],
-    'virtio-net': [ 'VirtioNetFeature' ],
-    'virtio-scsi': [ 'VirtioScsiFeature' ],
-    'virtio-balloon': [ 'VirtioBalloonFeature' ],
-    'virtio-iommu': [ 'VirtioIommuFeature' ]
+    'virtio-serial': 'VirtioDeviceFeaturesOptionsSerial',
+    'virtio-blk': 'VirtioDeviceFeaturesOptionsBlk',
+    'virtio-gpu': 'VirtioDeviceFeaturesOptionsGpu',
+    'virtio-net': 'VirtioDeviceFeaturesOptionsNet',
+    'virtio-scsi': 'VirtioDeviceFeaturesOptionsScsi',
+    'virtio-balloon': 'VirtioDeviceFeaturesOptionsBalloon',
+    'virtio-iommu': 'VirtioDeviceFeaturesOptionsIommu'
   }
-}
-
-##
-# @VirtioStatusFeatures:
-#
-# @transport: the list of transport features of the virtio device
-#
-# @device: the list of the virtio device specific features
-#
-# @unknown: virtio bitmap of the undecoded features
-#
-# Since: 5.1
-##
-
-{ 'struct': 'VirtioStatusFeatures',
-  'data': { 'transport': [ 'VirtioTransportFeature' ],
-            'device': 'VirtioDeviceFeatures',
-            'unknown': 'uint64' }
 }
 
 ##
@@ -245,9 +348,9 @@
   'data': {
     'device-id': 'int',
     'device-endian': 'VirtioStatusEndianness',
-    'guest-features': 'VirtioStatusFeatures',
-    'host-features': 'VirtioStatusFeatures',
-    'backend-features': 'VirtioStatusFeatures',
+    'guest-features': 'VirtioDeviceFeatures',
+    'host-features': 'VirtioDeviceFeatures',
+    'backend-features': 'VirtioDeviceFeatures',
     'num-vqs': 'uint16'
   }
 }
@@ -274,30 +377,21 @@
 #          "device-endian": "little",
 #          "device-id": 3,
 #          "backend-features": {
-#              "device": {
-#                  "type": "virtio-serial",
-#                  "data": []
-#              },
-#              "unknown": 0,
-#              "transport": []
+#              "transport": [],
+#              "type": "virtio-serial",
+#              "features": []
 #          },
 #          "num-vqs": 64,
 #          "guest-features": {
-#              "device": {
-#                  "type": "virtio-serial",
-#                  "data": [ "multiport" ]
-#              },
-#              "unknown": 0,
-#              "transport": [ "event-idx", "indirect-desc", "version-1" ]
+#              "transport": [ "event-idx", "indirect-desc", "version-1" ],
+#              "type": "virtio-serial",
+#              "features": [ "multiport" ]
 #          },
 #          "host-features": {
-#              "device": {
-#                  "type": "virtio-serial",
-#                  "data": [ "emerg-write", "multiport" ]
-#              },
-#              "unknown": 0,
 #              "transport": [ "event-idx", "indirect-desc", "bad-feature",
-#                             "version-1", "any-layout", "notify-on-empty" ]
+#                             "version-1", "any-layout", "notify-on-empty" ],
+#              "type": "virtio-serial",
+#              "features": [ "emerg-write", "multiport" ]
 #          }
 #      }
 #  }
