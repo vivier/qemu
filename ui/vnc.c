@@ -1141,6 +1141,8 @@ void vnc_disconnect_finish(VncState *vs)
         g_free(vs->lossy_rect[i]);
     }
     g_free(vs->lossy_rect);
+    g_free(vs->zrle);
+    g_free(vs->tight);
     g_free(vs);
 }
 
@@ -2003,8 +2005,8 @@ static void set_encodings(VncState *vs, int32_t *encodings, size_t n_encodings)
 
     vs->features = 0;
     vs->vnc_encoding = 0;
-    vs->tight.compression = 9;
-    vs->tight.quality = -1; /* Lossless by default */
+    vs->tight->compression = 9;
+    vs->tight->quality = -1; /* Lossless by default */
     vs->absolute = -1;
 
     /*
@@ -2069,11 +2071,11 @@ static void set_encodings(VncState *vs, int32_t *encodings, size_t n_encodings)
             vs->features |= VNC_FEATURE_LED_STATE_MASK;
             break;
         case VNC_ENCODING_COMPRESSLEVEL0 ... VNC_ENCODING_COMPRESSLEVEL0 + 9:
-            vs->tight.compression = (enc & 0x0F);
+            vs->tight->compression = (enc & 0x0F);
             break;
         case VNC_ENCODING_QUALITYLEVEL0 ... VNC_ENCODING_QUALITYLEVEL0 + 9:
             if (vs->vd->lossy) {
-                vs->tight.quality = (enc & 0x0F);
+                vs->tight->quality = (enc & 0x0F);
             }
             break;
         default:
@@ -2906,6 +2908,8 @@ static void vnc_connect(VncDisplay *vd, int csock, int skipauth, bool websocket)
     int i;
 
     vs->csock = csock;
+    vs->zrle = g_new0(VncZrle, 1);
+    vs->tight = g_new0(VncTight, 1);
 
     if (skipauth) {
 	vs->auth = VNC_AUTH_NONE;
