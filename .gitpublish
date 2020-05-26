@@ -1,7 +1,7 @@
 # Default profile for RHEL qemu-kvm
 [gitpublishprofile "default"]
 base = rhel7/master-1.5.3
-prefix = RHEL-7.8 qemu-kvm PATCH
+prefix = RHEL-7.9 qemu-kvm PATCH
 to = rhvirt-patches@redhat.com
 suppresscc = all
 message = True
