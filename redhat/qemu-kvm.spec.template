@@ -938,6 +938,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu May 28 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-48.el7
+- kvm-vnc-add-magic-cookie-to-VncState.patch [bz#1810409]
+- kvm-vnc-fix-memory-leak-when-vnc-disconnect.patch [bz#1810409]
+- Resolves: bz#1810409
+  (CVE-2019-20382 qemu-kvm-rhev: QEMU: vnc: memory leakage upon disconnect [rhel-7])
+
 * Mon Apr 27 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-47.el7
 - kvm-file-posix-Use-max-transfer-length-segment-count-onl.patch [bz#1819253]
 - Resolves: bz#1819253
