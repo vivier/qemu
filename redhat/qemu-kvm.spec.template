@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Mon Jun 01 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-175.el7
+- kvm-vnc-fix-memory-leak-when-vnc-disconnect.patch [bz#1810408]
+- Resolves: bz#1810408
+  (CVE-2019-20382 qemu-kvm: QEMU: vnc: memory leakage upon disconnect [rhel-7])
+
 * Thu Mar 19 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-174.el7
 - kvm-util-add-slirp_fmt-helpers2.patch [bz#1800515]
 - kvm-tcp_emu-fix-unsafe-snprintf-usages2.patch [bz#1800515]
