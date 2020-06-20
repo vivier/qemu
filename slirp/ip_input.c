@@ -329,10 +329,10 @@ insert:
 	/*
 	 * Reassembly is complete; concatenate fragments.
 	 */
-    q = fp->frag_link.next;
+	q = fp->frag_link.next;
 	m = dtom(slirp, q);
 
-	int was_ext = m->m_flags & M_EXT;
+	int delta = (char *)q - (m->m_flags & M_EXT ? m->m_ext : m->m_dat);
 
 	q = (struct ipasfrag *) q->ipf_next;
 	while (q != (struct ipasfrag*)&fp->frag_link) {
@@ -356,12 +356,11 @@ insert:
 	 * the old buffer (in the mbuf), so we must point ip
 	 * into the new buffer.
 	 */
-	if (!was_ext && m->m_flags & M_EXT) {
-	  int delta = (char *)q - m->m_dat;
+	if (m->m_flags & M_EXT) {
 	  q = (struct ipasfrag *)(m->m_ext + delta);
 	}
 
-    ip = fragtoip(q);
+	ip = fragtoip(q);
 	ip->ip_len = next;
 	ip->ip_tos &= ~1;
 	ip->ip_src = fp->ipq_src;
