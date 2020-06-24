@@ -139,11 +139,19 @@ void qemu_set_block(int fd)
     ioctlsocket(fd, FIONBIO, &opt);
 }
 
-void qemu_set_nonblock(int fd)
+int qemu_try_set_nonblock(int fd)
 {
     unsigned long opt = 1;
-    ioctlsocket(fd, FIONBIO, &opt);
+    if (ioctlsocket(fd, FIONBIO, &opt) != NO_ERROR) {
+        return -1
+    }
     qemu_fd_register(fd);
+    return 0;
+}
+
+void qemu_set_nonblock(int fd)
+{
+    (void)qemu_try_set_nonblock(fd);
 }
 
 int socket_set_fast_reuse(int fd)
