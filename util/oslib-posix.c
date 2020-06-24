@@ -43,6 +43,7 @@
 
 #ifdef CONFIG_LINUX
 #include <sys/syscall.h>
+#include <linux/major.h>
 #endif
 
 #ifdef __FreeBSD__
@@ -64,6 +65,16 @@
 #endif
 
 #define MAX_MEM_PREALLOC_THREAD_COUNT 16
+
+#ifdef CONFIG_LINUX
+#ifndef TUN_MINOR
+/*
+ * Allocated by device@lanana.org and defined in include/linux/miscdevice.h
+ * but the file is not exported
+ */
+#define TUN_MINOR 200
+#endif
+#endif
 
 struct MemsetThread {
     char *addr;
@@ -242,6 +253,37 @@ void qemu_anon_ram_free(void *ptr, size_t size)
 {
     trace_qemu_anon_ram_free(ptr, size);
     qemu_ram_munmap(-1, ptr, size);
+}
+
+bool qemu_fd_is_tap(int fd)
+{
+#ifdef CONFIG_LINUX
+    struct stat st;
+    int ret;
+    unsigned int major;
+
+    ret = fstat(fd, &st);
+    if (ret == -1) {
+        return false;
+    }
+
+    /* tuntap */
+    if (major(st.st_dev) == MISC_MAJOR && minor(st.st_dev) == TUN_MINOR) {
+        return true;
+    }
+
+    /* macvtap */
+    ret = qemu_get_device_major(&major, 'c', "macvtap");
+    if (ret == -1) {
+        /* if we fail to find the device major number, we don't check it*/
+        return true;
+    }
+
+    return major(st.st_rdev) == major;
+#else
+    /* we can only check if the file descriptor is valid */
+    return fcntl(fd, F_GETFL) != -1;
+#endif
 }
 
 void qemu_set_block(int fd)

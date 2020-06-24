@@ -607,4 +607,15 @@ static inline void qemu_reset_optind(void)
 #endif
 }
 
+/**
+ * qemu_get_device_major:
+ * @major: major number found
+ * @type: type of device ('c' for char, 'b' for block)
+ * @device: name of the device to find
+ *
+ * Extract the major number for a given device.
+ * Return 0 on succes, -1 otherwise.
+ */
+extern int qemu_get_device_major(unsigned int *major, unsigned char type,
+                                 const char *device);
 #endif

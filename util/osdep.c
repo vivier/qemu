@@ -562,3 +562,71 @@ writev(int fd, const struct iovec *iov, int iov_cnt)
     return readv_writev(fd, iov, iov_cnt, true);
 }
 #endif
+
+#ifdef CONFIG_LINUX
+int qemu_get_device_major(unsigned int *major, unsigned char type,
+                          const char *device)
+{
+    FILE *f;
+    ssize_t read;
+    int ret = -1;
+    char *line = NULL;
+    size_t len = 0;
+    unsigned char current_type = 0;
+
+    f = fopen("/proc/devices", "r");
+    if (f == NULL) {
+        return ret;
+    }
+
+    while ((read = getline(&line, &len, f)) != -1) {
+        long number;
+        char *next;
+        int l;
+
+        if (read == 0) {
+            continue;
+        }
+
+        if (strcmp(line, "Character devices:\n") == 0) {
+            current_type = 'c';
+            continue;
+        }
+
+        if (strcmp(line, "Block devices:\n") == 0) {
+            current_type = 'b';
+            continue;
+        }
+
+        if (current_type != type) {
+            continue;
+        }
+
+        ret = qemu_strtol(line, (const char **)&next, 10, &number);
+        if (ret != 0) {
+            continue;
+        }
+
+        while (*next == ' ') {
+            next++;
+        }
+
+        /* remove the '\n' */
+        l = strlen(next);
+        if (l != 0 && next[l - 1] == '\n') {
+            next[l - 1] = 0;
+        }
+
+        if (strcmp(next, device) == 0) {
+            *major = number;
+            ret = 0;
+            break;
+        }
+    }
+
+    free(line);
+    fclose(f);
+
+    return ret;
+}
+#endif

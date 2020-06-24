@@ -795,6 +795,12 @@ int net_init_tap(const Netdev *netdev, const char *name,
             return -1;
         }
 
+        /* Check if fd is a tap device */
+        if (!qemu_fd_is_tap(fd)) {
+            error_setg(errp, "Invalid file descriptor %d", fd);
+            return -1;
+        }
+
         qemu_set_nonblock(fd);
 
         vnet_hdr = tap_probe_vnet_hdr(fd);
@@ -839,6 +845,13 @@ int net_init_tap(const Netdev *netdev, const char *name,
             fd = monitor_fd_param(cur_mon, fds[i], &err);
             if (fd == -1) {
                 error_propagate(errp, err);
+                ret = -1;
+                goto free_fail;
+            }
+
+            /* Check if fd is tap device */
+            if (!qemu_fd_is_tap(fd)) {
+                error_setg(errp, "Invalid file descriptor %d", fd);
                 ret = -1;
                 goto free_fail;
             }
