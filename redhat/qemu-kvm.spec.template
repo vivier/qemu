@@ -813,6 +813,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Jul 01 2020 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-160.el7_6.7
+- kvm-util-add-slirp_fmt-helpers.patch [bz#1845560]
+- kvm-tcp_emu-fix-unsafe-snprintf-usages.patch [bz#1845560]
+- Resolves: bz#1845560
+  (CVE-2020-8608 qemu-kvm: QEMU: Slirp: potential OOB access due to unsafe snprintf() usages [rhel-7.6.z])
+
 * Mon May 04 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-160.el7_6.6
 - kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1825854]
 - Resolves: bz#1825854
