@@ -770,6 +770,7 @@ int net_init_tap(const Netdev *netdev, const char *name,
     Error *err = NULL;
     const char *vhostfdname;
     char ifname[128];
+    int ret = 0;
 
     assert(netdev->type == NET_CLIENT_DRIVER_TAP);
     tap = &netdev->u.tap;
@@ -799,13 +800,11 @@ int net_init_tap(const Netdev *netdev, const char *name,
             return -1;
         }
 
-        /* Check if fd is valid */
-        if (!qemu_fd_is_valid(fd)) {
-            error_setg(errp, "Invalid file descriptor %d", fd);
+        ret = qemu_try_set_nonblock(fd);
+        if (ret < 0) {
+            error_setg_errno(errp, -ret, "Can't use file descriptor %d", fd);
             return -1;
         }
-
-        qemu_set_nonblock(fd);
 
         vnet_hdr = tap_probe_vnet_hdr(fd, errp);
         if (vnet_hdr < 0) {
@@ -824,7 +823,6 @@ int net_init_tap(const Netdev *netdev, const char *name,
         char **fds;
         char **vhost_fds;
         int nfds = 0, nvhosts = 0;
-        int ret = 0;
 
         if (tap->has_ifname || tap->has_script || tap->has_downscript ||
             tap->has_vnet_hdr || tap->has_helper || tap->has_queues ||
@@ -857,14 +855,12 @@ int net_init_tap(const Netdev *netdev, const char *name,
                 goto free_fail;
             }
 
-            /* Check if fd is valid */
-            if (!qemu_fd_is_valid(fd)) {
-                error_setg(errp, "Invalid file descriptor %d", fd);
-                ret = -1;
+            ret = qemu_try_set_nonblock(fd);
+            if (ret < 0) {
+                error_setg_errno(errp, -ret, "Can't use file descriptor %d",
+                                 fd);
                 goto free_fail;
             }
-
-            qemu_set_nonblock(fd);
 
             if (i == 0) {
                 vnet_hdr = tap_probe_vnet_hdr(fd, errp);
