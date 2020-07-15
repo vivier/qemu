@@ -455,7 +455,8 @@
 { TARGET_NR_ioprio_set, "ioprio_set" , NULL, NULL, NULL },
 #endif
 #ifdef TARGET_NR_io_setup
-{ TARGET_NR_io_setup, "io_setup" , NULL, NULL, NULL },
+{ TARGET_NR_io_setup, "io_setup" , NULL, print_io_setup,
+                      print_syscall_ret_io_setup },
 #endif
 #ifdef TARGET_NR_io_submit
 { TARGET_NR_io_submit, "io_submit" , NULL, NULL, NULL },

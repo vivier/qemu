@@ -894,6 +894,21 @@ print_syscall_ret_ioctl(const struct syscallname *name, abi_long ret,
 }
 #endif
 
+static void
+print_syscall_ret_io_setup(const struct syscallname *name, abi_long ret,
+                           abi_long arg0, abi_long arg1, abi_long arg2,
+                           abi_long arg3, abi_long arg4, abi_long arg5)
+{
+    if (!print_syscall_err(ret)) {
+        abi_ulong ctx;
+        qemu_log(TARGET_ABI_FMT_ld, ret);
+        if (!get_user_ual(ctx, arg1)) {
+            qemu_log(" [0x" TARGET_ABI_FMT_lx "]", ctx);
+        }
+    }
+    qemu_log("\n");
+}
+
 UNUSED static struct flags access_flags[] = {
     FLAG_GENERIC(F_OK),
     FLAG_GENERIC(R_OK),
@@ -3132,6 +3147,17 @@ print_ioctl(const struct syscallname *name,
     print_syscall_epilogue(name);
 }
 #endif
+
+static void
+print_io_setup(const struct syscallname *name,
+               abi_long arg0, abi_long arg1, abi_long arg2,
+               abi_long arg3, abi_long arg4, abi_long arg5)
+{
+    print_syscall_prologue(name);
+    print_raw_param("%d", arg0, 0);
+    print_pointer(arg1, 1);
+    print_syscall_epilogue(name);
+}
 
 /*
  * An array of all of the syscalls we know about

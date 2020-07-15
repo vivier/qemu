@@ -115,6 +115,7 @@
 #ifdef HAVE_DRM_H
 #include <libdrm/drm.h>
 #endif
+#include <linux/aio_abi.h>
 #include "linux_loop.h"
 #include "uname.h"
 
@@ -751,6 +752,7 @@ static type safe_##name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, \
     return safe_syscall(__NR_##name, arg1, arg2, arg3, arg4, arg5, arg6); \
 }
 
+safe_syscall2(int, io_setup, unsigned, nr_revents, aio_context_t *, ctx_idp)
 safe_syscall3(ssize_t, read, int, fd, void *, buff, size_t, count)
 safe_syscall3(ssize_t, write, int, fd, const void *, buff, size_t, count)
 safe_syscall4(int, openat, int, dirfd, const char *, pathname, \
@@ -12560,6 +12562,22 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
     case TARGET_NR_membarrier:
         return get_errno(membarrier(arg1, arg2));
 #endif
+    case TARGET_NR_io_setup:
+    {
+        aio_context_t target_ctx_idp;
+
+        if (get_user_ual(target_ctx_idp, arg2)) {
+            return -TARGET_EFAULT;
+        }
+        ret = get_errno(safe_io_setup(arg1, &target_ctx_idp));
+        if (is_error(ret)) {
+            return ret;
+        }
+        if (put_user_ual(target_ctx_idp, arg2)) {
+            return -TARGET_EFAULT;
+        }
+        return ret;
+    }
 
     default:
         qemu_log_mask(LOG_UNIMP, "Unsupported syscall: %d\n", num);
