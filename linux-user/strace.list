@@ -437,7 +437,7 @@
                    print_syscall_ret_ioctl},
 #endif
 #ifdef TARGET_NR_io_destroy
-{ TARGET_NR_io_destroy, "io_destroy" , NULL, NULL, NULL },
+{ TARGET_NR_io_destroy, "io_destroy" , "%s(0x"TARGET_ABI_FMT_lx")", NULL, NULL },
 #endif
 #ifdef TARGET_NR_io_getevents
 { TARGET_NR_io_getevents, "io_getevents" , NULL, NULL, NULL },

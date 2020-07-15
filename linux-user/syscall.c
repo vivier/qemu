@@ -753,6 +753,7 @@ static type safe_##name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, \
 }
 
 safe_syscall2(int, io_setup, unsigned, nr_revents, aio_context_t *, ctx_idp)
+safe_syscall1(int, io_destroy, aio_context_t, ctx_idp)
 safe_syscall3(ssize_t, read, int, fd, void *, buff, size_t, count)
 safe_syscall3(ssize_t, write, int, fd, const void *, buff, size_t, count)
 safe_syscall4(int, openat, int, dirfd, const char *, pathname, \
@@ -12578,6 +12579,8 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
         }
         return ret;
     }
+    case TARGET_NR_io_destroy:
+        return get_errno(safe_io_destroy(arg1));
 
     default:
         qemu_log_mask(LOG_UNIMP, "Unsupported syscall: %d\n", num);
