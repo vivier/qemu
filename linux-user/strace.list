@@ -430,7 +430,7 @@
 { TARGET_NR_inotify_rm_watch, "inotify_rm_watch" , NULL, NULL, NULL },
 #endif
 #ifdef TARGET_NR_io_cancel
-{ TARGET_NR_io_cancel, "io_cancel" , NULL, NULL, NULL },
+{ TARGET_NR_io_cancel, "io_cancel" , "%s(0x"TARGET_ABI_FMT_lx","TARGET_ABI_FMT_lx",0x"TARGET_ABI_FMT_lx")", NULL, NULL },
 #endif
 #ifdef TARGET_NR_ioctl
 { TARGET_NR_ioctl, "ioctl" , NULL, print_ioctl,

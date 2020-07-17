@@ -2,15 +2,42 @@
 #include "qemu.h"
 #include "aio.h"
 
+static GHashTable *iocb_list_hashtable(bool create)
+{
+    static GHashTable *iocb_list;
+
+    if (create && !iocb_list) {
+        iocb_list = g_hash_table_new(g_int64_hash, g_int64_equal);
+    }
+
+    return iocb_list;
+}
+struct iocb *target_find_host_iocb(abi_long target_iocb)
+{
+    GHashTable *iocb_list = iocb_list_hashtable(false);
+
+    if (!iocb_list) {
+        return NULL;
+    }
+
+    return g_hash_table_lookup(iocb_list, &target_iocb);
+}
+
 static void host_iocb_free(struct iocb *iocb)
 {
+    GHashTable *iocb_list = iocb_list_hashtable(false);
+
+    if (iocb_list) {
+        struct qemu_internal_io_data *data;
+        data = (struct qemu_internal_io_data *)iocb->aio_data;
+        g_hash_table_remove(iocb_list, &data->orig_obj);
+    }
     g_free((void *)iocb->aio_data);
     g_free(iocb);
 }
 
-static struct iocb *host_to_target_io_event(
-                                           struct target_io_event *target_event,
-                                           struct io_event *host_event)
+struct iocb *host_to_target_io_event(struct target_io_event *target_event,
+                                     struct io_event *host_event)
 {
     struct qemu_internal_io_data *data;
     struct iocb *obj;
@@ -73,6 +100,8 @@ static int target_to_host_iocb(struct iocb *host_iocb, abi_long target_addr)
                                              host_iocb->aio_nbytes, 1);
 
     unlock_user_struct(target_iocb, target_addr, 0);
+
+    g_hash_table_add(iocb_list_hashtable(true), &data->orig_obj);
 
     return 0;
 }

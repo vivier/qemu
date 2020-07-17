@@ -760,6 +760,8 @@ safe_syscall3(int, io_submit, aio_context_t, ctx_idp, long, nr, \
 safe_syscall5(int, io_getevents, aio_context_t, ctx_idp, long, min_nr, \
               long, nr, struct io_event *, events, struct timespec *, timeout)
 #endif
+safe_syscall3(int, io_cancel, aio_context_t, ctx_idp, struct iocb *, iocb, \
+              struct io_event *, result)
 safe_syscall3(ssize_t, read, int, fd, void *, buff, size_t, count)
 safe_syscall3(ssize_t, write, int, fd, const void *, buff, size_t, count)
 safe_syscall4(int, openat, int, dirfd, const char *, pathname, \
@@ -12646,6 +12648,28 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
         return ret;
     }
 #endif
+    case TARGET_NR_io_cancel:
+    {
+        struct iocb *iocb;
+        struct target_io_event *target_result;
+        struct io_event result, *result_addr = NULL;
+
+        iocb = target_find_host_iocb(arg2);
+        if (iocb == NULL) {
+            return -TARGET_EINVAL;
+        }
+        /* NOTE: the result argument (arg3) is ignored by the kernel 3.12+... */
+        if (lock_user_struct(VERIFY_WRITE, target_result, arg3, 0)) {
+            /* ... so explicitly ignores the error */
+            result_addr = &result;
+        }
+        ret = get_errno(safe_io_cancel(arg1, iocb, result_addr));
+        if (!is_error(ret) && result_addr) {
+            host_to_target_io_event(target_result, result_addr);
+        }
+        unlock_user_struct(target_result, arg3, 0);
+        return ret;
+    }
 
     default:
         qemu_log_mask(LOG_UNIMP, "Unsupported syscall: %d\n", num);
