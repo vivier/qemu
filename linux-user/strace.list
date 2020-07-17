@@ -459,7 +459,7 @@
                       print_syscall_ret_io_setup },
 #endif
 #ifdef TARGET_NR_io_submit
-{ TARGET_NR_io_submit, "io_submit" , NULL, NULL, NULL },
+{ TARGET_NR_io_submit, "io_submit" , "%s(0x"TARGET_ABI_FMT_lx","TARGET_ABI_FMT_ld",0x"TARGET_ABI_FMT_lx")", NULL, NULL },
 #endif
 #ifdef TARGET_NR_ipc
 { TARGET_NR_ipc, "ipc" , NULL, print_ipc, NULL },

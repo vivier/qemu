@@ -115,7 +115,6 @@
 #ifdef HAVE_DRM_H
 #include <libdrm/drm.h>
 #endif
-#include <linux/aio_abi.h>
 #include "linux_loop.h"
 #include "uname.h"
 
@@ -126,6 +125,7 @@
 #include "qapi/error.h"
 #include "fd-trans.h"
 #include "tcg/tcg.h"
+#include "aio.h"
 
 #ifndef CLONE_IO
 #define CLONE_IO                0x80000000      /* Clone io context */
@@ -754,6 +754,8 @@ static type safe_##name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, \
 
 safe_syscall2(int, io_setup, unsigned, nr_revents, aio_context_t *, ctx_idp)
 safe_syscall1(int, io_destroy, aio_context_t, ctx_idp)
+safe_syscall3(int, io_submit, aio_context_t, ctx_idp, long, nr, \
+              struct iocb **, iocbpp)
 safe_syscall3(ssize_t, read, int, fd, void *, buff, size_t, count)
 safe_syscall3(ssize_t, write, int, fd, const void *, buff, size_t, count)
 safe_syscall4(int, openat, int, dirfd, const char *, pathname, \
@@ -12581,6 +12583,33 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
     }
     case TARGET_NR_io_destroy:
         return get_errno(safe_io_destroy(arg1));
+    case TARGET_NR_io_submit:
+    {
+        struct iocb **iocbpp;
+        abi_long *target_addr;
+
+        if (arg2 == 0) {
+            return 0;
+        }
+
+        if (arg2 < 0) {
+            return -TARGET_EINVAL;
+        }
+
+        target_addr = lock_user(VERIFY_READ, arg3,
+                                arg2 * sizeof(struct target_iocb *), 1);
+        if (!target_addr) {
+            return -TARGET_EFAULT;
+        }
+        iocbpp = g_new0(struct iocb *, arg2);
+        ret = target_to_host_iocb_array(iocbpp, target_addr, arg2);
+        if (!is_error(ret)) {
+            ret = get_errno(safe_io_submit(arg1, arg2, iocbpp));
+        }
+        g_free(iocbpp);
+        unlock_user(target_addr, arg3, 0);
+        return ret;
+    }
 
     default:
         qemu_log_mask(LOG_UNIMP, "Unsupported syscall: %d\n", num);
