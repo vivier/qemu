@@ -756,6 +756,10 @@ safe_syscall2(int, io_setup, unsigned, nr_revents, aio_context_t *, ctx_idp)
 safe_syscall1(int, io_destroy, aio_context_t, ctx_idp)
 safe_syscall3(int, io_submit, aio_context_t, ctx_idp, long, nr, \
               struct iocb **, iocbpp)
+#ifdef TARGET_NR_io_getevents
+safe_syscall5(int, io_getevents, aio_context_t, ctx_idp, long, min_nr, \
+              long, nr, struct io_event *, events, struct timespec *, timeout)
+#endif
 safe_syscall3(ssize_t, read, int, fd, void *, buff, size_t, count)
 safe_syscall3(ssize_t, write, int, fd, const void *, buff, size_t, count)
 safe_syscall4(int, openat, int, dirfd, const char *, pathname, \
@@ -12610,6 +12614,38 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
         unlock_user(target_addr, arg3, 0);
         return ret;
     }
+#ifdef TARGET_NR_io_getevents
+    case TARGET_NR_io_getevents:
+    {
+        struct io_event *events;
+        struct target_io_event *target_events;
+        struct timespec ts, *tsp = NULL;
+
+        if (arg5) {
+            tsp = &ts;
+            ret = target_to_host_timespec(tsp, arg5);
+            if (is_error(ret)) {
+                return ret;
+            }
+        }
+        if (arg2 > arg3 || arg2 < 0) { /* min_nr > nr || min_nr < 0 */
+            return -TARGET_EINVAL;
+        }
+        target_events = lock_user(VERIFY_WRITE, arg4,
+                                  arg3 * sizeof(struct target_io_event), 0);
+        if (!target_events) {
+            return -TARGET_EFAULT;
+        }
+        events = g_new(struct io_event, arg3);
+        ret = get_errno(safe_io_getevents(arg1, arg2, arg3, events, tsp));
+        if (ret > arg2) { /* nr > min_nr */
+            host_to_target_io_events(target_events, events, ret);
+        }
+        g_free(events);
+        unlock_user(target_events, arg4, 0);
+        return ret;
+    }
+#endif
 
     default:
         qemu_log_mask(LOG_UNIMP, "Unsupported syscall: %d\n", num);

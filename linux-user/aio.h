@@ -3,6 +3,13 @@
 
 #include <linux/aio_abi.h>
 
+struct target_io_event {
+    uint64_t data;
+    uint64_t obj;
+    int64_t  res;
+    int64_t  res2;
+};
+
 struct qemu_internal_io_data {
     uint64_t orig_data;
     uint64_t orig_obj;
@@ -31,4 +38,6 @@ struct target_iocb {
 
 int target_to_host_iocb_array(struct iocb **iocbpp, abi_long *target_addr,
                               abi_long nr);
+void host_to_target_io_events(struct target_io_event *target_result,
+                              struct io_event *host_result, long nr);
 #endif /* LINUX_USER_AIO_H */

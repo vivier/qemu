@@ -440,7 +440,7 @@
 { TARGET_NR_io_destroy, "io_destroy" , "%s(0x"TARGET_ABI_FMT_lx")", NULL, NULL },
 #endif
 #ifdef TARGET_NR_io_getevents
-{ TARGET_NR_io_getevents, "io_getevents" , NULL, NULL, NULL },
+{ TARGET_NR_io_getevents, "io_getevents" , "%s(0x"TARGET_ABI_FMT_lx","TARGET_ABI_FMT_ld","TARGET_ABI_FMT_ld",0x"TARGET_ABI_FMT_lx",0x"TARGET_ABI_FMT_lx")", NULL, NULL },
 #endif
 #ifdef TARGET_NR_ioperm
 { TARGET_NR_ioperm, "ioperm" , NULL, NULL, NULL },

@@ -8,6 +8,38 @@ static void host_iocb_free(struct iocb *iocb)
     g_free(iocb);
 }
 
+static struct iocb *host_to_target_io_event(
+                                           struct target_io_event *target_event,
+                                           struct io_event *host_event)
+{
+    struct qemu_internal_io_data *data;
+    struct iocb *obj;
+
+    obj = (struct iocb *)host_event->obj;
+    data = (struct qemu_internal_io_data *)host_event->data;
+
+    __put_user(data->orig_data, &target_event->data);
+    __put_user(data->orig_obj, &target_event->obj);
+    __put_user(host_event->res, &target_event->res);
+    __put_user(host_event->res2, &target_event->res2);
+
+    unlock_user((void *)obj->aio_buf, data->orig_buf, obj->aio_nbytes);
+
+    return obj;
+}
+
+void host_to_target_io_events(struct target_io_event *target_result,
+                              struct io_event *host_result, long nr)
+{
+    int i;
+    struct iocb *iocb;
+
+    for (i = 0; i < nr; i++) {
+        iocb = host_to_target_io_event(&target_result[i], &host_result[i]);
+        host_iocb_free(iocb);
+    }
+}
+
 static int target_to_host_iocb(struct iocb *host_iocb, abi_long target_addr)
 {
     struct qemu_internal_io_data *data;
