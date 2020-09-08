@@ -813,6 +813,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Sep 08 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-141.el7_4.11
+- kvm-usb-check-RNDIS-message-length.patch [bz#1869690]
+- kvm-usb-fix-setup_len-init-CVE-2020-14364.patch [bz#1869690]
+- Resolves: bz#1869690
+  (CVE-2020-14364 qemu-kvm: QEMU: usb: out-of-bounds r/w access issue while processing usb packets [rhel-7.4.z])
+
 * Mon Jul 23 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-141.el7_4.9
 - kvm-target-i386-introduce-kvm_put_one_msr.patch [bz#1596299]
 - kvm-apic-fix-2.2-2.1-migration.patch [bz#1596299]
