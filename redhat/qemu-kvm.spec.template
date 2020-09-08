@@ -860,6 +860,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Tue Sep 08 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-105.el7_2.20
+- kvm-usb-check-RNDIS-message-length.patch [bz#1869688]
+- kvm-usb-fix-setup_len-init-CVE-2020-14364.patch [bz#1869688]
+- Resolves: bz#1869688
+  (CVE-2020-14364 qemu-kvm: QEMU: usb: out-of-bounds r/w access issue while processing usb packets [rhel-7.2.z])
+
 * Tue Jun 19 2018 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.18
 - kvm-i386-Define-the-Virt-SSBD-MSR-and-handling-of-it-CVE.patch [bz#1584367]
 - kvm-i386-define-the-AMD-virt-ssbd-CPUID-feature-bit-CVE-.patch [bz#1584367]
