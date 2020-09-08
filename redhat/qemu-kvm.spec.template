@@ -813,6 +813,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Sep 08 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-175.el7
+- kvm-Fix-use-afte-free-in-ip_reass-CVE-2020-1983.patch [bz#1837565]
+- kvm-usb-check-RNDIS-message-length.patch [bz#1869693]
+- kvm-usb-fix-setup_len-init-CVE-2020-14364.patch [bz#1869693]
+- Resolves: bz#1837565
+  (CVE-2020-1983 qemu-kvm: QEMU: slirp: use-after-free in ip_reass() function in ip_input.c [rhel-7])
+- Resolves: bz#1869693
+  (CVE-2020-14364 qemu-kvm: QEMU: usb: out-of-bounds r/w access issue while processing usb packets [rhel-7.9.z])
+
 * Mon Jun 01 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-175.el7
 - kvm-vnc-fix-memory-leak-when-vnc-disconnect.patch [bz#1810408]
 - Resolves: bz#1810408
