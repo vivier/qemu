@@ -932,6 +932,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Sep 09 2020 Jon Maloy <jmaloy@redhat.com> - ma-2.12.0-18.el7_6.7
+- kvm-usb-fix-setup_len-init-CVE-2020-14364.patch [bz#1869697 bz#1869704]
+- Resolves: bz#1869697
+  (CVE-2020-14364 qemu-kvm-rhev: QEMU: usb: out-of-bounds r/w access issue while processing usb packets [rhel-7.6.z])
+- Resolves: bz#1869704
+  (CVE-2020-14364 qemu-kvm-ma: QEMU: usb: out-of-bounds r/w access issue while processing usb packets [rhel-7.6.z])
+
 * Mon May 04 2020 Jon Maloy <jmaloy@redhat.com> - ma-2.12.0-18.el7_6.6
 - kvm-Fix-heap-overflow-in-ip_reass-on-big-packet-input.patch [bz#1825860]
 - Resolves: bz#1825860
