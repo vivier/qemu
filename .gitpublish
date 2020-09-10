@@ -1,15 +1,7 @@
 # The default profile, for qemu-kvm-rhev BZs
 [gitpublishprofile "default"]
-base = rhv7/master-2.12.0
-prefix = RHEL-7.8 qemu-kvm-rhev PATCH
-to = rhvirt-patches@redhat.com
-suppresscc = all
-message = True
-
-# profile for qemu-kvm-ma BZs
-[gitpublishprofile "rhel"]
-base = rhv7/master-2.12.0
-prefix = RHEL-7.8 qemu-kvm-ma PATCH
+base = rhel79/ma/master
+prefix = RHEL-7.9.z qemu-kvm-ma PATCH
 to = rhvirt-patches@redhat.com
 suppresscc = all
 message = True

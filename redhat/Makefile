@@ -2,12 +2,9 @@ include Makefile.common
 include Makefile.local
 
 
-rh-env-prep rh-brew rh-local rh-srpm: RHEV=1
-rh-env-prep rh-brew rh-local: SRPM_NAME=$(NAME)-rhev-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+rh-env-prep rh-brew rh-local rh-srpm: RHEV=0
+rh-env-prep rh-brew rh-local: SRPM_NAME=$(NAME)-ma-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST).$(ZRELEASE)
 rh-brew: BUILD_TARGET=rhevh-rhel-7.9-candidate
-rh-brew-rhel rh-srpm-rhel: RHEV=0
-rh-brew-rhel: SRPM_NAME=$(NAME)-ma-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
-rh-brew-rhel: BUILD_TARGET=rhel-7.9-candidate
 
 REDHAT:=$(shell pwd)
 SCRIPTS:=$(REDHAT)/scripts
@@ -46,7 +43,7 @@ else
   LOCALVERSION:=
 endif
 
-.PHONY: rh-brew rh-brew-rhel rh-srpm rh-srpm-rhel rh-prep rh-help rh-clean-sources
+.PHONY: rh-brew rh-srpm rh-prep rh-help rh-clean-sources
 all: rh-help
 
 rh-clean-sources:
@@ -66,17 +63,13 @@ rh-prep: rh-clean-sources
     fi
 
 
-rh-srpm rh-srpm-rhel: rh-prep
+rh-srpm : rh-prep
 	$(DS)rpmbuild --define "_sourcedir $(RPMBUILD)/SOURCES" --define "_builddir $(RPMBUILD)/BUILD" --define "_srcrpmdir $(RPMBUILD)/SRPMS" --define "_rpmdir $(RPMBUILD)/RPMS" --define "_specdir $(RPMBUILD)/SPECS" --define "dist $(DIST)" --nodeps -bs $(RPMBUILD)/SPECS/$(SPECFILE)
-
-
-rh-brew-rhel: rh-srpm-rhel
-	@echo "Build $(SRPM_NAME)$(LOCALVERSION).src.rpm as $(BUILD_TARGET)"
-	$(DS)brew build $(BREW_OPTIONS) $(BUILD_TARGET) $(RPMBUILD)/SRPMS/$(SRPM_NAME)$(LOCALVERSION).src.rpm
 
 rh-brew: rh-srpm
 	@echo "Build $(SRPM_NAME)$(LOCALVERSION).src.rpm as $(BUILD_TARGET)"
 	$(DS)brew build $(BREW_OPTIONS) $(BUILD_TARGET) $(RPMBUILD)/SRPMS/$(SRPM_NAME)$(LOCALVERSION).src.rpm
+
 rh-env-prep: rh-prep
 	$(DS)if test "$$EUID" -eq 0; then \
 		yum-builddep $(RPMBUILD)/SPECS/$(SPECFILE); \
@@ -115,10 +108,8 @@ rh-local: rh-env-prep
 	make V=1 -j$$(getconf _NPROCESSORS_ONLN) -C $(REDHAT)/..  VL_LDFLAGS=-Wl,--build-id
 
 rh-help:
-	@echo "rh-brew: Build RHEV package on brew"
-	@echo "rh-brew-rhel: Build RHEL package on brew"
-	@echo "rh-srpm: Prepare srpm package for RHEV package"
-	@echo "rh-srpm-rhel: Prepare srpm package for RHEL package"
+	@echo "rh-brew: Build RHEL package on brew"
+	@echo "rh-srpm: Prepare srpm package for RHEL package"
 	@echo "rh-prep: Prepare sources and spec file in rpmbuild/"
 	@echo "rh-help: Print this help"
 	@echo "rh-env-prep: Install rpms required for redhat build and run configure"
