@@ -938,6 +938,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Sep 10 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-48.el7_9.1
+- kvm--usb-fix-setup_len-init-CVE-2020-14364.patch [bz#1869699]
+- Resolves: bz#1869699
+  (CVE-2020-14364 qemu-kvm-rhev: QEMU: usb: out-of-bounds r/w access issue while processing usb packets [rhel-7.9.z])
+
 * Thu May 28 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-48.el7
 - kvm-vnc-add-magic-cookie-to-VncState.patch [bz#1810409]
 - kvm-vnc-fix-memory-leak-when-vnc-disconnect.patch [bz#1810409]
