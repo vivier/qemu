@@ -938,6 +938,9 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Sun Sep 13 2020 Jon Maloy <jmaloyredhat.com> - 2.12.0-48.el7_9.0
+- Move configuration to z-stream build
+
 * Thu May 28 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-48.el7
 - kvm-vnc-add-magic-cookie-to-VncState.patch [bz#1810409]
 - kvm-vnc-fix-memory-leak-when-vnc-disconnect.patch [bz#1810409]
