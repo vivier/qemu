@@ -938,6 +938,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Sep 14 2020 Jon Maloy <jmaloy@redhat.com> - ma-2.12.0-48.el7_9.1
+- kvm-usb-fix-setup_len-init-CVE-2020-14364.patch [bz#1869706]
+- Resolves: bz#1869706
+  (CVE-2020-14364 qemu-kvm-ma: QEMU: usb: out-of-bounds r/w access issue while processing usb packets [rhel-7.9.z])
+
 * Sun Sep 13 2020 Jon Maloy <jmaloyredhat.com> - 2.12.0-48.el7_9.0
 - Move configuration to z-stream build
 
