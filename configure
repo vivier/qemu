@@ -3246,13 +3246,11 @@ EOF
     libcacard_libs="$($pkg_config --libs nss 2>/dev/null) $glib_libs"
     libcacard_cflags="$($pkg_config --cflags nss 2>/dev/null) $glib_cflags"
     test_cflags="$libcacard_cflags"
-    # The header files in nss < 3.13.3 have a bug which causes them to
-    # emit a warning. If we're going to compile QEMU with -Werror, then
-    # test that the headers don't have this bug. Otherwise we would pass
-    # the configure test but fail to compile QEMU later.
-    if test "$werror" = "yes"; then
-        test_cflags="-Werror $test_cflags"
-    fi
+    # nss > 3.53 generates warning when including it's headers. This breaks the
+    # build so we have to disable -Werror for build test.
+    # See https://bugzilla.redhat.com/show_bug.cgi?id=1885321
+    old_werror=$werror
+    werror=no
     if test -n "$libtool" &&
             $pkg_config --atleast-version=3.12.8 nss >/dev/null 2>&1 && \
       compile_prog "$test_cflags" "$libcacard_libs"; then
@@ -3266,6 +3264,7 @@ EOF
         fi
         smartcard_nss="no"
     fi
+    werror=$old_werror
 fi
 
 # check for libusb

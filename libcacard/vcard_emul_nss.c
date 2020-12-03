@@ -17,8 +17,16 @@
 /* avoid including prototypes.h that redefines uint32 */
 #define NO_NSPR_10_SUPPORT
 
+/*
+ * nss > 3.53 genererates prototype warning when including headers so we can't
+ * treat this warning ass error to allow build.
+ * See https://bugzilla.redhat.com/show_bug.cgi?id=1885321
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #include <nss.h>
 #include <pk11pub.h>
+#pragma GCC diagnostic pop
 #include <cert.h>
 #include <key.h>
 #include <secmod.h>
