@@ -938,6 +938,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Dec 15 2020 Jon Maloy <jmaloy@redhat.com> - rhev-2.12.0-48.el7_9.2
+- kvm-Fix-use-afte-free-in-ip_reass-CVE-2020-1983.patch [bz#1837567]
+- kvm-hw-net-net_tx_pkt-fix-assertion-failure-in-net_tx_pk.patch [bz#1860962]
+- Resolves: bz#1837567
+  (CVE-2020-1983 qemu-kvm-rhev: QEMU: slirp: use-after-free in ip_reass() function in ip_input.c [rhel-7])
+- Resolves: bz#1860962
+  (CVE-2020-16092 qemu-kvm-rhev: QEMU: reachable assertion failure in net_tx_pkt_add_raw_fragment() in hw/net/net_tx_pkt.c [rhel-7.9.z])
+
 * Thu Sep 10 2020 Miroslav Rezanina <mrezanin@redhat.com> - 2.12.0-48.el7_9.1
 - kvm--usb-fix-setup_len-init-CVE-2020-14364.patch [bz#1869699]
 - Resolves: bz#1869699
