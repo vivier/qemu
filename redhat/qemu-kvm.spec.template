@@ -813,6 +813,19 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Jan 05 2021 Jon Maloy <jmaloy@redhat.com> - 1.5.3-175.el7_9.3
+- kvm-Suppress-prototype-warning-for-nss-headers.patch [bz#1884997]
+- Resolves: bz#1884997
+  (qemu-kvm FTBFS on rhel7.9)
+
+* Tue Nov 17 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-175.el7_9.2
+- kvm-hw-net-vmxnet_tx_pkt-fix-assertion-failure-in-vmxnet.patch [bz#1860960]
+- kvm-hw-core-loader-Fix-possible-crash-in-rom_copy.patch [bz#1842923]
+- Resolves: bz#1842923
+  (CVE-2020-13765 qemu-kvm: QEMU: loader: OOB access while loading registered ROM may lead to code execution [rhel-7.9.z])
+- Resolves: bz#1860960
+  (CVE-2020-16092 qemu-kvm: QEMU: reachable assertion failure in net_tx_pkt_add_raw_fragment() in hw/net/net_tx_pkt.c [rhel-7.9.z])
+
 * Tue Sep 08 2020 Jon Maloy <jmaloy@redhat.com> - 1.5.3-175.el7
 - kvm-Fix-use-afte-free-in-ip_reass-CVE-2020-1983.patch [bz#1837565]
 - kvm-usb-check-RNDIS-message-length.patch [bz#1869693]
