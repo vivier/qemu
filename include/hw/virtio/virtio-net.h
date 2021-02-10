@@ -205,6 +205,7 @@ struct VirtIONet {
     /* primary failover device is hidden*/
     bool failover_primary_hidden;
     bool failover;
+    QEMUTimer *delay_timer; /* timer to delay the primary hotplug */
     DeviceListener primary_listener;
     Notifier migration_state;
     VirtioNetRssData rss_data;

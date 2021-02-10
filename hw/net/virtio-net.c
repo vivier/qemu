@@ -45,6 +45,8 @@
 #include "net_rx_pkt.h"
 #include "hw/virtio/vhost.h"
 
+#define FAILOVER_PRIMARY_DELAY 2000
+
 #define VIRTIO_NET_VM_VERSION    11
 
 #define MAC_TABLE_ENTRIES    64
@@ -872,10 +874,22 @@ static void failover_add_primary(VirtIONet *n, Error **errp)
     error_propagate(errp, err);
 }
 
+static void failover_add_primary_cb(void *opaque)
+{
+    VirtIONet *n = opaque;
+    Error *err = NULL;
+
+    qatomic_set(&n->failover_primary_hidden, false);
+    failover_add_primary(n, &err);
+    if (err) {
+         warn_report_err(err);
+    }
+    timer_del(n->delay_timer);
+}
+
 static void virtio_net_set_features(VirtIODevice *vdev, uint64_t features)
 {
     VirtIONet *n = VIRTIO_NET(vdev);
-    Error *err = NULL;
     int i;
 
     if (n->mtu_bypass_backend &&
@@ -924,11 +938,10 @@ static void virtio_net_set_features(VirtIODevice *vdev, uint64_t features)
 
     if (virtio_has_feature(features, VIRTIO_NET_F_STANDBY)) {
         qapi_event_send_failover_negotiated(n->netclient_name);
-        qatomic_set(&n->failover_primary_hidden, false);
-        failover_add_primary(n, &err);
-        if (err) {
-            warn_report_err(err);
-        }
+        n->delay_timer = timer_new_ms(QEMU_CLOCK_VIRTUAL,
+                                   failover_add_primary_cb, n);
+        timer_mod(n->delay_timer, qemu_clock_get_ms(QEMU_CLOCK_VIRTUAL) +
+                  FAILOVER_PRIMARY_DELAY);
     }
 }
 
