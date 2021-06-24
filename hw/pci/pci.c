@@ -2229,6 +2229,7 @@ static void pci_dev_handle_migration(PCIDevice *pci_dev, MigrationState *s)
     if (migration_in_setup(s) && !should_be_hidden) {
         if (pci_dev_migration_unplug(pci_dev)) {
             vmstate_unregister(VMSTATE_IF(dev), qdev_get_vmsd(dev), dev);
+            pci_del_option_rom(pci_dev);
             qapi_event_send_unplug_primary(dev->id);
             qatomic_set(&vdev->failover_primary_hidden, true);
         } else {

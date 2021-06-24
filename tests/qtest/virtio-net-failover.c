@@ -572,8 +572,6 @@ static void test_hotplug_2_reverse(void)
                          "{'bus': 'root0',"
                          "'failover': 'on',"
                          "'netdev': 'hs0',"
-                         "'rombar': 0,"
-                         "'romfile': '',"
                          "'mac': '"MAC_STANDBY0"'}");
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
@@ -653,8 +651,6 @@ static void test_migrate_out(gconstpointer opaque)
                          "{'bus': 'root1',"
                          "'failover_pair_id': 'standby0',"
                          "'netdev': 'hs1',"
-                         "'rombar': 0,"
-                         "'romfile': '',"
                          "'mac': '"MAC_PRIMARY0"'}");
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
@@ -779,8 +775,6 @@ static void test_migrate_in(gconstpointer opaque)
                          "{'bus': 'root1',"
                          "'failover_pair_id': 'standby0',"
                          "'netdev': 'hs1',"
-                         "'rombar': 0,"
-                         "'romfile': '',"
                          "'mac': '"MAC_PRIMARY0"'}");
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
