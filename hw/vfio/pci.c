@@ -3079,8 +3079,7 @@ static void vfio_realize(PCIDevice *pdev, Error **errp)
             error_report("Failed to setup NVlink2 bridge");
         }
     }
-
-    if (!pdev->failover_pair_id) {
+    if (!pdev->unplug_on_migration) {
         ret = vfio_migration_probe(&vdev->vbasedev, errp);
         if (ret) {
             error_report("%s: Migration disabled", vdev->vbasedev.name);
