@@ -241,6 +241,9 @@ struct PCIDeviceClass {
 
     /* rom bar */
     const char *romfile;
+
+    DeviceListener listener;
+    bool (*dev_unplug_pending)(void *opaque);
 };
 
 typedef void (*PCIINTxRoutingNotifier)(PCIDevice *dev);
@@ -359,6 +362,8 @@ struct PCIDevice {
 
     /* ID of standby device in net_failover pair */
     char *failover_pair_id;
+    bool unplug_on_migration;
+    Notifier migration_state;
     uint32_t acpi_index;
 };
 
