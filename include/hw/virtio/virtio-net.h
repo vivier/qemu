@@ -208,8 +208,6 @@ struct VirtIONet {
     /* primary failover device is hidden*/
     bool failover_primary_hidden;
     bool failover;
-    DeviceListener primary_listener;
-    Notifier migration_state;
     VirtioNetRssData rss_data;
     struct NetRxPkt *rx_pkt;
     struct EBPFRSSContext ebpf_rss;
@@ -217,5 +215,5 @@ struct VirtIONet {
 
 void virtio_net_set_netclient_name(VirtIONet *n, const char *name,
                                    const char *type);
-
+VirtIONet *virtio_net_pci_get_device(DeviceState *s);
 #endif
