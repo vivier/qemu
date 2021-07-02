@@ -3187,101 +3187,6 @@ void virtio_net_set_netclient_name(VirtIONet *n, const char *name,
     n->netclient_type = g_strdup(type);
 }
 
-static bool failover_unplug_primary(VirtIONet *n, DeviceState *dev)
-{
-    HotplugHandler *hotplug_ctrl;
-    PCIDevice *pci_dev;
-    Error *err = NULL;
-
-    hotplug_ctrl = qdev_get_hotplug_handler(dev);
-    if (hotplug_ctrl) {
-        pci_dev = PCI_DEVICE(dev);
-        pci_dev->partially_hotplugged = true;
-        hotplug_handler_unplug_request(hotplug_ctrl, dev, &err);
-        if (err) {
-            error_report_err(err);
-            return false;
-        }
-    } else {
-        return false;
-    }
-    return true;
-}
-
-static bool failover_replug_primary(VirtIONet *n, DeviceState *dev,
-                                    Error **errp)
-{
-    Error *err = NULL;
-    HotplugHandler *hotplug_ctrl;
-    PCIDevice *pdev = PCI_DEVICE(dev);
-    BusState *primary_bus;
-
-    if (!pdev->partially_hotplugged) {
-        return true;
-    }
-    primary_bus = dev->parent_bus;
-    if (!primary_bus) {
-        error_setg(errp, "virtio_net: couldn't find primary bus");
-        return false;
-    }
-    qdev_set_parent_bus(dev, primary_bus, &error_abort);
-    qatomic_set(&n->failover_primary_hidden, false);
-    hotplug_ctrl = qdev_get_hotplug_handler(dev);
-    if (hotplug_ctrl) {
-        hotplug_handler_pre_plug(hotplug_ctrl, dev, &err);
-        if (err) {
-            goto out;
-        }
-        hotplug_handler_plug(hotplug_ctrl, dev, &err);
-    }
-    pdev->partially_hotplugged = false;
-
-out:
-    error_propagate(errp, err);
-    return !err;
-}
-
-static void virtio_net_handle_migration_primary(VirtIONet *n, MigrationState *s)
-{
-    bool should_be_hidden;
-    Error *err = NULL;
-    DeviceState *dev = failover_find_primary_device(n);
-
-    if (!dev) {
-        return;
-    }
-
-    should_be_hidden = qatomic_read(&n->failover_primary_hidden);
-
-    if (migration_in_setup(s) && !should_be_hidden) {
-        if (failover_unplug_primary(n, dev)) {
-            vmstate_unregister(VMSTATE_IF(dev), qdev_get_vmsd(dev), dev);
-            if (PCI_DEVICE(dev)->has_rom) {
-                PCI_DEVICE(dev)->has_rom = false;
-                vmstate_unregister_ram(&PCI_DEVICE(dev)->rom, dev);
-            }
-            qapi_event_send_unplug_primary(dev->id);
-            qatomic_set(&n->failover_primary_hidden, true);
-        } else {
-            warn_report("couldn't unplug primary device");
-        }
-    } else if (migration_has_failed(s)) {
-        /* We already unplugged the device let's plug it back */
-        if (!failover_replug_primary(n, dev, &err)) {
-            if (err) {
-                error_report_err(err);
-            }
-        }
-    }
-}
-
-static void virtio_net_migration_state_notifier(Notifier *notifier, void *data)
-{
-    MigrationState *s = data;
-    VirtIONet *n = container_of(notifier, VirtIONet, migration_state);
-    virtio_net_handle_migration_primary(n, s);
-}
-
 static bool failover_hide_primary_device(DeviceListener *listener,
                                          QemuOpts *device_opts)
 {
@@ -3337,8 +3242,6 @@ static void virtio_net_device_realize(DeviceState *dev, Error **errp)
         n->primary_listener.hide_device = failover_hide_primary_device;
         qatomic_set(&n->failover_primary_hidden, true);
         device_listener_register(&n->primary_listener);
-        n->migration_state.notify = virtio_net_migration_state_notifier;
-        add_migration_state_change_notifier(&n->migration_state);
         n->host_features |= (1ULL << VIRTIO_NET_F_STANDBY);
     }
 
@@ -3486,7 +3389,6 @@ static void virtio_net_device_unrealize(DeviceState *dev)
 
     if (n->failover) {
         device_listener_unregister(&n->primary_listener);
-        remove_migration_state_change_notifier(&n->migration_state);
     }
 
     max_queues = n->multiqueue ? n->max_queues : 1;
