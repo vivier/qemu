@@ -33,6 +33,7 @@
 #include "hw/pci/pci_host.h"
 #include "hw/qdev-properties.h"
 #include "hw/qdev-properties-system.h"
+#include "migration/misc.h"
 #include "migration/qemu-file-types.h"
 #include "migration/vmstate.h"
 #include "monitor/monitor.h"
@@ -49,6 +50,7 @@
 #include "hw/boards.h"
 #include "qapi/error.h"
 #include "qapi/qapi-commands-pci.h"
+#include "qapi/qapi-events-migration.h"
 #include "qemu/cutils.h"
 
 //#define DEBUG_PCI
@@ -76,6 +78,8 @@ static Property pci_props[] = {
                     QEMU_PCIE_LNKSTA_DLLLA_BITNR, true),
     DEFINE_PROP_BIT("x-pcie-extcap-init", PCIDevice, cap_present,
                     QEMU_PCIE_EXTCAP_INIT_BITNR, true),
+    DEFINE_PROP_BOOL("unplug-on-migration", PCIDevice,
+                     unplug_on_migration, false),
     DEFINE_PROP_STRING("failover_pair_id", PCIDevice,
                        failover_pair_id),
     DEFINE_PROP_UINT32("acpi-index",  PCIDevice, acpi_index, 0),
@@ -1170,6 +1174,10 @@ static void pci_qdev_unrealize(DeviceState *dev)
     PCIDevice *pci_dev = PCI_DEVICE(dev);
     PCIDeviceClass *pc = PCI_DEVICE_GET_CLASS(pci_dev);
 
+    if (pci_dev->unplug_on_migration) {
+        remove_migration_state_change_notifier(&pci_dev->migration_state);
+    }
+
     pci_unregister_io_regions(pci_dev);
     pci_del_option_rom(pci_dev);
 
@@ -2115,6 +2123,87 @@ PCIDevice *pci_find_device(PCIBus *bus, int bus_num, uint8_t devfn)
     return bus->devices[devfn];
 }
 
+static bool pci_dev_migration_unplug(PCIDevice *pci_dev)
+{
+    HotplugHandler *hotplug_ctrl;
+    DeviceState *dev = &pci_dev->qdev;
+    Error *err = NULL;
+
+    hotplug_ctrl = qdev_get_hotplug_handler(dev);
+    if (hotplug_ctrl) {
+        pci_dev->partially_hotplugged = true;
+        hotplug_handler_unplug_request(hotplug_ctrl, dev, &err);
+        if (err) {
+            error_report_err(err);
+            return false;
+        }
+    } else {
+        return false;
+    }
+    return true;
+}
+
+static bool pci_dev_migration_replug(PCIDevice *pci_dev, Error **errp)
+{
+    Error *err = NULL;
+    HotplugHandler *hotplug_ctrl;
+    DeviceState *dev = &pci_dev->qdev;
+    BusState *primary_bus;
+
+    if (!pci_dev->partially_hotplugged) {
+        return true;
+    }
+    primary_bus = dev->parent_bus;
+    if (!primary_bus) {
+        error_setg(errp, "virtio_net: couldn't find primary bus");
+        return false;
+    }
+    qdev_set_parent_bus(dev, primary_bus, &error_abort);
+    hotplug_ctrl = qdev_get_hotplug_handler(dev);
+    if (hotplug_ctrl) {
+        hotplug_handler_pre_plug(hotplug_ctrl, dev, &err);
+        if (err) {
+            goto out;
+        }
+        hotplug_handler_plug(hotplug_ctrl, dev, &err);
+    }
+    pci_dev->partially_hotplugged = false;
+
+out:
+    error_propagate(errp, err);
+    return !err;
+}
+
+static void pci_dev_handle_migration(PCIDevice *pci_dev, MigrationState *s)
+{
+    Error *err = NULL;
+    DeviceState *dev = &pci_dev->qdev;
+
+    if (migration_in_setup(s)) {
+        if (pci_dev_migration_unplug(pci_dev)) {
+            vmstate_unregister(VMSTATE_IF(dev), qdev_get_vmsd(dev), dev);
+            pci_del_option_rom(pci_dev);
+            qapi_event_send_unplug_primary(dev->id);
+        } else {
+            warn_report("couldn't unplug primary device");
+        }
+    } else if (migration_has_failed(s)) {
+        /* We already unplugged the device let's plug it back */
+        if (!pci_dev_migration_replug(pci_dev, &err)) {
+            if (err) {
+                error_report_err(err);
+            }
+        }
+    }
+}
+
+static void pci_dev_migration_state_notifier(Notifier *notifier, void *data)
+{
+    MigrationState *s = data;
+    PCIDevice *pci_dev = container_of(notifier, PCIDevice, migration_state);
+    pci_dev_handle_migration(pci_dev, s);
+}
+
 static void pci_qdev_realize(DeviceState *qdev, Error **errp)
 {
     PCIDevice *pci_dev = (PCIDevice *)qdev;
@@ -2153,12 +2242,6 @@ static void pci_qdev_realize(DeviceState *qdev, Error **errp)
     }
 
     if (pci_dev->failover_pair_id) {
-        if (!pci_bus_is_express(pci_get_bus(pci_dev))) {
-            error_setg(errp, "failover primary device must be on "
-                             "PCIExpress bus");
-            pci_qdev_unrealize(DEVICE(pci_dev));
-            return;
-        }
         class_id = pci_get_word(pci_dev->config + PCI_CLASS_DEVICE);
         if (class_id != PCI_CLASS_NETWORK_ETHERNET) {
             error_setg(errp, "failover primary device is not an "
@@ -2166,14 +2249,26 @@ static void pci_qdev_realize(DeviceState *qdev, Error **errp)
             pci_qdev_unrealize(DEVICE(pci_dev));
             return;
         }
+        pci_dev->unplug_on_migration = true;
+    }
+
+    if (pci_dev->unplug_on_migration) {
+        if (!pci_bus_is_express(pci_get_bus(pci_dev))) {
+            error_setg(errp, "Unplugged device on migration must be on "
+                             "PCIExpress bus");
+            pci_qdev_unrealize(DEVICE(pci_dev));
+            return;
+        }
         if ((pci_dev->cap_present & QEMU_PCI_CAP_MULTIFUNCTION)
             || (PCI_FUNC(pci_dev->devfn) != 0)) {
-            error_setg(errp, "failover: primary device must be in its own "
-                              "PCI slot");
+            error_setg(errp, "Unplugged device on migration must be in its "
+                              "own PCI slot");
             pci_qdev_unrealize(DEVICE(pci_dev));
             return;
         }
         qdev->allow_unplug_during_migration = true;
+        pci_dev->migration_state.notify = pci_dev_migration_state_notifier;
+        add_migration_state_change_notifier(&pci_dev->migration_state);
     }
 
     /* rom loading */
