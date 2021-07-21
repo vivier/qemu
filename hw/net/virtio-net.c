@@ -3433,28 +3433,6 @@ static int virtio_net_pre_save(void *opaque)
     return 0;
 }
 
-static bool primary_unplug_pending(void *opaque)
-{
-    DeviceState *dev = opaque;
-    DeviceState *primary;
-    VirtIODevice *vdev = VIRTIO_DEVICE(dev);
-    VirtIONet *n = VIRTIO_NET(vdev);
-
-    if (!virtio_vdev_has_feature(vdev, VIRTIO_NET_F_STANDBY)) {
-        return false;
-    }
-    primary = failover_find_primary_device(n);
-    return primary ? primary->pending_deleted_event : false;
-}
-
-static bool dev_unplug_pending(void *opaque)
-{
-    DeviceState *dev = opaque;
-    VirtioDeviceClass *vdc = VIRTIO_DEVICE_GET_CLASS(dev);
-
-    return vdc->primary_unplug_pending(dev);
-}
-
 static const VMStateDescription vmstate_virtio_net = {
     .name = "virtio-net",
     .minimum_version_id = VIRTIO_NET_VM_VERSION,
@@ -3464,7 +3442,6 @@ static const VMStateDescription vmstate_virtio_net = {
         VMSTATE_END_OF_LIST()
     },
     .pre_save = virtio_net_pre_save,
-    .dev_unplug_pending = dev_unplug_pending,
 };
 
 static Property virtio_net_properties[] = {
@@ -3556,7 +3533,6 @@ static void virtio_net_class_init(ObjectClass *klass, void *data)
     vdc->legacy_features |= (0x1 << VIRTIO_NET_F_GSO);
     vdc->post_load = virtio_net_post_load_virtio;
     vdc->vmsd = &vmstate_virtio_net_device;
-    vdc->primary_unplug_pending = primary_unplug_pending;
 }
 
 static const TypeInfo virtio_net_info = {

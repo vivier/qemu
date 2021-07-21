@@ -241,6 +241,8 @@ struct PCIDeviceClass {
 
     /* rom bar */
     const char *romfile;
+
+    bool (*dev_unplug_pending)(void *opaque);
 };
 
 typedef void (*PCIINTxRoutingNotifier)(PCIDevice *dev);

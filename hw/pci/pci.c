@@ -86,6 +86,27 @@ static Property pci_props[] = {
     DEFINE_PROP_END_OF_LIST()
 };
 
+static bool bus_unplug_pending(void *opaque)
+{
+    DeviceState *dev = opaque;
+    PCIBus *bus = PCI_BUS(dev);
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(bus->devices); ++i) {
+	PCIDeviceClass *pc;
+
+        if (bus->devices[i] == NULL) {
+            continue;
+        }
+
+	pc = PCI_DEVICE_GET_CLASS(bus->devices[i]);
+        if (pc->dev_unplug_pending && pc->dev_unplug_pending(DEVICE(bus->devices[i]))) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static const VMStateDescription vmstate_pcibus = {
     .name = "PCIBUS",
     .version_id = 1,
@@ -96,7 +117,8 @@ static const VMStateDescription vmstate_pcibus = {
                              nirq, 0, vmstate_info_int32,
                              int32_t),
         VMSTATE_END_OF_LIST()
-    }
+    },
+    .dev_unplug_pending = bus_unplug_pending,
 };
 
 static void pci_init_bus_master(PCIDevice *pci_dev)
@@ -686,7 +708,7 @@ const VMStateDescription vmstate_pci_device = {
                                    vmstate_info_pci_irq_state,
                                    PCI_NUM_PINS * sizeof(int32_t)),
         VMSTATE_END_OF_LIST()
-    }
+    },
 };
 
 
@@ -2778,14 +2800,23 @@ MemoryRegion *pci_address_space_io(PCIDevice *dev)
     return pci_get_bus(dev)->address_space_io;
 }
 
+static bool pci_device_unplug_pending(void *opaque)
+{
+    DeviceState *dev = opaque;
+
+    return dev->pending_deleted_event;
+}
+
 static void pci_device_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *k = DEVICE_CLASS(klass);
+    PCIDeviceClass *pc = PCI_DEVICE_CLASS(klass);
 
     k->realize = pci_qdev_realize;
     k->unrealize = pci_qdev_unrealize;
     k->bus_type = TYPE_PCI_BUS;
     device_class_set_props(k, pci_props);
+    pc->dev_unplug_pending = pci_device_unplug_pending;
 }
 
 static void pci_device_class_base_init(ObjectClass *klass, void *data)
