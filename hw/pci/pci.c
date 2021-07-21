@@ -669,6 +669,22 @@ static bool migrate_is_not_pcie(void *opaque, int version_id)
     return !pci_is_express((PCIDevice *)opaque);
 }
 
+static bool pci_device_unplug_pending(void *opaque)
+{
+    DeviceState *dev = opaque;
+
+fprintf(stderr, "XXX pci_device_unplug_pending %d\n", dev->pending_deleted_event);
+    return dev->pending_deleted_event;
+}
+
+static bool dev_unplug_pending(void *opaque)
+{
+    DeviceState *dev = opaque;
+    PCIDeviceClass *pc = PCI_DEVICE_CLASS(dev);
+
+    return pc->dev_unplug_pending(dev);
+}
+
 const VMStateDescription vmstate_pci_device = {
     .name = "PCIDevice",
     .version_id = 2,
@@ -687,7 +703,8 @@ const VMStateDescription vmstate_pci_device = {
                                    vmstate_info_pci_irq_state,
                                    PCI_NUM_PINS * sizeof(int32_t)),
         VMSTATE_END_OF_LIST()
-    }
+    },
+    .dev_unplug_pending = dev_unplug_pending,
 };
 
 
@@ -2785,11 +2802,13 @@ MemoryRegion *pci_address_space_io(PCIDevice *dev)
 static void pci_device_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *k = DEVICE_CLASS(klass);
+    PCIDeviceClass *pc = PCI_DEVICE_CLASS(klass);
 
     k->realize = pci_qdev_realize;
     k->unrealize = pci_qdev_unrealize;
     k->bus_type = TYPE_PCI_BUS;
     device_class_set_props(k, pci_props);
+    pc->dev_unplug_pending = pci_device_unplug_pending;
 }
 
 static void pci_device_class_base_init(ObjectClass *klass, void *data)

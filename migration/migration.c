@@ -3693,6 +3693,7 @@ bool migration_rate_limit(void)
 static void qemu_savevm_wait_unplug(MigrationState *s, int old_state,
                                     int new_state)
 {
+fprintf(stderr, "qemu_savevm_wait_unplug %d\n", qemu_savevm_state_guest_unplug_pending());
     if (qemu_savevm_state_guest_unplug_pending()) {
         migrate_set_state(&s->state, old_state, MIGRATION_STATUS_WAIT_UNPLUG);
 

@@ -1186,6 +1186,7 @@ bool qemu_savevm_state_guest_unplug_pending(void)
     SaveStateEntry *se;
 
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
+fprintf(stderr, "%s %p\n", se->idstr, se->vmsd ? se->vmsd->dev_unplug_pending:NULL);
         if (se->vmsd && se->vmsd->dev_unplug_pending &&
             se->vmsd->dev_unplug_pending(se->opaque)) {
             return true;
