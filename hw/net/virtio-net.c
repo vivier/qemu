@@ -3187,24 +3187,6 @@ void virtio_net_set_netclient_name(VirtIONet *n, const char *name,
     n->netclient_type = g_strdup(type);
 }
 
-static bool failover_hide_primary_device(DeviceListener *listener,
-                                         QemuOpts *device_opts)
-{
-    VirtIONet *n = container_of(listener, VirtIONet, primary_listener);
-    const char *standby_id;
-
-    if (!device_opts) {
-        return false;
-    }
-    standby_id = qemu_opt_get(device_opts, "failover_pair_id");
-    if (g_strcmp0(standby_id, n->netclient_name) != 0) {
-        return false;
-    }
-
-    /* failover_primary_hidden is set during feature negotiation */
-    return qatomic_read(&n->failover_primary_hidden);
-}
-
 static void virtio_net_device_realize(DeviceState *dev, Error **errp)
 {
     VirtIODevice *vdev = VIRTIO_DEVICE(dev);
@@ -3239,9 +3221,7 @@ static void virtio_net_device_realize(DeviceState *dev, Error **errp)
     }
 
     if (n->failover) {
-        n->primary_listener.hide_device = failover_hide_primary_device;
         qatomic_set(&n->failover_primary_hidden, true);
-        device_listener_register(&n->primary_listener);
         n->host_features |= (1ULL << VIRTIO_NET_F_STANDBY);
     }
 
@@ -3386,10 +3366,6 @@ static void virtio_net_device_unrealize(DeviceState *dev)
 
     g_free(n->mac_table.macs);
     g_free(n->vlans);
-
-    if (n->failover) {
-        device_listener_unregister(&n->primary_listener);
-    }
 
     max_queues = n->multiqueue ? n->max_queues : 1;
     for (i = 0; i < max_queues; i++) {
