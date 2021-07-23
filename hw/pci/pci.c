@@ -49,6 +49,7 @@
 #include "hw/pci/msix.h"
 #include "hw/hotplug.h"
 #include "hw/boards.h"
+#include "hw/virtio/virtio-net.h" /* for failover */
 #include "qapi/error.h"
 #include "qapi/qapi-commands-pci.h"
 #include "qapi/qapi-events-migration.h"
@@ -2232,17 +2233,27 @@ static bool pci_dev_hide_device(DeviceListener *listener,
                                 QemuOpts *device_opts)
 {
     const char *opt;
+    DeviceState *d;
 
     if (!device_opts) {
         return false;
     }
 
     opt = qemu_opt_get(device_opts, "unplug-on-migration");
-    if (!opt)
-	    return false;
+    if (g_strcmp0(opt, "on") == 0 || g_strcmp0(opt, "true") == 0) {
+        return runstate_check(RUN_STATE_INMIGRATE);
+    }
 
-    //return qatomic_read(&pci_dev->hidden);
-    return runstate_check(RUN_STATE_INMIGRATE);
+    opt = qemu_opt_get(device_opts, "failover_pair_id");
+    if (opt == NULL) {
+        return false;
+    }
+    d =  qdev_find_recursive(sysbus_get_default(), opt);
+    if (d == NULL) {
+        return false;
+    }
+
+    return qatomic_read(&virtio_net_pci_get_device(d)->failover_primary_hidden);
 }
 
 

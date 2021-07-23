@@ -215,5 +215,5 @@ struct VirtIONet {
 
 void virtio_net_set_netclient_name(VirtIONet *n, const char *name,
                                    const char *type);
-
+VirtIONet *virtio_net_pci_get_device(DeviceState *s);
 #endif
