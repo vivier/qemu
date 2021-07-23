@@ -46,6 +46,11 @@ static Property virtio_net_properties[] = {
     DEFINE_PROP_END_OF_LIST(),
 };
 
+VirtIONet *virtio_net_pci_get_device(DeviceState *s)
+{
+    return &VIRTIO_NET_PCI(s)->vdev;
+}
+
 static void virtio_net_pci_realize(VirtIOPCIProxy *vpci_dev, Error **errp)
 {
     DeviceState *qdev = DEVICE(vpci_dev);
