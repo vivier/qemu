@@ -242,6 +242,7 @@ struct PCIDeviceClass {
     /* rom bar */
     const char *romfile;
 
+    DeviceListener listener;
     bool (*dev_unplug_pending)(void *opaque);
 };
 

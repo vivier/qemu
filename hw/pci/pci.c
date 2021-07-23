@@ -39,6 +39,7 @@
 #include "monitor/monitor.h"
 #include "net/net.h"
 #include "sysemu/numa.h"
+#include "sysemu/runstate.h"
 #include "sysemu/sysemu.h"
 #include "hw/loader.h"
 #include "qemu/error-report.h"
@@ -48,6 +49,7 @@
 #include "hw/pci/msix.h"
 #include "hw/hotplug.h"
 #include "hw/boards.h"
+#include "hw/virtio/virtio-net.h" /* for failover */
 #include "qapi/error.h"
 #include "qapi/qapi-commands-pci.h"
 #include "qapi/qapi-events-migration.h"
@@ -2227,6 +2229,34 @@ static void pci_dev_migration_state_notifier(Notifier *notifier, void *data)
     pci_dev_handle_migration(pci_dev, s);
 }
 
+static bool pci_dev_hide_device(DeviceListener *listener,
+                                QemuOpts *device_opts)
+{
+    const char *opt;
+    DeviceState *d;
+
+    if (!device_opts) {
+        return false;
+    }
+
+    opt = qemu_opt_get(device_opts, "unplug-on-migration");
+    if (g_strcmp0(opt, "on") == 0 || g_strcmp0(opt, "true") == 0) {
+        return runstate_check(RUN_STATE_INMIGRATE);
+    }
+
+    opt = qemu_opt_get(device_opts, "failover_pair_id");
+    if (opt == NULL) {
+        return false;
+    }
+    d =  qdev_find_recursive(sysbus_get_default(), opt);
+    if (d == NULL) {
+        return false;
+    }
+
+    return qatomic_read(&virtio_net_pci_get_device(d)->failover_primary_hidden);
+}
+
+
 static void pci_qdev_realize(DeviceState *qdev, Error **errp)
 {
     PCIDevice *pci_dev = (PCIDevice *)qdev;
@@ -2821,6 +2851,9 @@ static void pci_device_class_init(ObjectClass *klass, void *data)
     k->bus_type = TYPE_PCI_BUS;
     device_class_set_props(k, pci_props);
     pc->dev_unplug_pending = pci_device_unplug_pending;
+
+    pc->listener.hide_device = pci_dev_hide_device;
+    device_listener_register(&pc->listener);
 }
 
 static void pci_device_class_base_init(ObjectClass *klass, void *data)
