@@ -626,17 +626,11 @@ static DeviceState *qdev_device_add_from_qdict(const QDict *opts,
         }
     }
 
-    if (qdict_haskey(opts, "failover_pair_id")) {
-        if (!qdict_haskey(opts, "id")) {
-            error_setg(errp, "Device with failover_pair_id don't have id");
-            return NULL;
+    if (qdev_should_hide_device(opts, errp)) {
+        if (errp && !*errp && bus && !qbus_is_hotpluggable(bus)) {
+            error_setg(errp, QERR_BUS_NO_HOTPLUG, bus->name);
         }
-        if (qdev_should_hide_device(opts, errp)) {
-            if (errp && !*errp && bus && !qbus_is_hotpluggable(bus)) {
-                error_setg(errp, QERR_BUS_NO_HOTPLUG, bus->name);
-            }
-            return NULL;
-        }
+        return NULL;
     }
 
     if (phase_check(PHASE_MACHINE_READY) && bus && !qbus_is_hotpluggable(bus)) {
