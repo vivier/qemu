@@ -3292,6 +3292,10 @@ static bool failover_hide_primary_device(DeviceListener *listener,
         /* no pair id, don't hide */
         return false;
     }
+    if (device_opts->id == NULL) {
+        error_setg(errp, "Device with failover_pair_id don't have id");
+        return true;
+    }
     if (strcmp(standby_id, n->netclient_name) != 0) {
         /*
          * PCI device has a pair id, but the virtio-net device is not
