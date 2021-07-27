@@ -622,8 +622,8 @@ DeviceState *qdev_device_add(QemuOpts *opts, Error **errp)
         }
     }
 
-    if (qdev_should_hide_device(opts)) {
-        if (bus && !qbus_is_hotpluggable(bus)) {
+    if (qdev_should_hide_device(opts, errp)) {
+        if (*errp == NULL && bus && !qbus_is_hotpluggable(bus)) {
             error_setg(errp, QERR_BUS_NO_HOTPLUG, bus->name);
         }
         return NULL;
