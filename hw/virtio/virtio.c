@@ -2240,6 +2240,16 @@ void virtio_queue_set_rings(VirtIODevice *vdev, int n, hwaddr desc,
     virtio_init_region_cache(vdev, n);
 }
 
+/*
+ * virtio-net failover needs to disable a queue to disable the
+ * driver with pre- virtio spec 1.0
+ * The queue is re-enabled on reset
+ */
+void virtio_failover_queue_disable(VirtIODevice *vdev, int n)
+{
+    vdev->vq[n].vring.num = 0;
+}
+
 void virtio_queue_set_num(VirtIODevice *vdev, int n, int num)
 {
     /* Don't allow guest to flip queue between existent and
