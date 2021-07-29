@@ -208,6 +208,7 @@ struct VirtIONet {
     /* primary failover device is hidden*/
     bool failover_primary_hidden;
     bool failover;
+    bool failover_default;
     DeviceListener primary_listener;
     QDict *primary_opts;
     bool primary_opts_from_json;
