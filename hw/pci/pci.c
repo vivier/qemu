@@ -2287,10 +2287,11 @@ static bool pci_dev_hide_device(DeviceListener *listener,
     d =  qdev_find_recursive(sysbus_get_default(), standby_id);
     if (d == NULL) {
         /*
-         * if the the virtio-net device is not plugged it can be
-         * plugged later, and this device will be added to the failover
+         * PCI device has a pair id, but the virtio-net device is not
+         * plugged: hide it, it will be plugged later when the virtio-net
+         * device will be plugged
          */
-        return false;
+        return true;
     }
 
     hidden = failover_find_primary_qdict(standby_id, NULL, errp);
