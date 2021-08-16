@@ -3288,8 +3288,17 @@ static bool failover_hide_primary_device(DeviceListener *listener,
         return false;
     }
     standby_id = qemu_opt_get(device_opts, "failover_pair_id");
-    if (g_strcmp0(standby_id, n->netclient_name) != 0) {
+    if (!standby_id) {
+        /* no pair id, don't hide */
         return false;
+    }
+    if (strcmp(standby_id, n->netclient_name) != 0) {
+        /*
+         * PCI device has a pair id, but the virtio-net device is not
+         * plugged: hide it, it will be plugged later when the virtio-net
+         * device will be plugged
+         */
+        return true;
     }
 
     /* failover_primary_hidden is set during feature negotiation */
