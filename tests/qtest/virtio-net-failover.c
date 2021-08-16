@@ -346,12 +346,12 @@ static void test_on_mismatch(void)
                      2);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
-    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
     vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
-    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
     qos_object_destroy((QOSGraphObject *)vdev);
     machine_stop(qts);
@@ -486,7 +486,7 @@ static void test_hotplug_1_reverse(void)
                      2);
 
     check_one_card(qts, false, "standby0", MAC_STANDBY0);
-    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
     qtest_qmp_device_add(qts, "virtio-net", "standby0",
                          "{'bus': 'root0',"
@@ -495,7 +495,7 @@ static void test_hotplug_1_reverse(void)
                          "'mac': '"MAC_STANDBY0"'}");
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
-    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
     vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
@@ -566,7 +566,7 @@ static void test_hotplug_2_reverse(void)
                          "'mac': '"MAC_PRIMARY0"'}");
 
     check_one_card(qts, false, "standby0", MAC_STANDBY0);
-    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
     qtest_qmp_device_add(qts, "virtio-net", "standby0",
                          "{'bus': 'root0',"
@@ -576,13 +576,8 @@ static void test_hotplug_2_reverse(void)
                          "'romfile': '',"
                          "'mac': '"MAC_STANDBY0"'}");
 
-    /*
-     * XXX: sounds like a bug:
-     * The primary should be hidden until the virtio-net driver
-     * negotiates the VIRTIO_NET_F_STANDBY feature by start_virtio_net()
-     */
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
-    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
     vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
