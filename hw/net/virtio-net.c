@@ -848,12 +848,15 @@ static void failover_add_primary(VirtIONet *n, Error **errp)
 {
     Error *err = NULL;
     DeviceState *dev = failover_find_primary_device(n);
+    QDict *primary_opts;
+    bool primary_opts_from_json;
 
     if (dev) {
         return;
     }
 
-    if (!n->primary_opts) {
+    primary_opts = qemu_opts_hidden_device_find(dev->id, &primary_opts_from_json);
+    if (!primary_opts) {
         error_setg(errp, "Primary device not found");
         error_append_hint(errp, "Virtio-net failover will not work. Make "
                           "sure primary device has parameter"
@@ -861,13 +864,10 @@ static void failover_add_primary(VirtIONet *n, Error **errp)
         return;
     }
 
-    dev = qdev_device_add_from_qdict(n->primary_opts,
-                                     n->primary_opts_from_json,
+    dev = qdev_device_add_from_qdict(primary_opts,
+                                     primary_opts_from_json,
                                      &err);
-    if (err) {
-        qobject_unref(n->primary_opts);
-        n->primary_opts = NULL;
-    } else {
+    if (!err) {
         object_unref(OBJECT(dev));
     }
     error_propagate(errp, err);
@@ -3311,6 +3311,7 @@ static bool failover_hide_primary_device(DeviceListener *listener,
         return false;
     }
 
+#if 0 /* XXX */
     /*
      * The hide helper can be called several times for a given device.
      * Check there is only one primary for a virtio-net device but
@@ -3327,10 +3328,8 @@ static bool failover_hide_primary_device(DeviceListener *listener,
                        "'%s': '%s' and '%s'", n->netclient_name, old, new);
             return false;
         }
-    } else {
-        n->primary_opts = qdict_clone_shallow(device_opts);
-        n->primary_opts_from_json = from_json;
     }
+#endif
 
     if (runstate_check(RUN_STATE_PRELAUNCH)) {
         /* hide the failover primary on src on startup */
@@ -3544,11 +3543,11 @@ static void virtio_net_device_unrealize(DeviceState *dev)
     g_free(n->vlans);
 
     if (n->failover) {
-        qobject_unref(n->primary_opts);
+        /* XXX qobject_unref(n->primary_opts); */
         device_listener_unregister(&n->primary_listener);
         remove_migration_state_change_notifier(&n->migration_state);
     } else {
-        assert(n->primary_opts == NULL);
+        /* XXX assert(n->primary_opts == NULL); */
     }
 
     max_queue_pairs = n->multiqueue ? n->max_queue_pairs : 1;

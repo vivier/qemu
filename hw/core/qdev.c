@@ -220,6 +220,7 @@ bool qdev_should_hide_device(const QDict *opts, bool from_json, Error **errp)
     QTAILQ_FOREACH(listener, &device_listeners, link) {
         if (listener->hide_device) {
             if (listener->hide_device(listener, opts, from_json, errp)) {
+                qemu_opts_store_hidden_device(opts, from_json);
                 return true;
             } else if (*errp) {
                 return false;

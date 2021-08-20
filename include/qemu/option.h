@@ -150,4 +150,9 @@ QDict *keyval_parse(const char *params, const char *implied_key,
                     bool *help, Error **errp);
 void keyval_merge(QDict *old, const QDict *new, Error **errp);
 
+typedef int (*qemu_opts_hidden_loopfunc)(void *opaque, QDict *qdict, bool from_json, Error **errp);
+int qemu_opts_hidden_device_foreach(qemu_opts_hidden_loopfunc func,
+                                    void *opaque, Error **errp);
+QDict *qemu_opts_hidden_device_find(const char *id, bool *from_json);
+void qemu_opts_store_hidden_device(const QDict *qdict, bool from_json);
 #endif

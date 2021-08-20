@@ -37,6 +37,14 @@
 #include "qemu/id.h"
 #include "qemu/help_option.h"
 
+struct hidden_device {
+    bool from_json;
+    QDict *qdict;
+    QTAILQ_ENTRY(hidden_device) next;
+};
+
+static QTAILQ_HEAD(, hidden_device) hidden_devices =
+                               QTAILQ_HEAD_INITIALIZER(hidden_devices);
 /*
  * Extracts the name of an option from the parameter string (@p points at the
  * first byte of the option name)
@@ -1223,4 +1231,59 @@ QemuOptsList *qemu_opts_append(QemuOptsList *dst,
     }
 
     return dst;
+}
+
+/*
+ * For each member of the hidded device list,
+ * call @func(@opaque, name, value, @errp).
+ * @func() may store an Error through @errp, but must return non-zero then.
+ * When @func() returns non-zero, break the loop and return that value.
+ * Return zero when the loop completes.
+ */
+int qemu_opts_hidden_device_foreach(qemu_opts_hidden_loopfunc func,
+                                    void *opaque, Error **errp)
+{
+    struct hidden_device *hidden;
+    int rc = 0;
+
+    QTAILQ_FOREACH(hidden, &hidden_devices, next) {
+        rc = func(opaque, hidden->qdict, hidden->from_json, errp);
+        if (rc) {
+            break;
+        }
+    }
+    return rc;
+}
+
+/* scan the list of hidden devices to find opts for the one with id @id */
+QDict *qemu_opts_hidden_device_find(const char *id, bool *from_json)
+{
+    struct hidden_device *hidden;
+
+    QTAILQ_FOREACH(hidden, &hidden_devices, next) {
+        const char *id = qdict_get_str(hidden->qdict, "id");
+        if (g_strcmp0(id, id) == 0) {
+            *from_json = hidden->from_json;
+            return hidden->qdict;
+        }
+    }
+
+    return NULL;
+}
+
+/* add the @opts to the list of hidden devices */
+void qemu_opts_store_hidden_device(const QDict *qdict, bool from_json)
+{
+    const char *id;
+    struct hidden_device *hidden;
+
+    id = qdict_get_str(qdict, "id");
+    if (qemu_opts_hidden_device_find(id, &from_json)) {
+        return;
+    }
+
+    hidden = g_new(struct hidden_device, 1);
+    hidden->qdict = qdict_clone_shallow(qdict);
+    hidden->from_json = from_json;
+    QTAILQ_INSERT_TAIL(&hidden_devices, hidden, next);
 }
