@@ -176,6 +176,17 @@ configurations (e.g. -smp 8,sockets=0) is deprecated since 6.2 and will
 be removed in the near future, users have to ensure that all the topology
 members described with -smp are greater than zero.
 
+Stable non-JSON ``-device`` and ``-object`` syntax (since 6.2)
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+If you rely on a stable interface for ``-device`` and ``-object`` that doesn't
+change incompatibly between QEMU versions (e.g. because you are using the QEMU
+command line as a machine interface in scripts rather than interactively), use
+JSON syntax for these options instead.
+
+There is no intention to remove support for non-JSON syntax entirely, but
+future versions may change the way to spell some options.
+
 Plugin argument passing through ``arg=<string>`` (since 6.1)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
