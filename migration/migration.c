@@ -904,6 +904,9 @@ MigrationParameters *qmp_query_migrate_parameters(Error **errp)
                        s->parameters.block_bitmap_mapping);
     }
 
+    params->has_pause_vm = true;
+    params->pause_vm = s->parameters.pause_vm;
+
     return params;
 }
 
@@ -1552,6 +1555,11 @@ static void migrate_params_test_apply(MigrateSetParameters *params,
         dest->has_block_bitmap_mapping = true;
         dest->block_bitmap_mapping = params->block_bitmap_mapping;
     }
+
+    if (params->has_pause_vm) {
+        dest->has_pause_vm = true;
+        dest->pause_vm = params->pause_vm;
+    }
 }
 
 static void migrate_params_apply(MigrateSetParameters *params, Error **errp)
@@ -1674,6 +1682,10 @@ static void migrate_params_apply(MigrateSetParameters *params, Error **errp)
             QAPI_CLONE(BitmapMigrationNodeAliasList,
                        params->block_bitmap_mapping);
     }
+
+    if (params->has_pause_vm) {
+        s->parameters.pause_vm = params->pause_vm;
+    }
 }
 
 void qmp_migrate_set_parameters(MigrateSetParameters *params, Error **errp)
@@ -1721,6 +1733,12 @@ void qmp_migrate_start_postcopy(Error **errp)
                          " started");
         return;
     }
+
+    if (s->parameters.pause_vm) {
+        error_setg(errp, "Postcopy cannot be started if pause-vm is on");
+        return;
+    }
+
     /*
      * we don't error if migration has finished since that would be racy
      * with issuing this command.
@@ -3136,15 +3154,18 @@ static int migration_maybe_pause(MigrationState *s,
  */
 static void migration_completion(MigrationState *s)
 {
-    int ret;
+    int ret = 0;
     int current_active_state = s->state;
 
     if (s->state == MIGRATION_STATUS_ACTIVE) {
         qemu_mutex_lock_iothread();
         s->downtime_start = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
-        qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER, NULL);
-        s->vm_was_running = runstate_is_running();
-        ret = global_state_store();
+        if (!s->parameters.pause_vm) {
+            /* the vm state has been saved by pause_vm parameter */
+            qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER, NULL);
+            s->vm_was_running = runstate_is_running();
+            ret = global_state_store();
+        }
 
         if (!ret) {
             bool inactivate = !migrate_colo_enabled();
@@ -3737,10 +3758,24 @@ static void qemu_savevm_wait_unplug(MigrationState *s, int old_state,
                             "failure");
             }
         }
-
         migrate_set_state(&s->state, MIGRATION_STATUS_WAIT_UNPLUG, new_state);
     } else {
         migrate_set_state(&s->state, old_state, new_state);
+    }
+}
+
+/* stop the VM before starting the migration but after device unplug */
+static void pause_vm_after_unplug(MigrationState *s)
+{
+    if (s->parameters.pause_vm) {
+        qemu_mutex_lock_iothread();
+        qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER, NULL);
+        s->vm_was_running = runstate_is_running();
+        if (global_state_store() || vm_stop_force_state(RUN_STATE_PAUSED)) {
+            migrate_set_state(&s->state, MIGRATION_STATUS_ACTIVE,
+                                         MIGRATION_STATUS_FAILED);
+        }
+        qemu_mutex_unlock_iothread();
     }
 }
 
@@ -3792,6 +3827,8 @@ static void *migration_thread(void *opaque)
 
     qemu_savevm_wait_unplug(s, MIGRATION_STATUS_SETUP,
                                MIGRATION_STATUS_ACTIVE);
+
+    pause_vm_after_unplug(s);
 
     s->setup_time = qemu_clock_get_ms(QEMU_CLOCK_HOST) - setup_start;
 
@@ -4268,6 +4305,7 @@ static void migration_instance_init(Object *obj)
     params->has_announce_max = true;
     params->has_announce_rounds = true;
     params->has_announce_step = true;
+    params->has_pause_vm = true;
 
     qemu_sem_init(&ms->postcopy_pause_sem, 0);
     qemu_sem_init(&ms->postcopy_pause_rp_sem, 0);
