@@ -2249,7 +2249,13 @@ static void pci_dev_handle_migration(PCIDevice *pci_dev, MigrationState *s)
     DeviceState *dev = &pci_dev->qdev;
 
     if (migration_in_setup(s)) {
-        if (pci_dev_migration_unplug(pci_dev)) {
+        if (!runstate_is_running()) {
+            Error *err = NULL;
+            error_setg(&err,
+                       "migration canceled: PCI unplug and guest is paused");
+            migration_cancel(err);
+            error_free(err);
+        } else if (pci_dev_migration_unplug(pci_dev)) {
             vmstate_unregister(VMSTATE_IF(dev), qdev_get_vmsd(dev), dev);
             pci_del_option_rom(pci_dev);
             qapi_event_send_unplug_primary(dev->id);
