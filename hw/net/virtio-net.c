@@ -842,16 +842,48 @@ static DeviceState *failover_find_primary_device(VirtIONet *n)
     return fdev.dev;
 }
 
+struct failover_by_pair_id_data {
+    const char *pair_id;
+    QDict *qdict;
+    bool from_json;
+};
+
+static int failover_by_pair_id_cmp(void *opaque, QDict *qdict, bool from_json)
+{
+    struct failover_by_pair_id_data *data = opaque;
+    const char *pair_id;
+
+    pair_id = qdict_get_try_str(qdict, "failover_pair_id");
+    if (g_strcmp0(data->pair_id, pair_id) == 0) {
+        data->qdict = qdict;
+        data->from_json = from_json;
+        return 1;
+    }
+    return 0;
+}
+
+static QDict *failover_find_primary_qdict(const char *pair_id, bool *from_json)
+{
+    struct failover_by_pair_id_data data = { .pair_id = pair_id };
+
+    if (qdev_hidden_device_foreach(failover_by_pair_id_cmp, &data)) {
+        if (from_json) {
+            *from_json = data.from_json;
+        }
+        return data.qdict;
+    }
+    return NULL;
+}
+
 static void failover_add_primary(VirtIONet *n, Error **errp)
 {
     Error *err = NULL;
-    DeviceState *dev = failover_find_primary_device(n);
+    DeviceState *dev;
+    QDict *hidden;
+    bool from_json;
 
-    if (dev) {
-        return;
-    }
-
-    if (!n->primary_opts) {
+    hidden = failover_find_primary_qdict(n->netclient_name, &from_json);
+    if (!hidden) {
         error_setg(errp, "Primary device not found");
         error_append_hint(errp, "Virtio-net failover will not work. Make "
                           "sure primary device has parameter"
@@ -859,13 +891,8 @@ static void failover_add_primary(VirtIONet *n, Error **errp)
         return;
     }
 
-    dev = qdev_device_add_from_qdict(n->primary_opts,
-                                     n->primary_opts_from_json,
-                                     &err);
-    if (err) {
-        qobject_unref(n->primary_opts);
-        n->primary_opts = NULL;
-    } else {
+    dev = qdev_device_add_from_qdict(hidden, from_json, &err);
+    if (!err) {
         object_unref(OBJECT(dev));
     }
     error_propagate(errp, err);
@@ -3296,6 +3323,7 @@ static bool failover_hide_primary_device(DeviceListener *listener,
 {
     VirtIONet *n = container_of(listener, VirtIONet, primary_listener);
     const char *standby_id;
+    QDict *hidden;
 
     if (!device_opts) {
         return false;
@@ -3315,27 +3343,18 @@ static bool failover_hide_primary_device(DeviceListener *listener,
         return false;
     }
 
-    /*
-     * The hide helper can be called several times for a given device.
-     * Check there is only one primary for a virtio-net device but
-     * don't duplicate the qdict several times if it's called for the same
-     * device.
-     */
-    if (n->primary_opts) {
+    hidden = failover_find_primary_qdict(n->netclient_name, NULL);
+    if (hidden) {
         const char *old, *new;
         /* devices with failover_pair_id always have an id */
-        old = qdict_get_str(n->primary_opts, "id");
+        old = qdict_get_str(hidden, "id");
         new = qdict_get_str(device_opts, "id");
         if (strcmp(old, new) != 0) {
             error_setg(errp, "Cannot attach more than one primary device to "
                        "'%s': '%s' and '%s'", n->netclient_name, old, new);
             return false;
         }
-    } else {
-        n->primary_opts = qdict_clone_shallow(device_opts);
-        n->primary_opts_from_json = from_json;
     }
-
     /* failover_primary_hidden is set during feature negotiation */
     return qatomic_read(&n->failover_primary_hidden);
 }
@@ -3539,11 +3558,8 @@ static void virtio_net_device_unrealize(DeviceState *dev)
     g_free(n->vlans);
 
     if (n->failover) {
-        qobject_unref(n->primary_opts);
         device_listener_unregister(&n->primary_listener);
         remove_migration_state_change_notifier(&n->migration_state);
-    } else {
-        assert(n->primary_opts == NULL);
     }
 
     max_queue_pairs = n->multiqueue ? n->max_queue_pairs : 1;

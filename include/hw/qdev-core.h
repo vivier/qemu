@@ -833,6 +833,12 @@ static inline void qbus_mark_full(BusState *bus)
 void device_listener_register(DeviceListener *listener);
 void device_listener_unregister(DeviceListener *listener);
 
+typedef int (*qdev_hidden_device_loopfunc)(void *opaque, QDict *qdict, bool from_json);
+int qdev_hidden_device_foreach(qdev_hidden_device_loopfunc func, void *opaque);
+QDict *qdev_hidden_device_find(const char *id, bool *from_json);
+void qdev_store_hidden_device(const QDict *qdict, bool from_json);
+void qdev_remove_hidden_device(const QDict *qdict);
+
 /**
  * @qdev_should_hide_device:
  * @opts: options QDict
