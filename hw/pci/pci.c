@@ -113,7 +113,7 @@ static bool bus_unplug_pending(void *opaque)
     return false;
 }
 
-static int pci_dev_replug_on_migration(void *opaque, QemuOpts *opts,
+static int pci_dev_replug_on_migration(void *opaque, QDict *qdict, bool from_json,
                                        Error **errp)
 {
     Error *err = NULL;
@@ -121,15 +121,15 @@ static int pci_dev_replug_on_migration(void *opaque, QemuOpts *opts,
     const char *opt;
     DeviceState *dev;
 
-    if (g_strcmp0(qemu_opt_get(opts, "bus"), bus_name)) {
+    if (g_strcmp0(qdict_get_try_str(qdict, "bus"), bus_name)) {
         return 0;
     }
 
-    opt = qemu_opt_get(opts, "unplug-on-migration");
+    opt = qdict_get_try_str(qdict, "unplug-on-migration");
     if (g_strcmp0(opt, "on") && g_strcmp0(opt, "true")) {
         return 0;
     }
-    dev = qdev_device_add(opts, &err);
+    dev = qdev_device_add_from_qdict(qdict, from_json, &err);
     if (err) {
         error_propagate(errp, err);
         return 1;
@@ -143,8 +143,8 @@ static int bus_post_load(void *opaque, int version_id)
     Error *err = NULL;
     PCIBus *bus = opaque;
 
-    if (qemu_opts_hidden_device_foreach(pci_dev_replug_on_migration,
-                                        bus->qbus.name, &err)) {
+    if (qdev_hidden_device_foreach(pci_dev_replug_on_migration,
+                                   bus->qbus.name, &err)) {
         error_report_err(err);
         return -EINVAL;
     }
@@ -2279,7 +2279,7 @@ struct failover_by_pair_id_data {
     bool from_json;
 };
 
-static int failover_by_pair_id_cmp(void *opaque, QDict *qdict, bool from_json)
+static int failover_by_pair_id_cmp(void *opaque, QDict *qdict, bool from_json, Error **errp)
 {
     struct failover_by_pair_id_data *data = opaque;
     const char *pair_id;
@@ -2293,11 +2293,11 @@ static int failover_by_pair_id_cmp(void *opaque, QDict *qdict, bool from_json)
     return 0;
 }
 
-static QDict *failover_find_primary_qdict(const char *pair_id, bool *from_json)
+static QDict *failover_find_primary_qdict(const char *pair_id, bool *from_json, Error **errp)
 {
     struct failover_by_pair_id_data data = { .pair_id = pair_id };
 
-    if (qdev_hidden_device_foreach(failover_by_pair_id_cmp, &data)) {
+    if (qdev_hidden_device_foreach(failover_by_pair_id_cmp, &data, errp)) {
         if (from_json) {
             *from_json = data.from_json;
         }
@@ -2312,6 +2312,7 @@ static bool pci_dev_hide_device(DeviceListener *listener,
                                 Error **errp)
 {
     const char *standby_id;
+    const char *opt;
     DeviceState *d;
     QDict *hidden;
 
@@ -2335,7 +2336,7 @@ static bool pci_dev_hide_device(DeviceListener *listener,
         return true;
     }
 
-    hidden = failover_find_primary_qdict(standby_id, NULL);
+    hidden = failover_find_primary_qdict(standby_id, NULL, errp);
     if (hidden) {
         const char *old, *new;
         /* devices with failover_pair_id always have an id */
@@ -2359,7 +2360,7 @@ static bool pci_dev_hide_device(DeviceListener *listener,
         return true;
     }
 
-    opt = qemu_opt_get(device_opts, "unplug-on-migration");
+    opt = qdict_get_try_str(device_opts, "unplug-on-migration");
     if (g_strcmp0(opt, "on") == 0 || g_strcmp0(opt, "true") == 0) {
         if (runstate_check(RUN_STATE_INMIGRATE)) {
             return migration_incoming_get_current()->state !=

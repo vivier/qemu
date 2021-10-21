@@ -796,7 +796,7 @@ struct failover_by_pair_id_data {
     bool from_json;
 };
 
-static int failover_by_pair_id_cmp(void *opaque, QDict *qdict, bool from_json)
+static int failover_by_pair_id_cmp(void *opaque, QDict *qdict, bool from_json, Error **errp)
 {
     struct failover_by_pair_id_data *data = opaque;
     const char *pair_id;
@@ -810,11 +810,11 @@ static int failover_by_pair_id_cmp(void *opaque, QDict *qdict, bool from_json)
     return 0;
 }
 
-static QDict *failover_find_primary_qdict(const char *pair_id, bool *from_json)
+static QDict *failover_find_primary_qdict(const char *pair_id, bool *from_json, Error **errp)
 {
     struct failover_by_pair_id_data data = { .pair_id = pair_id };
 
-    if (qdev_hidden_device_foreach(failover_by_pair_id_cmp, &data)) {
+    if (qdev_hidden_device_foreach(failover_by_pair_id_cmp, &data, errp)) {
         if (from_json) {
             *from_json = data.from_json;
         }
@@ -830,7 +830,7 @@ static void failover_add_primary(VirtIONet *n, Error **errp)
     QDict *hidden;
     bool from_json;
 
-    hidden = failover_find_primary_qdict(n->netclient_name, &from_json);
+    hidden = failover_find_primary_qdict(n->netclient_name, &from_json, errp);
     if (!hidden) {
         error_setg(errp, "Primary device not found");
         error_append_hint(errp, "Virtio-net failover will not work. Make "

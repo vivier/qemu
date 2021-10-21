@@ -247,13 +247,13 @@ QDict *qdev_hidden_device_find(const char *id, bool *from_json)
     return NULL;
 }
 
-int qdev_hidden_device_foreach(qdev_hidden_device_loopfunc func, void *opaque)
+int qdev_hidden_device_foreach(qdev_hidden_device_loopfunc func, void *opaque, Error **errp)
 {
     struct hidden_device *hidden;
     int ret = 0;
 
     QTAILQ_FOREACH(hidden, &hidden_devices, next) {
-        ret = func(opaque, hidden->qdict, hidden->from_json);
+        ret = func(opaque, hidden->qdict, hidden->from_json, errp);
         if (ret) {
             break;
         }
