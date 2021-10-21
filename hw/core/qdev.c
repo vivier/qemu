@@ -212,6 +212,125 @@ void device_listener_unregister(DeviceListener *listener)
     QTAILQ_REMOVE(&device_listeners, listener, link);
 }
 
+struct hidden_device {
+    QDict *qdict;
+    bool from_json;
+    QTAILQ_ENTRY(hidden_device) next;
+};
+
+struct qdev_hidden_device_find_data {
+    const char *tag;
+    const char *value;
+    QDict *qdict;
+    bool from_json;
+};
+
+static QTAILQ_HEAD(, hidden_device) hidden_devices =
+                               QTAILQ_HEAD_INITIALIZER(hidden_devices);
+
+int qdev_hidden_device_foreach(qdev_hidden_device_loopfunc func, void *opaque,
+                               Error **errp)
+{
+    struct hidden_device *hidden;
+    int ret = 0;
+
+    QTAILQ_FOREACH(hidden, &hidden_devices, next) {
+        ret = func(opaque, hidden->qdict, hidden->from_json, errp);
+        if (ret) {
+            break;
+        }
+    }
+
+    return ret;
+}
+
+static int qdev_hidden_device_find_cmp(void *opaque, QDict *qdict,
+                                       bool from_json, Error **errp)
+{
+    struct qdev_hidden_device_find_data *data = opaque;
+    const char *value;
+
+    value = qdict_get_try_str(qdict, data->tag);
+    if (g_strcmp0(data->value, value) == 0) {
+        data->qdict = qdict;
+        data->from_json = from_json;
+        return 1;
+    }
+    return 0;
+}
+
+QDict *qdev_hidden_device_find(const char *tag, const char *value,
+                               bool *from_json)
+{
+    Error *err;
+    struct qdev_hidden_device_find_data data = { .tag = tag,
+                                                 .value = value };
+
+    if (qdev_hidden_device_foreach(qdev_hidden_device_find_cmp,
+                                    &data, &err)) {
+        if (from_json) {
+            *from_json = data.from_json;
+        }
+        return data.qdict;
+    }
+    return NULL;
+}
+
+static struct hidden_device *find_hidden_device(const char *id)
+{
+    struct hidden_device *hidden;
+    const char *hidden_id;
+
+    QTAILQ_FOREACH(hidden, &hidden_devices, next) {
+        hidden_id = qdict_get_str(hidden->qdict, "id");
+        if (g_strcmp0(id, hidden_id) == 0) {
+            return hidden;
+        }
+    }
+    return NULL;
+}
+
+void qdev_store_hidden_device(const QDict *qdict, bool from_json)
+{
+    struct hidden_device *hidden;
+    const char *id;
+
+    id = qdict_get_try_str(qdict, "id");
+    if (id == NULL) {
+        return;
+    }
+
+    if (find_hidden_device(id)) {
+        return;
+    }
+
+    hidden = g_new(struct hidden_device, 1);
+    hidden->qdict = qdict_clone_shallow(qdict);
+    hidden->from_json = from_json;
+
+    QTAILQ_INSERT_TAIL(&hidden_devices, hidden, next);
+}
+
+void qdev_remove_hidden_device(const QDict *qdict)
+{
+    struct hidden_device *hidden;
+    const char *id = qdict_get_try_str(qdict, "id");
+
+    if (id == NULL) {
+        return;
+    }
+
+    hidden = find_hidden_device(id);
+    if (!hidden) {
+        return;
+    }
+
+    QTAILQ_REMOVE(&hidden_devices, hidden, next);
+
+    qobject_unref(hidden->qdict);
+    g_free(hidden);
+}
+
 bool qdev_should_hide_device(const QDict *opts, bool from_json, Error **errp)
 {
     ERRP_GUARD();

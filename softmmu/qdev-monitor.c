@@ -642,20 +642,23 @@ DeviceState *qdev_device_add_from_qdict(const QDict *opts,
     if (qdev_should_hide_device(opts, from_json, errp)) {
         if (bus && !qbus_is_hotpluggable(bus)) {
             error_setg(errp, QERR_BUS_NO_HOTPLUG, bus->name);
+        } else {
+            qdev_store_hidden_device(opts, from_json);
         }
         return NULL;
-    } else if (*errp) {
-        return NULL;
+    }
+    if (*errp) {
+        goto err_rem_hidden;
     }
 
     if (phase_check(PHASE_MACHINE_READY) && bus && !qbus_is_hotpluggable(bus)) {
         error_setg(errp, QERR_BUS_NO_HOTPLUG, bus->name);
-        return NULL;
+        goto err_rem_hidden;
     }
 
     if (!migration_is_idle()) {
         error_setg(errp, "device_add not allowed while migrating");
-        return NULL;
+        goto err_rem_hidden;
     }
 
     /* create device */
@@ -699,6 +702,7 @@ DeviceState *qdev_device_add_from_qdict(const QDict *opts,
     if (!qdev_realize(DEVICE(dev), bus, errp)) {
         goto err_del_dev;
     }
+    qdev_remove_hidden_device(opts);
     return dev;
 
 err_del_dev:
@@ -706,6 +710,8 @@ err_del_dev:
         object_unparent(OBJECT(dev));
         object_unref(OBJECT(dev));
     }
+err_rem_hidden:
+    qdev_remove_hidden_device(opts);
     return NULL;
 }
 
