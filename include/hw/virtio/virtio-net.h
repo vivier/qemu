@@ -208,8 +208,6 @@ struct VirtIONet {
     bool mtu_bypass_backend;
     bool failover;
     DeviceListener primary_listener;
-    QDict *primary_opts;
-    bool primary_opts_from_json;
     Notifier migration_state;
     VirtioNetRssData rss_data;
     struct NetRxPkt *rx_pkt;
