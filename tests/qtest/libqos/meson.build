@@ -14,6 +14,7 @@ libqos_srcs = files('../libqtest.c',
 
         # pc
         'pci-pc.c',
+        'pcie-pc.c',
         'malloc-pc.c',
         'libqos-pc.c',
         'ahci.c',
@@ -52,6 +53,7 @@ libqos_srcs = files('../libqtest.c',
         'arm-xilinx-zynq-a9-machine.c',
         'ppc64_pseries-machine.c',
         'x86_64_pc-machine.c',
+        'x86_64_q35-machine.c',
 )
 
 libqos = static_library('qos', libqos_srcs + genh,

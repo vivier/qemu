@@ -313,6 +313,20 @@ static void *virtio_net_test_setup_nosocket(GString *cmd_line, void *arg)
     return arg;
 }
 
+static void *virtio_net_test_setup_failover(GString *cmd_line, void *arg)
+{
+    g_string_append(cmd_line, ",id=standby0,failover=on,bus=pcie-root-port-0 "
+                    "-device virtio-net-pci,id=primary0,failover_pair_id=standby0,bus=pcie-root-port-1 "
+                    "-device pcie-root-port,id=pcie-root-port-0,bus=pcie.0,addr=0x1,chassis=1 "
+                    "-device pcie-root-port,id=pcie-root-port-1,bus=pcie.0,addr=0x2,chassis=2 "
+                    "-netdev hubport,hubid=0,id=hs0 ");
+    return arg;
+}
+
+static void failover(void *obj, void *data, QGuestAllocator *t_alloc)
+{
+}
+
 static void register_virtio_net_test(void)
 {
     QOSGraphTestOptions opts = {
@@ -332,6 +346,11 @@ static void register_virtio_net_test(void)
     qos_add_test("large_tx/uint_max", "virtio-net", large_tx, &opts);
     opts.arg = (gpointer)NET_BUFSIZE;
     qos_add_test("large_tx/net_bufsize", "virtio-net", large_tx, &opts);
+
+    /* failover tests */
+    opts.before = virtio_net_test_setup_failover;
+    qos_add_test("failover", "virtio-net-pci", failover, &opts);
+
 }
 
 libqos_init(register_virtio_net_test);

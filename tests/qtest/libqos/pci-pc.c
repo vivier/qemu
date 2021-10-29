@@ -113,7 +113,7 @@ static void qpci_pc_config_writel(QPCIBus *bus, int devfn, uint8_t offset, uint3
 static void *qpci_pc_get_driver(void *obj, const char *interface)
 {
     QPCIBusPC *qpci = obj;
-    if (!g_strcmp0(interface, "pci-bus")) {
+    if (!g_strcmp0(interface, "pci-bus") || !g_strcmp0(interface, "pcie-bus")) {
         return &qpci->bus;
     }
     fprintf(stderr, "%s not present in pci-bus-pc\n", interface);
