@@ -173,11 +173,9 @@ static void virtio_net_register_nodes(void)
      * Therefore, we do not include "produces" edge for virtio
      * and pci-device yet.
      */
-#if 0
     QPCIAddress addr = {
         .devfn = QPCI_DEVFN(4, 0),
     };
-#endif
 
     QOSGraphEdgeOptions opts = { };
 
@@ -189,18 +187,10 @@ static void virtio_net_register_nodes(void)
     qos_node_produces("virtio-net-device", "virtio-net");
 
     /* virtio-net-pci */
-#if 0
     opts.extra_device_opts = "netdev=hs0,addr=04.0";
     add_qpci_address(&opts, &addr);
     qos_node_create_driver("virtio-net-pci", virtio_net_pci_create);
     qos_node_consumes("virtio-net-pci", "pci-bus", &opts);
-    qos_node_produces("virtio-net-pci", "virtio-net");
-#endif
-
-    opts.before_cmd_line = "-device pcie-root-port,id=pcie-root-port-0,bus=pcie.0,addr=0x4,chassis=1";
-    opts.extra_device_opts = "netdev=hs0,bus=pcie-root-port-0,addr=0x0";
-    qos_node_create_driver("virtio-net-pci", virtio_net_pci_create);
-    qos_node_consumes("virtio-net-pci", "pcie-bus", &opts);
     qos_node_produces("virtio-net-pci", "virtio-net");
 }
 

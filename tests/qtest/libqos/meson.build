@@ -15,6 +15,7 @@ libqos_srcs = files('../libqtest.c',
         # pc
         'pci-pc.c',
         'pcie-pc.c',
+        'pcie-root-port.c',
         'malloc-pc.c',
         'libqos-pc.c',
         'ahci.c',
