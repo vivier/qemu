@@ -6,7 +6,20 @@
 #include "qapi/qmp/qlist.h"
 #include "libqos/malloc-pc.h"
 #include "libqos/virtio-pci.h"
+#include "standard-headers/linux/pci_regs.h"
 #include "standard-headers/linux/virtio_net.h"
+#include "hw/pci/pci.h"
+
+static int qemu_printf(const char *fmt, ...)
+{
+    va_list ap;
+    int ret;
+
+    va_start(ap, fmt);
+    ret = vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    return ret;
+}
 
 static void test_error_id(void)
 {
@@ -214,15 +227,40 @@ static void test_enabled(void)
     uint64_t features;
     //QVirtQueuePCI *tx, *rx;
     QPCIAddress addr;
+    QPCIDevice *root0, *root1;
+    //uint16_t vendor_id, class_device;
 
     qts = qtest_init("-M q35 -nodefaults "
                      "-netdev user,id=hs0 "
-                     "-device virtio-net,bus=pcie.0,id=standby0,failover=on,netdev=hs0,mac=52:54:00:11:11:11,addr=1 "
+                     "-device pcie-root-port,id=root0,addr=0x1,bus=pcie.0,chassis=1 "
+                     "-device virtio-net,bus=root0,id=standby0,failover=off,netdev=hs0,mac=52:54:00:11:11:11 "
                      "-netdev user,id=hs1 "
-                     "-device virtio-net,bus=pcie.0,id=primary0,failover_pair_id=standby0,netdev=hs1,mac=52:54:00:11:11:11,addr=2");
+                     "-device pcie-root-port,id=root1,addr=0x2,bus=pcie.0,chassis=2 "
+                     "-device virtio-net,bus=root1,id=primary0,failover_pair_id=standby0,netdev=hs1,mac=52:54:00:11:11:11 "
+                     "-trace pci_cfg_read -trace pci_cfg_write -trace msix_write_config");
     pc_alloc_init(&guest_malloc, qts, 0);
     pcibus = qpci_new_pc(qts, &guest_malloc);
 
+
+    root0 = qpci_device_find(pcibus, QPCI_DEVFN(1, 0));
+    g_assert(root0);
+    g_assert_cmpint(qpci_config_readw(root0, PCI_VENDOR_ID), ==, PCI_VENDOR_ID_REDHAT);
+    g_assert_cmpint(qpci_config_readw(root0, PCI_CLASS_DEVICE), ==, PCI_CLASS_BRIDGE_PCI);
+    qpci_config_writew(root0, PCI_SECONDARY_BUS, 0x01);
+    qpci_config_writew(root0, PCI_SUBORDINATE_BUS, 0x01);
+    g_assert_cmpint(qpci_config_readw(root0, PCI_HEADER_TYPE), ==, PCI_HEADER_TYPE_BRIDGE);
+
+    root1 = qpci_device_find(pcibus, QPCI_DEVFN(2, 0));
+    g_assert(root1);
+    g_assert_cmpint(qpci_config_readw(root1, PCI_VENDOR_ID), ==, PCI_VENDOR_ID_REDHAT);
+    g_assert_cmpint(qpci_config_readw(root1, PCI_CLASS_DEVICE), ==, PCI_CLASS_BRIDGE_PCI);
+    qpci_config_writew(root1, PCI_SECONDARY_BUS, 0x02);
+    qpci_config_writew(root1, PCI_SUBORDINATE_BUS, 0x01);
+    g_assert_cmpint(qpci_config_readw(root1, PCI_HEADER_TYPE), ==, PCI_HEADER_TYPE_BRIDGE);
+
+    bus = get_bus(qts, 0);
+    dump_qdict(4, bus, qemu_printf);
+return;
     addr.devfn = QPCI_DEVFN(1, 0);
     dev = virtio_pci_new(pcibus, &addr);
 
