@@ -5,6 +5,7 @@
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qlist.h"
 #include "libqos/malloc-pc.h"
+#include "libqos/virtio-pci.h"
 
 #define BASE_MACHINE "-M q35 -nodefaults " \
     "-device pcie-root-port,id=root0,addr=0x1,bus=pcie.0,chassis=1 " \
@@ -287,6 +288,63 @@ static void test_off(void)
     qtest_quit(qts);
 }
 
+static void test_enabled(void)
+{
+    QVirtioPCIDevice *dev;
+    uint64_t features;
+    QPCIAddress addr;
+    QTestState *qts;
+    QDict *device;
+    QDict *bus;
+    char *mac;
+
+    qts = machine_start(BASE_MACHINE
+                     "-netdev user,id=hs0 "
+                     "-device virtio-net,bus=root0,id=standby0,"
+                     "failover=on,netdev=hs0,mac="MAC_STANDBY" "
+                     "-netdev user,id=hs1 "
+                     "-device virtio-net,bus=root1,id=primary0,"
+                     "failover_pair_id=standby0,netdev=hs1,mac="MAC_PRIMARY);
+
+    addr.devfn = QPCI_DEVFN(1 << 5, 0);
+    dev = virtio_pci_new(pcibus, &addr);
+
+    qvirtio_pci_device_enable(dev);
+    qvirtio_start_device(&dev->vdev);
+    features = qvirtio_get_features(&dev->vdev);
+    features = features & ~(QVIRTIO_F_BAD_FEATURE |
+                            (1ull << VIRTIO_RING_F_INDIRECT_DESC) |
+                            (1ull << VIRTIO_RING_F_EVENT_IDX));
+    qvirtio_set_features(&dev->vdev, features);
+    qvirtio_set_driver_ok(&dev->vdev);
+
+    qtest_qmp_eventwait(qts, "FAILOVER_NEGOTIATED");
+
+    bus = get_bus(qts, 0);
+
+    device = find_device(bus, "standby0");
+    g_assert(device);
+    qobject_unref(device);
+
+    device = find_device(bus, "primary0");
+    g_assert(device);
+    qobject_unref(device);
+
+    qobject_unref(bus);
+
+    mac = get_mac(qts, "/machine/peripheral/standby0");
+    g_assert_cmpstr(mac, ==, MAC_STANDBY);
+    g_free(mac);
+
+    mac = get_mac(qts, "/machine/peripheral/primary0");
+    g_assert_cmpstr(mac, ==, MAC_PRIMARY);
+    g_free(mac);
+
+    qpci_free_pc(pcibus);
+    alloc_destroy(&guest_malloc);
+    qtest_quit(qts);
+}
+
 int main(int argc, char **argv)
 {
     g_test_init(&argc, &argv, NULL);
@@ -297,6 +355,7 @@ int main(int argc, char **argv)
     qtest_add_func("failover-virtio-net/params/error/on_mismatch",
                    test_on_mismatch);
     qtest_add_func("failover-virtio-net/params/error/off", test_off);
+    qtest_add_func("failover-virtio-net/params/error/enabled", test_enabled);
 
     return g_test_run();
 }
