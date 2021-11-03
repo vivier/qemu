@@ -4,6 +4,9 @@
 #include "libqos/pci-pc.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qlist.h"
+#include "libqos/malloc-pc.h"
+#include "libqos/virtio-pci.h"
+#include "standard-headers/linux/virtio_net.h"
 
 static void test_error_id(void)
 {
@@ -199,6 +202,71 @@ static void test_off(void)
     qtest_quit(qts);
 }
 
+static void test_enabled(void)
+{
+    QTestState *qts;
+    QDict *bus;
+    QDict *device;
+    char *mac;
+    QPCIBus *pcibus;
+    QGuestAllocator guest_malloc;
+    QVirtioPCIDevice *dev;
+    uint64_t features;
+    //QVirtQueuePCI *tx, *rx;
+    QPCIAddress addr;
+
+    qts = qtest_init("-M q35 -nodefaults "
+                     "-netdev user,id=hs0 "
+                     "-device virtio-net,bus=pcie.0,id=standby0,failover=on,netdev=hs0,mac=52:54:00:11:11:11,addr=1 "
+                     "-netdev user,id=hs1 "
+                     "-device virtio-net,bus=pcie.0,id=primary0,failover_pair_id=standby0,netdev=hs1,mac=52:54:00:11:11:11,addr=2");
+    pc_alloc_init(&guest_malloc, qts, 0);
+    pcibus = qpci_new_pc(qts, &guest_malloc);
+
+    addr.devfn = QPCI_DEVFN(1, 0);
+    dev = virtio_pci_new(pcibus, &addr);
+
+    qvirtio_pci_device_enable(dev);
+    qvirtio_reset(&dev->vdev);
+    qvirtio_set_acknowledge(&dev->vdev);
+    qvirtio_set_driver(&dev->vdev);
+    qvirtio_start_device(&dev->vdev);
+    features = qvirtio_get_features(&dev->vdev);
+    features = features & ~(QVIRTIO_F_BAD_FEATURE |
+                            (1ull << VIRTIO_RING_F_INDIRECT_DESC) |
+                            (1ull << VIRTIO_RING_F_EVENT_IDX));
+    qvirtio_set_features(&dev->vdev, features);
+    //rx = (QVirtQueuePCI *)qvirtqueue_setup(&dev->vdev, &guest_malloc, 0);
+    //tx = (QVirtQueuePCI *)qvirtqueue_setup(&dev->vdev, &guest_malloc, 1);
+    qvirtio_set_driver_ok(&dev->vdev);
+
+    qtest_qmp_eventwait(qts, "FAILOVER_NEGOTIATED");
+
+    bus = get_bus(qts, 0);
+
+    device = find_device(bus, "standby0");
+    g_assert(device);
+    qobject_unref(device);
+
+    device = find_device(bus, "primary0");
+    g_assert(device);
+    qobject_unref(device);
+
+    qobject_unref(bus);
+
+    mac = get_mac(qts, "/machine/peripheral/standby0");
+    g_assert_cmpstr(mac, ==, "52:54:00:11:11:11");
+    g_free(mac);
+
+    mac = get_mac(qts, "/machine/peripheral/primary0");
+    g_assert_cmpstr(mac, ==, "52:54:00:11:11:11");
+    g_free(mac);
+
+    qpci_free_pc(pcibus);
+    alloc_destroy(&guest_malloc);
+    qtest_quit(qts);
+}
+
 int main(int argc, char **argv)
 {
     g_test_init(&argc, &argv, NULL);
@@ -207,6 +275,7 @@ int main(int argc, char **argv)
     qtest_add_func("failover-virtio-net/params/error/pcie", test_error_pcie);
     qtest_add_func("failover-virtio-net/params/error/on", test_on);
     qtest_add_func("failover-virtio-net/params/error/off", test_off);
+    qtest_add_func("failover-virtio-net/params/error/enabled", test_enabled);
 
     return g_test_run();
 }
