@@ -30,6 +30,17 @@ static QTestState *machine_start(const char *args)
     return qts;
 }
 
+static int qemu_printf(const char *fmt, ...)
+{
+    va_list ap;
+    int ret;
+
+    va_start(ap, fmt);
+    ret = vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    return ret;
+}
+
 static void test_error_id(void)
 {
     QTestState *qts;
@@ -304,13 +315,19 @@ static void test_enabled(void)
                      "failover=on,netdev=hs0,mac="MAC_STANDBY" "
                      "-netdev user,id=hs1 "
                      "-device virtio-net,bus=root1,id=primary0,"
-                     "failover_pair_id=standby0,netdev=hs1,mac="MAC_PRIMARY);
+                     "failover_pair_id=standby0,netdev=hs1,mac="MAC_PRIMARY" "
+                     "-trace enable=pci*");
+
+    bus = get_bus(qts, 0);
+    dump_qdict(4, bus, qemu_printf);
 
     addr.devfn = QPCI_DEVFN(1 << 5, 0);
     dev = virtio_pci_new(pcibus, &addr);
-
+    g_assert_nonnull(dev);
     qvirtio_pci_device_enable(dev);
+    if (0) fprintf(stderr, "%s\n", qtest_hmp(qts, "info mtree"));
     qvirtio_start_device(&dev->vdev);
+return;
     features = qvirtio_get_features(&dev->vdev);
     features = features & ~(QVIRTIO_F_BAD_FEATURE |
                             (1ull << VIRTIO_RING_F_INDIRECT_DESC) |
@@ -321,13 +338,15 @@ static void test_enabled(void)
     qtest_qmp_eventwait(qts, "FAILOVER_NEGOTIATED");
 
     bus = get_bus(qts, 0);
+    dump_qdict(4, bus, qemu_printf);
 
+return;
     device = find_device(bus, "standby0");
-    g_assert(device);
+    g_assert_nonnull(device);
     qobject_unref(device);
 
     device = find_device(bus, "primary0");
-    g_assert(device);
+    g_assert_nonnull(device);
     qobject_unref(device);
 
     qobject_unref(bus);
