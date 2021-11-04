@@ -9,6 +9,7 @@
 #include "standard-headers/linux/pci_regs.h"
 #include "standard-headers/linux/virtio_net.h"
 #include "hw/pci/pci.h"
+#include "hw/pci/pci_bridge.h"
 
 static int qemu_printf(const char *fmt, ...)
 {
@@ -109,7 +110,7 @@ static QDict *get_bus(QTestState *qts, int num)
     g_assert(qdict_haskey(resp, "return"));
 
     ret = qdict_get_qlist(resp, "return");
-    g_assert(ret);
+    g_assert_nonnull(ret);
 
     while ((obj = qlist_pop(ret))) {
         QDict *bus;
@@ -163,11 +164,11 @@ static void test_on(void)
     bus = get_bus(qts, 0);
 
     device = find_device(bus, "standby0");
-    g_assert(device);
+    g_assert_nonnull(device);
     qobject_unref(device);
 
     device = find_device(bus, "primary0");
-    g_assert(!device);
+    g_assert_null(device);
     qobject_unref(device);
 
     qobject_unref(bus);
@@ -195,11 +196,11 @@ static void test_off(void)
     bus = get_bus(qts, 0);
 
     device = find_device(bus, "standby0");
-    g_assert(device);
+    g_assert_nonnull(device);
     qobject_unref(device);
 
     device = find_device(bus, "primary0");
-    g_assert(device);
+    g_assert_nonnull(device);
     qobject_unref(device);
 
     qobject_unref(bus);
@@ -215,6 +216,131 @@ static void test_off(void)
     qtest_quit(qts);
 }
 
+static void get_pcibus(QPCIBus *bus, int devfn)
+{
+    QPCIDevice *root;
+
+    root = qpci_device_find(bus, devfn);
+    g_assert_nonnull(root);
+
+    g_assert_cmpint(qpci_config_readw(root, PCI_VENDOR_ID), ==,
+                    PCI_VENDOR_ID_REDHAT);
+    g_assert_cmpint(qpci_config_readw(root, PCI_CLASS_DEVICE), ==,
+                    PCI_CLASS_BRIDGE_PCI);
+
+    qpci_config_writeb(root, PCI_SECONDARY_BUS, devfn >> 3);
+    qpci_config_writeb(root, PCI_SUBORDINATE_BUS, devfn >> 3);
+
+    g_assert_cmpint(qpci_config_readw(root, PCI_HEADER_TYPE), ==,
+                    PCI_HEADER_TYPE_BRIDGE);
+
+    qpci_device_enable(root);
+}
+
+static uint8_t qpci_find_resource_reserve_capability(QPCIDevice *dev)
+{
+    uint16_t device_id;
+    uint8_t cap = 0;
+
+    if (qpci_config_readw(dev, PCI_VENDOR_ID) != PCI_VENDOR_ID_REDHAT) {
+        return 0;
+    }
+
+    device_id = qpci_config_readw(dev, PCI_DEVICE_ID);
+
+    if (device_id != PCI_DEVICE_ID_REDHAT_PCIE_RP &&
+        device_id != PCI_DEVICE_ID_REDHAT_BRIDGE) {
+        return 0;
+    }
+
+    do {
+        cap = qpci_find_capability(dev, PCI_CAP_ID_VNDR, cap);
+    } while (cap &&
+             qpci_config_readb(dev, cap + REDHAT_PCI_CAP_TYPE_OFFSET) != REDHAT_PCI_CAP_RESOURCE_RESERVE);
+    if (cap) {
+        uint8_t cap_len = qpci_config_readb(dev, cap + PCI_CAP_FLAGS);
+        if (cap_len < REDHAT_PCI_CAP_RES_RESERVE_CAP_SIZE) {
+            return 0;
+        }
+    }
+    return cap;
+}
+
+static void qpci_init_all_buses(QPCIBus *qbus, int bus, int *pci_bus)
+{
+    QPCIDevice *dev;
+    uint16_t class;
+    uint8_t pribus, secbus, subbus;
+    int i;
+
+    for (i = bus; i < 32; i++ ) {
+        dev = qpci_device_find(qbus, QPCI_DEVFN(i, 0));
+        if (dev == NULL) {
+            continue;
+        }
+        class = qpci_config_readw(dev, PCI_CLASS_DEVICE);
+        if (class == PCI_CLASS_BRIDGE_PCI) {
+            qpci_config_writeb(dev, PCI_SECONDARY_BUS, 255);
+            qpci_config_writeb(dev, PCI_SUBORDINATE_BUS, 0);
+        }
+        g_free(dev);
+    }
+
+    for (i = bus; i < 32; i++ ) {
+        dev = qpci_device_find(qbus, QPCI_DEVFN(i, 0));
+	if (dev == NULL) {
+            continue;
+        }
+        class = qpci_config_readw(dev, PCI_CLASS_DEVICE);
+        if (class != PCI_CLASS_BRIDGE_PCI) {
+            continue;
+        }
+
+        pribus = qpci_config_readb(dev, PCI_PRIMARY_BUS);
+        if (pribus != bus) {
+            qpci_config_writeb(dev, PCI_PRIMARY_BUS, bus);
+        }
+
+        secbus = qpci_config_readb(dev, PCI_SECONDARY_BUS);
+        (*pci_bus)++;
+        if (*pci_bus != secbus) {
+            secbus = *pci_bus;
+            qpci_config_writeb(dev, PCI_SECONDARY_BUS, secbus);
+        }
+
+        subbus = qpci_config_readb(dev, PCI_SUBORDINATE_BUS);
+        qpci_config_writeb(dev, PCI_SUBORDINATE_BUS, 255);
+
+        qpci_init_all_buses(qbus, secbus << 5, pci_bus);
+
+        if (subbus != *pci_bus) {
+            uint8_t res_bus = *pci_bus;
+            uint8_t cap = qpci_find_resource_reserve_capability(dev);
+
+            if (cap) {
+                uint32_t tmp_res_bus;
+
+                tmp_res_bus = qpci_config_readl(dev, cap + REDHAT_PCI_CAP_RES_RESERVE_BUS_RES);
+                if (tmp_res_bus != (uint32_t)-1) {
+                    res_bus = tmp_res_bus & 0xFF;
+                    if ((uint8_t)(res_bus + secbus) < secbus ||
+                        (uint8_t)(res_bus + secbus) < res_bus) {
+                        res_bus = 0;
+                    }
+                    if (secbus + res_bus > *pci_bus) {
+                        res_bus = secbus + res_bus;
+                    }
+                }
+            }
+            subbus = res_bus;
+            *pci_bus = res_bus;
+        }
+
+        qpci_config_writeb(dev, PCI_SUBORDINATE_BUS, subbus);
+        g_free(dev);
+    }
+}
+
 static void test_enabled(void)
 {
     QTestState *qts;
@@ -227,8 +353,6 @@ static void test_enabled(void)
     uint64_t features;
     //QVirtQueuePCI *tx, *rx;
     QPCIAddress addr;
-    QPCIDevice *root0, *root1;
-    //uint16_t vendor_id, class_device;
 
     qts = qtest_init("-M q35 -nodefaults "
                      "-netdev user,id=hs0 "
@@ -237,38 +361,25 @@ static void test_enabled(void)
                      "-netdev user,id=hs1 "
                      "-device pcie-root-port,id=root1,addr=0x2,bus=pcie.0,chassis=2 "
                      "-device virtio-net,bus=root1,id=primary0,failover_pair_id=standby0,netdev=hs1,mac=52:54:00:11:11:11 "
-                     "-trace pci_cfg_read -trace pci_cfg_write -trace msix_write_config");
+                     "-trace enable=pci*");
     pc_alloc_init(&guest_malloc, qts, 0);
     pcibus = qpci_new_pc(qts, &guest_malloc);
 
-
-    root0 = qpci_device_find(pcibus, QPCI_DEVFN(1, 0));
-    g_assert(root0);
-    g_assert_cmpint(qpci_config_readw(root0, PCI_VENDOR_ID), ==, PCI_VENDOR_ID_REDHAT);
-    g_assert_cmpint(qpci_config_readw(root0, PCI_CLASS_DEVICE), ==, PCI_CLASS_BRIDGE_PCI);
-    qpci_config_writew(root0, PCI_SECONDARY_BUS, 0x01);
-    qpci_config_writew(root0, PCI_SUBORDINATE_BUS, 0x01);
-    g_assert_cmpint(qpci_config_readw(root0, PCI_HEADER_TYPE), ==, PCI_HEADER_TYPE_BRIDGE);
-
-    root1 = qpci_device_find(pcibus, QPCI_DEVFN(2, 0));
-    g_assert(root1);
-    g_assert_cmpint(qpci_config_readw(root1, PCI_VENDOR_ID), ==, PCI_VENDOR_ID_REDHAT);
-    g_assert_cmpint(qpci_config_readw(root1, PCI_CLASS_DEVICE), ==, PCI_CLASS_BRIDGE_PCI);
-    qpci_config_writew(root1, PCI_SECONDARY_BUS, 0x02);
-    qpci_config_writew(root1, PCI_SUBORDINATE_BUS, 0x01);
-    g_assert_cmpint(qpci_config_readw(root1, PCI_HEADER_TYPE), ==, PCI_HEADER_TYPE_BRIDGE);
+int nb_bus = 0;
+    qpci_init_all_buses(pcibus, 0, &nb_bus);
+fprintf(stderr, "nb_bus %d\n", nb_bus);
+    if (0) get_pcibus(pcibus, QPCI_DEVFN(1, 0));
+    //get_pcibus(pcibus, QPCI_DEVFN(2, 0));
 
     bus = get_bus(qts, 0);
     dump_qdict(4, bus, qemu_printf);
-return;
-    addr.devfn = QPCI_DEVFN(1, 0);
+    addr.devfn = QPCI_DEVFN(1 << 5, 0);
     dev = virtio_pci_new(pcibus, &addr);
-
+    g_assert_nonnull(dev);
     qvirtio_pci_device_enable(dev);
-    qvirtio_reset(&dev->vdev);
-    qvirtio_set_acknowledge(&dev->vdev);
-    qvirtio_set_driver(&dev->vdev);
+    if (0) fprintf(stderr, "%s\n", qtest_hmp(qts, "info mtree"));
     qvirtio_start_device(&dev->vdev);
+return;
     features = qvirtio_get_features(&dev->vdev);
     features = features & ~(QVIRTIO_F_BAD_FEATURE |
                             (1ull << VIRTIO_RING_F_INDIRECT_DESC) |
@@ -281,13 +392,15 @@ return;
     qtest_qmp_eventwait(qts, "FAILOVER_NEGOTIATED");
 
     bus = get_bus(qts, 0);
+    dump_qdict(4, bus, qemu_printf);
 
+return;
     device = find_device(bus, "standby0");
-    g_assert(device);
+    g_assert_nonnull(device);
     qobject_unref(device);
 
     device = find_device(bus, "primary0");
-    g_assert(device);
+    g_assert_nonnull(device);
     qobject_unref(device);
 
     qobject_unref(bus);

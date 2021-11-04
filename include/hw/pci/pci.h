@@ -169,6 +169,12 @@ enum {
 
 #define PCI_NUM_PINS 4 /* A-D */
 
+/* Offset of vendor-specific capability type field */
+#define PCI_CAP_REDHAT_TYPE_OFFSET  3
+
+/* List of valid Red Hat vendor-specific capability types */
+#define REDHAT_CAP_RESOURCE_RESERVE 1
+
 /* Bits in cap_present field. */
 enum {
     QEMU_PCI_CAP_MSI = 0x1,
