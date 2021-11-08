@@ -6,6 +6,7 @@
 #include "qapi/qmp/qlist.h"
 #include "libqos/malloc-pc.h"
 #include "libqos/virtio-pci.h"
+#include "hw/pci/pci.h"
 
 #define BASE_MACHINE "-M q35 -nodefaults " \
     "-device pcie-root-port,id=root0,addr=0x1,bus=pcie.0,chassis=1 " \
@@ -28,17 +29,6 @@ static QTestState *machine_start(const char *args)
     g_assert(qpci_secondary_buses_init(pcibus) == 2);
 
     return qts;
-}
-
-static int qemu_printf(const char *fmt, ...)
-{
-    va_list ap;
-    int ret;
-
-    va_start(ap, fmt);
-    ret = vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    return ret;
 }
 
 static void test_error_id(void)
@@ -299,11 +289,28 @@ static void test_off(void)
     qtest_quit(qts);
 }
 
-static void test_enabled(void)
+static void start_virtio_net(QTestState *qts)
 {
     QVirtioPCIDevice *dev;
     uint64_t features;
     QPCIAddress addr;
+
+    addr.devfn = QPCI_DEVFN(1 << 5, 0);
+    dev = virtio_pci_new(pcibus, &addr);
+    g_assert_nonnull(dev);
+    qvirtio_pci_device_enable(dev);
+    qvirtio_start_device(&dev->vdev);
+    features = qvirtio_get_features(&dev->vdev);
+    features = features & ~(QVIRTIO_F_BAD_FEATURE |
+                            (1ull << VIRTIO_RING_F_INDIRECT_DESC) |
+                            (1ull << VIRTIO_RING_F_EVENT_IDX));
+    qvirtio_set_features(&dev->vdev, features);
+    qvirtio_set_driver_ok(&dev->vdev);
+
+    qtest_qmp_eventwait(qts, "FAILOVER_NEGOTIATED");
+}
+static void test_enabled(void)
+{
     QTestState *qts;
     QDict *device;
     QDict *bus;
@@ -316,31 +323,30 @@ static void test_enabled(void)
                      "-netdev user,id=hs1 "
                      "-device virtio-net,bus=root1,id=primary0,"
                      "failover_pair_id=standby0,netdev=hs1,mac="MAC_PRIMARY" "
-                     "-trace enable=pci*");
+                     );
+
+{ /* XXX */
+QPCIDevice *pd;
+pd = qpci_device_find(pcibus, QPCI_DEVFN(1,0));
+g_assert_nonnull(pd);
+qpci_config_writew(pd, PCI_COMMAND, PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_SERR);
+qpci_iomap(pd, 4, NULL);
+}
 
     bus = get_bus(qts, 0);
-    dump_qdict(4, bus, qemu_printf);
 
-    addr.devfn = QPCI_DEVFN(1 << 5, 0);
-    dev = virtio_pci_new(pcibus, &addr);
-    g_assert_nonnull(dev);
-    qvirtio_pci_device_enable(dev);
-    if (0) fprintf(stderr, "%s\n", qtest_hmp(qts, "info mtree"));
-    qvirtio_start_device(&dev->vdev);
-return;
-    features = qvirtio_get_features(&dev->vdev);
-    features = features & ~(QVIRTIO_F_BAD_FEATURE |
-                            (1ull << VIRTIO_RING_F_INDIRECT_DESC) |
-                            (1ull << VIRTIO_RING_F_EVENT_IDX));
-    qvirtio_set_features(&dev->vdev, features);
-    qvirtio_set_driver_ok(&dev->vdev);
+    device = find_device(bus, "standby0");
+    g_assert_nonnull(device);
+    qobject_unref(device);
+    start_virtio_net(qts);
 
-    qtest_qmp_eventwait(qts, "FAILOVER_NEGOTIATED");
+    device = find_device(bus, "primary0");
+    g_assert_null(device);
+
+    start_virtio_net(qts);
 
     bus = get_bus(qts, 0);
-    dump_qdict(4, bus, qemu_printf);
 
-return;
     device = find_device(bus, "standby0");
     g_assert_nonnull(device);
     qobject_unref(device);
