@@ -1801,6 +1801,130 @@ static void test_multi_in(gconstpointer opaque)
     machine_stop(qts);
 }
 
+static void test_unplug_pci_migrate_out(gconstpointer opaque)
+{
+    QTestState *qts;
+    QDict *resp, *args, *ret;
+    g_autofree gchar *uri = g_strdup_printf("exec: cat > %s", (gchar *)opaque);
+    const gchar *status;
+
+    qts = machine_start(BASE_MACHINE
+                        "-netdev user,id=hs0 "
+                        "-device virtio-net,id=unplug0,bus=root0,netdev=hs0,"
+                        "mac="MAC_PRIMARY0",unplug-on-migration=on ", 2);
+
+    check_one_card(qts, true, "unplug0", MAC_PRIMARY0);
+
+    args = qdict_from_jsonf_nofail("{}");
+    g_assert_nonnull(args);
+    qdict_put_str(args, "uri", uri);
+
+    resp = qtest_qmp(qts, "{ 'execute': 'migrate', 'arguments': %p}", args);
+    g_assert(qdict_haskey(resp, "return"));
+    qobject_unref(resp);
+
+    /* the event is sent whan QEMU asks the OS to unplug the card */
+    resp = get_unplug_primary_event(qts);
+    g_assert_cmpstr(qdict_get_str(resp, "device-id"), ==, "unplug0");
+    qobject_unref(resp);
+
+    /* wait the end of the migration setup phase */
+    while (true) {
+        ret = migrate_status(qts);
+
+        status = qdict_get_str(ret, "status");
+        if (strcmp(status, "wait-unplug") == 0) {
+            break;
+        }
+
+        /* The migration must not start if the card is not ejected */
+        g_assert_cmpstr(status, !=, "active");
+        g_assert_cmpstr(status, !=, "completed");
+        g_assert_cmpstr(status, !=, "failed");
+        g_assert_cmpstr(status, !=, "cancelling");
+        g_assert_cmpstr(status, !=, "cancelled");
+        qobject_unref(ret);
+    }
+    qobject_unref(ret);
+
+    if (g_test_slow()) {
+        /* check we stay in wait-unplug while the card is not eject */
+        int i;
+
+        for (i = 0; i < 10; i++) {
+            sleep(1);
+            ret = migrate_status(qts);
+            status = qdict_get_str(ret, "status");
+            g_assert_cmpstr(status, ==, "wait-unplug");
+        }
+    }
+
+    /* OS unplugs the card, QEMU can move from wait-unplug state */
+    qtest_outl(qts, ACPI_PCIHP_ADDR_ICH9 + PCI_SEL_BASE, 1);
+    qtest_outl(qts, ACPI_PCIHP_ADDR_ICH9 + PCI_EJ_BASE, 1);
+
+    while (true) {
+        ret = migrate_status(qts);
+
+        status = qdict_get_str(ret, "status");
+        if (strcmp(status, "completed") == 0) {
+            break;
+        }
+        g_assert_cmpstr(status, !=, "failed");
+        g_assert_cmpstr(status, !=, "cancelling");
+        g_assert_cmpstr(status, !=, "cancelled");
+    }
+
+    qtest_qmp_eventwait(qts, "STOP");
+
+    /*
+     * in fact, the card is ejected from the point of view of kernel
+     * but not really from QEMU to be able to hotplug it back if
+     * migration fails. So we can't check that:
+     *   check_cards(qts, true, false);
+     */
+
+    machine_stop(qts);
+}
+
+static void test_unplug_pci_migrate_in(gconstpointer opaque)
+{
+    QTestState *qts;
+    QDict *resp, *args, *ret;
+    g_autofree gchar *uri = g_strdup_printf("exec: cat %s", (gchar *)opaque);
+
+    qts = machine_start(BASE_MACHINE
+                        "-netdev user,id=hs0 "
+                        "-device virtio-net,id=unplug0,bus=root0,netdev=hs0,"
+                        "mac="MAC_PRIMARY0",unplug-on-migration=on "
+                        "-incoming defer ", 2);
+
+    check_one_card(qts, false, "unplug0", MAC_PRIMARY0);
+
+    args = qdict_from_jsonf_nofail("{}");
+    g_assert_nonnull(args);
+    qdict_put_str(args, "uri", uri);
+
+    resp = qtest_qmp(qts, "{ 'execute': 'migrate-incoming', 'arguments': %p}",
+                     args);
+    g_assert(qdict_haskey(resp, "return"));
+    qobject_unref(resp);
+
+    resp = get_migration_event(qts);
+    g_assert_cmpstr(qdict_get_str(resp, "status"), ==, "setup");
+    qobject_unref(resp);
+
+    qtest_qmp_eventwait(qts, "RESUME");
+
+    check_one_card(qts, true, "unplug0", MAC_PRIMARY0);
+
+    ret = migrate_status(qts);
+    g_assert_cmpstr(qdict_get_str(ret, "status"), ==, "completed");
+    qobject_unref(ret);
+
+    machine_stop(qts);
+}
+
 int main(int argc, char **argv)
 {
     const gchar *tmpdir = g_get_tmp_dir();
@@ -1857,6 +1981,10 @@ int main(int argc, char **argv)
                         tmpfile, test_multi_out);
     qtest_add_data_func("failover-virtio-net/migrate/multi/in",
                    tmpfile, test_multi_in);
+    qtest_add_data_func("failover-virtio-net/unplug_pci/migrate/out",
+                   tmpfile, test_unplug_pci_migrate_out);
+    qtest_add_data_func("failover-virtio-net/unplug_pci/migrate/in",
+                   tmpfile, test_unplug_pci_migrate_in);
 
     ret = g_test_run();
 
