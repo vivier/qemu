@@ -685,7 +685,6 @@ static void test_migrate_out(gconstpointer opaque)
         g_assert_cmpstr(status, !=, "failed");
         g_assert_cmpstr(status, !=, "cancelling");
         g_assert_cmpstr(status, !=, "cancelled");
-
         qobject_unref(ret);
     }
 
@@ -1801,6 +1800,74 @@ static void test_multi_in(gconstpointer opaque)
     machine_stop(qts);
 }
 
+static void test_stop_migrate(gconstpointer opaque)
+{
+    QTestState *qts;
+    QDict *resp, *args, *ret;
+    g_autofree gchar *uri = g_strdup_printf("exec: cat > %s", (gchar *)opaque);
+
+    qts = machine_start(BASE_MACHINE
+                     "-netdev user,id=hs0 "
+                     "-netdev user,id=hs1 ",
+                     2);
+
+    check_one_card(qts, false, "standby0", MAC_STANDBY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
+
+    qtest_qmp_device_add(qts, "virtio-net", "standby0",
+                         "{'bus': 'root0',"
+                         "'failover': 'on',"
+                         "'netdev': 'hs0',"
+                         "'mac': '"MAC_STANDBY0"'}");
+
+    check_one_card(qts, true, "standby0", MAC_STANDBY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
+
+    start_virtio_net(qts, 1, 0, "standby0", true);
+
+    check_one_card(qts, true, "standby0", MAC_STANDBY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
+
+    qtest_qmp_device_add(qts, "virtio-net", "primary0",
+                         "{'bus': 'root1',"
+                         "'failover_pair_id': 'standby0',"
+                         "'netdev': 'hs1',"
+                         "'mac': '"MAC_PRIMARY0"'}");
+
+    check_one_card(qts, true, "standby0", MAC_STANDBY0);
+    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+
+    resp = qtest_qmp(qts, "{ 'execute': 'stop' }");
+    g_assert(qdict_haskey(resp, "return"));
+    qobject_unref(resp);
+
+    qtest_qmp_eventwait(qts, "STOP");
+
+    args = qdict_from_jsonf_nofail("{}");
+    g_assert_nonnull(args);
+    qdict_put_str(args, "uri", uri);
+
+    resp = qtest_qmp(qts, "{ 'execute': 'migrate', 'arguments': %p}", args);
+    g_assert(qdict_haskey(resp, "return"));
+    qobject_unref(resp);
+
+    while (true) {
+        const gchar *status;
+        ret = migrate_status(qts);
+        status = qdict_get_str(ret, "status");
+        if (strcmp(status, "cancelled") == 0) {
+            break;
+        }
+        g_assert_cmpstr(status, !=, "active");
+        g_assert_cmpstr(status, !=, "completed");
+        g_assert_cmpstr(status, !=, "failed");
+        qobject_unref(ret);
+    }
+    qobject_unref(ret);
+
+    machine_stop(qts);
+}
+
 static void test_unplug_pci_migrate_out(gconstpointer opaque)
 {
     QTestState *qts;
@@ -1981,6 +2048,8 @@ int main(int argc, char **argv)
                         tmpfile, test_multi_out);
     qtest_add_data_func("failover-virtio-net/migrate/multi/in",
                    tmpfile, test_multi_in);
+    qtest_add_data_func("failover-virtio-net/migrate/stop",
+                   tmpfile, test_stop_migrate);
     qtest_add_data_func("failover-virtio-net/unplug_pci/migrate/out",
                    tmpfile, test_unplug_pci_migrate_out);
     qtest_add_data_func("failover-virtio-net/unplug_pci/migrate/in",
