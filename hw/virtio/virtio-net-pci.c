@@ -18,25 +18,9 @@
 #include "qemu/osdep.h"
 
 #include "hw/qdev-properties.h"
-#include "hw/virtio/virtio-net.h"
-#include "virtio-pci.h"
+#include "hw/virtio/virtio-net-pci.h"
 #include "qapi/error.h"
 #include "qemu/module.h"
-#include "qom/object.h"
-
-typedef struct VirtIONetPCI VirtIONetPCI;
-
-/*
- * virtio-net-pci: This extends VirtioPCIProxy.
- */
-#define TYPE_VIRTIO_NET_PCI "virtio-net-pci-base"
-DECLARE_INSTANCE_CHECKER(VirtIONetPCI, VIRTIO_NET_PCI,
-                         TYPE_VIRTIO_NET_PCI)
-
-struct VirtIONetPCI {
-    VirtIOPCIProxy parent_obj;
-    VirtIONet vdev;
-};
 
 static Property virtio_net_properties[] = {
     DEFINE_PROP_BIT("ioeventfd", VirtIOPCIProxy, flags,
