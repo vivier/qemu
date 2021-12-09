@@ -18,6 +18,8 @@
 #include "libqos/virtio-pci.h"
 #include "hw/pci/pci.h"
 
+#define VIRTIO_NET_F_STANDBY    62
+
 #define ACPI_PCIHP_ADDR_ICH9    0x0cc0
 #define PCI_EJ_BASE             0x0008
 #define PCI_SEL_BASE            0x0010
@@ -251,62 +253,6 @@ static void check_one_card(QTestState *qts, bool present,
     qobject_unref(bus);
 }
 
-static void test_on(void)
-{
-    QTestState *qts;
-
-    qts = machine_start(BASE_MACHINE
-                        "-netdev user,id=hs0 "
-                        "-device virtio-net,bus=root0,id=standby0,"
-                        "failover=on,netdev=hs0,mac="MAC_STANDBY0" "
-                        "-device virtio-net,bus=root1,id=primary0,"
-                        "failover_pair_id=standby0,netdev=hs1,mac="MAC_PRIMARY0,
-                        2);
-
-    check_one_card(qts, true, "standby0", MAC_STANDBY0);
-    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
-
-    machine_stop(qts);
-}
-
-static void test_on_mismatch(void)
-{
-    QTestState *qts;
-
-    qts = machine_start(BASE_MACHINE
-                     "-netdev user,id=hs0 "
-                     "-device virtio-net,bus=root0,id=standby0,"
-                     "failover=on,netdev=hs0,mac="MAC_STANDBY0" "
-                     "-netdev user,id=hs1 "
-                     "-device virtio-net,bus=root1,id=primary0,"
-                     "failover_pair_id=standby1,netdev=hs1,mac="MAC_PRIMARY0,
-                     2);
-
-    check_one_card(qts, true, "standby0", MAC_STANDBY0);
-    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
-
-    machine_stop(qts);
-}
-
-static void test_off(void)
-{
-    QTestState *qts;
-
-    qts = machine_start(BASE_MACHINE
-                     "-netdev user,id=hs0 "
-                     "-device virtio-net,bus=root0,id=standby0,"
-                     "failover=off,netdev=hs0,mac="MAC_STANDBY0" "
-                     "-netdev user,id=hs1 "
-                     "-device virtio-net,bus=root1,id=primary0,"
-                     "failover_pair_id=standby0,netdev=hs1,mac="MAC_PRIMARY0,
-                     2);
-
-    check_one_card(qts, true, "standby0", MAC_STANDBY0);
-    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
-
-    machine_stop(qts);
-}
-
 static QDict *get_failover_negociated_event(QTestState *qts)
 {
     QDict *resp;
@@ -323,31 +269,118 @@ static QDict *get_failover_negociated_event(QTestState *qts)
     return data;
 }
 
-static QVirtioPCIDevice *start_virtio_net(QTestState *qts, int bus, int slot,
-                             const char *id)
+static QVirtioPCIDevice *start_virtio_net_internal(QTestState *qts,
+                                                   int bus, int slot,
+                                                   uint64_t *features)
 {
     QVirtioPCIDevice *dev;
-    uint64_t features;
     QPCIAddress addr;
-    QDict *resp;
 
     addr.devfn = QPCI_DEVFN((bus << 5) + slot, 0);
     dev = virtio_pci_new(pcibus, &addr);
     g_assert_nonnull(dev);
     qvirtio_pci_device_enable(dev);
     qvirtio_start_device(&dev->vdev);
-    features = qvirtio_get_features(&dev->vdev);
-    features = features & ~(QVIRTIO_F_BAD_FEATURE |
-                            (1ull << VIRTIO_RING_F_INDIRECT_DESC) |
-                            (1ull << VIRTIO_RING_F_EVENT_IDX));
-    qvirtio_set_features(&dev->vdev, features);
+    *features &= qvirtio_get_features(&dev->vdev);
+    qvirtio_set_features(&dev->vdev, *features);
     qvirtio_set_driver_ok(&dev->vdev);
+    return dev;
+}
 
-    resp = get_failover_negociated_event(qts);
-    g_assert_cmpstr(qdict_get_str(resp, "device-id"), ==, id);
-    qobject_unref(resp);
+static QVirtioPCIDevice *start_virtio_net(QTestState *qts, int bus, int slot,
+                                          const char *id, bool failover)
+{
+    QVirtioPCIDevice *dev;
+    uint64_t features;
+
+    features = ~(QVIRTIO_F_BAD_FEATURE |
+                 (1ull << VIRTIO_RING_F_INDIRECT_DESC) |
+                 (1ull << VIRTIO_RING_F_EVENT_IDX));
+
+    dev = start_virtio_net_internal(qts, bus, slot, &features);
+
+    g_assert(!!(features & (1ull << VIRTIO_NET_F_STANDBY)) == failover);
+
+    if (failover) {
+        QDict *resp;
+
+        resp = get_failover_negociated_event(qts);
+        g_assert_cmpstr(qdict_get_str(resp, "device-id"), ==, id);
+        qobject_unref(resp);
+    }
 
     return dev;
+}
+
+static void test_on(void)
+{
+    QTestState *qts;
+
+    qts = machine_start(BASE_MACHINE
+                        "-netdev user,id=hs0 "
+                        "-device virtio-net,bus=root0,id=standby0,"
+                        "failover=on,netdev=hs0,mac="MAC_STANDBY0" "
+                        "-netdev user,id=hs1 "
+                        "-device virtio-net,bus=root1,id=primary0,"
+                        "failover_pair_id=standby0,netdev=hs1,mac="MAC_PRIMARY0,
+                        2);
+
+    check_one_card(qts, true, "standby0", MAC_STANDBY0);
+    check_one_card(qts, false, "primary0", MAC_PRIMARY0);
+
+    machine_stop(qts);
+}
+
+static void test_on_mismatch(void)
+{
+    QTestState *qts;
+    QVirtioPCIDevice *vdev;
+
+    qts = machine_start(BASE_MACHINE
+                     "-netdev user,id=hs0 "
+                     "-device virtio-net,bus=root0,id=standby0,"
+                     "failover=on,netdev=hs0,mac="MAC_STANDBY0" "
+                     "-netdev user,id=hs1 "
+                     "-device virtio-net,bus=root1,id=primary0,"
+                     "failover_pair_id=standby1,netdev=hs1,mac="MAC_PRIMARY0,
+                     2);
+
+    check_one_card(qts, true, "standby0", MAC_STANDBY0);
+    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
+
+    check_one_card(qts, true, "standby0", MAC_STANDBY0);
+    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+
+    qos_object_destroy((QOSGraphObject *)vdev);
+    machine_stop(qts);
+}
+
+static void test_off(void)
+{
+    QTestState *qts;
+    QVirtioPCIDevice *vdev;
+
+    qts = machine_start(BASE_MACHINE
+                     "-netdev user,id=hs0 "
+                     "-device virtio-net,bus=root0,id=standby0,"
+                     "failover=off,netdev=hs0,mac="MAC_STANDBY0" "
+                     "-netdev user,id=hs1 "
+                     "-device virtio-net,bus=root1,id=primary0,"
+                     "failover_pair_id=standby0,netdev=hs1,mac="MAC_PRIMARY0,
+                     2);
+
+    check_one_card(qts, true, "standby0", MAC_STANDBY0);
+    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+
+    vdev = start_virtio_net(qts, 1, 0, "standby0", false);
+
+    check_one_card(qts, true, "standby0", MAC_STANDBY0);
+    check_one_card(qts, true, "primary0", MAC_PRIMARY0);
+
+    qos_object_destroy((QOSGraphObject *)vdev);
+    machine_stop(qts);
 }
 
 static void test_enabled(void)
@@ -367,7 +400,7 @@ static void test_enabled(void)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, true, "primary0", MAC_PRIMARY0);
@@ -390,7 +423,7 @@ static void test_hotplug_1(void)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
@@ -432,7 +465,7 @@ static void test_hotplug_1_reverse(void)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, true, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, true, "primary0", MAC_PRIMARY0);
@@ -463,7 +496,7 @@ static void test_hotplug_2(void)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
@@ -519,7 +552,7 @@ static void test_hotplug_2_reverse(void)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, true, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, true, "primary0", MAC_PRIMARY0);
@@ -584,7 +617,7 @@ static void test_migrate_out(gconstpointer opaque)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
@@ -780,7 +813,7 @@ static void test_migrate_abort_wait_unplug(gconstpointer opaque)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
@@ -870,7 +903,7 @@ static void test_migrate_abort_active(gconstpointer opaque)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
@@ -964,7 +997,7 @@ static void test_migrate_abort_timeout(gconstpointer opaque)
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
 
-    vdev = start_virtio_net(qts, 1, 0, "standby0");
+    vdev = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, false, "primary0", MAC_PRIMARY0);
@@ -1075,7 +1108,7 @@ static void test_multi_out(gconstpointer opaque)
     check_one_card(qts, false, "standby1", MAC_STANDBY1);
     check_one_card(qts, false, "primary1", MAC_PRIMARY1);
 
-    vdev0 = start_virtio_net(qts, 1, 0, "standby0");
+    vdev0 = start_virtio_net(qts, 1, 0, "standby0", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, true, "primary0", MAC_PRIMARY0);
@@ -1106,7 +1139,7 @@ static void test_multi_out(gconstpointer opaque)
     check_one_card(qts, true, "standby1", MAC_STANDBY1);
     check_one_card(qts, false, "primary1", MAC_PRIMARY1);
 
-    vdev1 = start_virtio_net(qts, 3, 0, "standby1");
+    vdev1 = start_virtio_net(qts, 3, 0, "standby1", true);
 
     check_one_card(qts, true, "standby0", MAC_STANDBY0);
     check_one_card(qts, true, "primary0", MAC_PRIMARY0);
