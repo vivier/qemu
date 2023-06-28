@@ -2071,6 +2071,8 @@ SRST
         ``window-close=on|off`` : Allow to quit qemu with window close button
 
         ``show-menubar=on|off`` : Display the main window menubar, defaults to "on"
+        ``zoom-to-fit=on|off`` : Expand video output to the window size,
+                                 defaults to "off"
 
     ``curses[,charset=<encoding>]``
         Display video output via curses. For graphics device models
