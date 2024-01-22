@@ -123,14 +123,6 @@ e1000e_intmgr_timer_resume(E1000IntrDelayTimer *timer)
     }
 }
 
-static void
-e1000e_intmgr_timer_pause(E1000IntrDelayTimer *timer)
-{
-    if (timer->running) {
-        timer_del(timer->timer);
-    }
-}
-
 static inline void
 e1000e_intrmgr_stop_timer(E1000IntrDelayTimer *timer)
 {
@@ -395,24 +387,6 @@ e1000e_intrmgr_resume(E1000ECore *core)
 
     for (i = 0; i < E1000E_MSIX_VEC_NUM; i++) {
         e1000e_intmgr_timer_resume(&core->eitr[i]);
-    }
-}
-
-static void
-e1000e_intrmgr_pause(E1000ECore *core)
-{
-    int i;
-
-    e1000e_intmgr_timer_pause(&core->radv);
-    e1000e_intmgr_timer_pause(&core->rdtr);
-    e1000e_intmgr_timer_pause(&core->raid);
-    e1000e_intmgr_timer_pause(&core->tidv);
-    e1000e_intmgr_timer_pause(&core->tadv);
-
-    e1000e_intmgr_timer_pause(&core->itr);
-
-    for (i = 0; i < E1000E_MSIX_VEC_NUM; i++) {
-        e1000e_intmgr_timer_pause(&core->eitr[i]);
     }
 }
 
@@ -3351,22 +3325,6 @@ e1000e_autoneg_resume(E1000ECore *core)
     }
 }
 
-static void
-e1000e_vm_state_change(void *opaque, bool running, RunState state)
-{
-    E1000ECore *core = opaque;
-
-    if (running) {
-        trace_e1000e_vm_state_running();
-        e1000e_intrmgr_resume(core);
-        e1000e_autoneg_resume(core);
-    } else {
-        trace_e1000e_vm_state_stopped();
-        e1000e_autoneg_pause(core);
-        e1000e_intrmgr_pause(core);
-    }
-}
-
 void
 e1000e_core_pci_realize(E1000ECore     *core,
                         const uint16_t *eeprom_templ,
@@ -3378,9 +3336,6 @@ e1000e_core_pci_realize(E1000ECore     *core,
     core->autoneg_timer = timer_new_ms(QEMU_CLOCK_VIRTUAL,
                                        e1000e_autoneg_timer, core);
     e1000e_intrmgr_pci_realize(core);
-
-    core->vmstate =
-        qemu_add_vm_change_state_handler(e1000e_vm_state_change, core);
 
     for (i = 0; i < E1000E_NUM_QUEUES; i++) {
         net_tx_pkt_init(&core->tx[i].tx_pkt, E1000E_MAX_TX_FRAGS);
@@ -3404,8 +3359,6 @@ e1000e_core_pci_uninit(E1000ECore *core)
     timer_free(core->autoneg_timer);
 
     e1000e_intrmgr_pci_unint(core);
-
-    qemu_del_vm_change_state_handler(core->vmstate);
 
     for (i = 0; i < E1000E_NUM_QUEUES; i++) {
         net_tx_pkt_uninit(core->tx[i].tx_pkt);
@@ -3575,6 +3528,9 @@ e1000e_core_post_load(E1000ECore *core)
      * to link status bit in core.mac[STATUS].
      */
     nc->link_down = (core->mac[STATUS] & E1000_STATUS_LU) == 0;
+
+    e1000e_intrmgr_resume(core);
+    e1000e_autoneg_resume(core);
 
     return 0;
 }
