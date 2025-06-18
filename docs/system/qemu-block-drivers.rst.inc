@@ -470,7 +470,7 @@ directory tree. In order to use it, just type:
 
   |qemu_system| linux.img -hdb fat:/my_directory
 
-Then you access access to all the files in the ``/my_directory``
+Then you have access to all the files in the ``/my_directory``
 directory without having to copy them in a disk image or to export
 them via SAMBA or NFS. The default access is *read-only*.
 
