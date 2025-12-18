@@ -1821,7 +1821,7 @@ static bool same_stat_id(const struct stat *a, const struct stat *b)
  */
 static char *trace_v9fs_walk_wnames(V9fsString *wnames, size_t nwnames)
 {
-    g_autofree char **arr = g_malloc0_n(nwnames + 1, sizeof(char *));
+    g_autofree char **arr = g_new0(char *, nwnames + 1);
     for (size_t i = 0; i < nwnames; ++i) {
         arr[i] = wnames[i].data;
     }

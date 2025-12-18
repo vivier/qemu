@@ -428,13 +428,13 @@ static int sndio_init(SndioVoice *self,
 
     nfds = sio_nfds(self->hdl);
 
-    self->pfds = g_malloc_n(nfds, sizeof(struct pollfd));
+    self->pfds = g_new(struct pollfd, nfds);
     if (self->pfds == NULL) {
         dolog("failed to allocate pollfd structures\n");
         goto fail;
     }
 
-    self->pindexes = g_malloc_n(nfds, sizeof(struct pollindex));
+    self->pindexes = g_new(struct pollindex, nfds);
     if (self->pindexes == NULL) {
         dolog("failed to allocate pollindex structures\n");
         goto fail;

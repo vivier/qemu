@@ -407,14 +407,12 @@ static bool save_ramblock_hash(struct RamblockDirtyInfo *info)
         return true;
     }
 
-    info->hash_result = g_try_malloc0_n(sample_pages_count,
-                                        sizeof(uint32_t));
+    info->hash_result = g_try_new0(uint32_t, sample_pages_count);
     if (!info->hash_result) {
         return false;
     }
 
-    info->sample_page_vfn = g_try_malloc0_n(sample_pages_count,
-                                            sizeof(uint64_t));
+    info->sample_page_vfn = g_try_new0(uint64_t, sample_pages_count);
     if (!info->sample_page_vfn) {
         g_free(info->hash_result);
         return false;
@@ -498,7 +496,7 @@ static bool record_ramblock_hash_info(struct RamblockDirtyInfo **block_dinfo,
         total_count++;
     }
 
-    dinfo = g_try_malloc0_n(total_count, sizeof(struct RamblockDirtyInfo));
+    dinfo = g_try_new0(struct RamblockDirtyInfo, total_count);
     if (dinfo == NULL) {
         goto out;
     }
