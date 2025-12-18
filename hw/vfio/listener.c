@@ -537,7 +537,7 @@ void vfio_container_region_add(VFIOContainer *bcontainer,
          * would be the right place to wire that up (tell the KVM
          * device emulation the VFIO iommu handles to use).
          */
-        giommu = g_malloc0(sizeof(*giommu));
+        giommu = g_new0(VFIOGuestIOMMU, 1);
         giommu->iommu_mr = iommu_mr;
         giommu->iommu_offset = section->offset_within_address_space -
                                section->offset_within_region;

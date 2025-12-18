@@ -169,7 +169,7 @@ void ppc4xx_l2sram_init(CPUPPCState *env)
 {
     ppc4xx_l2sram_t *l2sram;
 
-    l2sram = g_malloc0(sizeof(*l2sram));
+    l2sram = g_new0(ppc4xx_l2sram_t, 1);
     /* XXX: Size is 4*64kB for 460ex, cf. U-Boot, ppc4xx-isram.h */
     memory_region_init_ram(&l2sram->bank[0], NULL, "ppc4xx.l2sram_bank0",
                            64 * KiB, &error_abort);
@@ -296,7 +296,7 @@ void ppc4xx_cpr_init(CPUPPCState *env)
 {
     ppc4xx_cpr_t *cpr;
 
-    cpr = g_malloc0(sizeof(*cpr));
+    cpr = g_new0(ppc4xx_cpr_t, 1);
     ppc_dcr_register(env, CPR0_CFGADDR, cpr, &dcr_read_cpr, &dcr_write_cpr);
     ppc_dcr_register(env, CPR0_CFGDATA, cpr, &dcr_read_cpr, &dcr_write_cpr);
     qemu_register_reset(ppc4xx_cpr_reset, cpr);
@@ -415,7 +415,7 @@ void ppc4xx_sdr_init(CPUPPCState *env)
 {
     ppc4xx_sdr_t *sdr;
 
-    sdr = g_malloc0(sizeof(*sdr));
+    sdr = g_new0(ppc4xx_sdr_t, 1);
     qemu_register_reset(&sdr_reset, sdr);
     ppc_dcr_register(env, SDR0_CFGADDR,
                      sdr, &dcr_read_sdr, &dcr_write_sdr);
@@ -489,7 +489,7 @@ void ppc4xx_ahb_init(CPUPPCState *env)
 {
     ppc4xx_ahb_t *ahb;
 
-    ahb = g_malloc0(sizeof(*ahb));
+    ahb = g_new0(ppc4xx_ahb_t, 1);
     ppc_dcr_register(env, AHB_TOP, ahb, &dcr_read_ahb, &dcr_write_ahb);
     ppc_dcr_register(env, AHB_BOT, ahb, &dcr_read_ahb, &dcr_write_ahb);
     qemu_register_reset(ppc4xx_ahb_reset, ahb);
@@ -690,7 +690,7 @@ void ppc4xx_dma_init(CPUPPCState *env, int dcr_base)
     PPC4xxDmaState *dma;
     int i;
 
-    dma = g_malloc0(sizeof(*dma));
+    dma = g_new0(PPC4xxDmaState, 1);
     dma->base = dcr_base;
     qemu_register_reset(&ppc4xx_dma_reset, dma);
     for (i = 0; i < 4; i++) {

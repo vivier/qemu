@@ -1084,7 +1084,7 @@ GuestDiskInfoList *qmp_guest_get_disks(Error **errp)
 static GuestFilesystemInfo *build_guest_fsinfo(struct FsMount *mount,
                                                Error **errp)
 {
-    GuestFilesystemInfo *fs = g_malloc0(sizeof(*fs));
+    GuestFilesystemInfo *fs = g_new0(GuestFilesystemInfo, 1);
     struct statvfs buf;
     unsigned long used, nonroot_total, fr_size;
     char *devpath = g_strdup_printf("/sys/dev/block/%u:%u",
@@ -1164,10 +1164,10 @@ qmp_guest_fstrim(bool has_minimum, int64_t minimum, Error **errp)
         return NULL;
     }
 
-    response = g_malloc0(sizeof(*response));
+    response = g_new0(GuestFilesystemTrimResponse, 1);
 
     QTAILQ_FOREACH(mount, &mounts, next) {
-        result = g_malloc0(sizeof(*result));
+        result = g_new0(GuestFilesystemTrimResult, 1);
         result->path = g_strdup(mount->dirname);
 
         QAPI_LIST_PREPEND(response->paths, result);
@@ -1569,7 +1569,7 @@ GuestLogicalProcessorList *qmp_guest_get_vcpus(Error **errp)
         if (sscanf(line, "cpu%" PRId64, &id)) {
             g_autofree char *path = g_strdup_printf("/sys/devices/system/cpu/"
                                                     "cpu%" PRId64 "/", id);
-            vcpu = g_malloc0(sizeof *vcpu);
+            vcpu = g_new0(GuestLogicalProcessor, 1);
             vcpu->logical_id = id;
             vcpu->has_can_offline = true; /* lolspeak ftw */
             transfer_vcpu(vcpu, true, path, &local_err);
@@ -1835,7 +1835,7 @@ GuestMemoryBlockList *qmp_guest_get_memory_blocks(Error **errp)
             continue;
         }
 
-        mem_blk = g_malloc0(sizeof *mem_blk);
+        mem_blk = g_new0(GuestMemoryBlock, 1);
         /* The d_name is "memoryXXX",  phys_index is block id, same as XXX */
         mem_blk->phys_index = strtoul(&de->d_name[6], NULL, 10);
         mem_blk->has_can_offline = true; /* lolspeak ftw */
@@ -1874,7 +1874,7 @@ qmp_guest_set_memory_blocks(GuestMemoryBlockList *mem_blks, Error **errp)
         GuestMemoryBlockResponse *result;
         GuestMemoryBlock *current_mem_blk = mem_blks->value;
 
-        result = g_malloc0(sizeof(*result));
+        result = g_new0(GuestMemoryBlockResponse, 1);
         result->phys_index = current_mem_blk->phys_index;
         transfer_memory_block(current_mem_blk, false, result, &local_err);
         if (local_err) { /* should never happen */

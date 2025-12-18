@@ -1298,7 +1298,7 @@ calculate_l2_meta(BlockDriverState *bs, uint64_t host_cluster_offset,
         }
     }
 
-    *m = g_malloc0(sizeof(**m));
+    *m = g_new0(QCowL2Meta, 1);
     **m = (QCowL2Meta) {
         .next           = old_m,
 

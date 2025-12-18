@@ -87,7 +87,7 @@ static void *acpi_set_bsel(PCIBus *bus, void *opaque)
     /* hotplugged bridges can't be described in ACPI ignore them */
     if (qbus_is_hotpluggable(BUS(bus))) {
         if (!is_bridge || (!br->hotplugged && info->has_bridge_hotplug)) {
-            bus_bsel = g_malloc(sizeof *bus_bsel);
+            bus_bsel = g_new(unsigned, 1);
 
             *bus_bsel = info->bsel_alloc++;
             object_property_add_uint32_ptr(OBJECT(bus), ACPI_PCIHP_PROP_BSEL,

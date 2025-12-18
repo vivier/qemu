@@ -308,7 +308,7 @@ static void openrisc_sim_init(MachineState *machine)
         qemu_register_reset(main_cpu_reset, cpus[n]);
     }
 
-    ram = g_malloc(sizeof(*ram));
+    ram = g_new(MemoryRegion, 1);
     memory_region_init_ram(ram, NULL, "openrisc.ram", ram_size, &error_fatal);
     memory_region_add_subregion(get_system_memory(), 0, ram);
 

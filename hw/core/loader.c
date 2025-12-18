@@ -1035,7 +1035,7 @@ static void *rom_set_mr(Rom *rom, Object *owner, const char *name, bool ro)
 {
     void *data;
 
-    rom->mr = g_malloc(sizeof(*rom->mr));
+    rom->mr = g_new(MemoryRegion, 1);
     memory_region_init_resizeable_ram(rom->mr, owner, name,
                                       rom->datasize, rom->romsize,
                                       fw_cfg_resized,
@@ -1069,7 +1069,7 @@ ssize_t rom_add_file(const char *file, const char *fw_dir,
         return -1;
     }
 
-    rom = g_malloc0(sizeof(*rom));
+    rom = g_new0(Rom, 1);
     rom->name = g_strdup(file);
     rom->path = qemu_find_file(QEMU_FILE_TYPE_BIOS, rom->name);
     rom->as = as;
@@ -1140,7 +1140,7 @@ MemoryRegion *rom_add_blob(const char *name, const void *blob, size_t len,
     Rom *rom;
     MemoryRegion *mr = NULL;
 
-    rom           = g_malloc0(sizeof(*rom));
+    rom           = g_new0(Rom, 1);
     rom->name     = g_strdup(name);
     rom->as       = as;
     rom->addr     = addr;
@@ -1185,7 +1185,7 @@ int rom_add_elf_program(const char *name, GMappedFile *mapped_file, void *data,
 {
     Rom *rom;
 
-    rom           = g_malloc0(sizeof(*rom));
+    rom           = g_new0(Rom, 1);
     rom->name     = g_strdup(name);
     rom->addr     = addr;
     rom->datasize = datasize;

@@ -65,7 +65,7 @@ static void ct3_build_cdat_entries_for_mr(CDATSubHeader **cdat_table,
     CDATDslbis *dslbis3;
     CDATDsemts *dsemts;
 
-    dsmas = g_malloc(sizeof(*dsmas));
+    dsmas = g_new(CDATDsmas, 1);
     *dsmas = (CDATDsmas) {
         .header = {
             .type = CDAT_TYPE_DSMAS,
@@ -79,7 +79,7 @@ static void ct3_build_cdat_entries_for_mr(CDATSubHeader **cdat_table,
     };
 
     /* For now, no memory side cache, plausiblish numbers */
-    dslbis0 = g_malloc(sizeof(*dslbis0));
+    dslbis0 = g_new(CDATDslbis, 1);
     *dslbis0 = (CDATDslbis) {
         .header = {
             .type = CDAT_TYPE_DSLBIS,
@@ -92,7 +92,7 @@ static void ct3_build_cdat_entries_for_mr(CDATSubHeader **cdat_table,
         .entry[0] = 15, /* 150ns */
     };
 
-    dslbis1 = g_malloc(sizeof(*dslbis1));
+    dslbis1 = g_new(CDATDslbis, 1);
     *dslbis1 = (CDATDslbis) {
         .header = {
             .type = CDAT_TYPE_DSLBIS,
@@ -105,7 +105,7 @@ static void ct3_build_cdat_entries_for_mr(CDATSubHeader **cdat_table,
         .entry[0] = 25, /* 250ns */
     };
 
-    dslbis2 = g_malloc(sizeof(*dslbis2));
+    dslbis2 = g_new(CDATDslbis, 1);
     *dslbis2 = (CDATDslbis) {
         .header = {
             .type = CDAT_TYPE_DSLBIS,
@@ -118,7 +118,7 @@ static void ct3_build_cdat_entries_for_mr(CDATSubHeader **cdat_table,
         .entry[0] = 16,
     };
 
-    dslbis3 = g_malloc(sizeof(*dslbis3));
+    dslbis3 = g_new(CDATDslbis, 1);
     *dslbis3 = (CDATDslbis) {
         .header = {
             .type = CDAT_TYPE_DSLBIS,
@@ -131,7 +131,7 @@ static void ct3_build_cdat_entries_for_mr(CDATSubHeader **cdat_table,
         .entry[0] = 16,
     };
 
-    dsemts = g_malloc(sizeof(*dsemts));
+    dsemts = g_new(CDATDsemts, 1);
     *dsemts = (CDATDsemts) {
         .header = {
             .type = CDAT_TYPE_DSEMTS,
@@ -200,7 +200,7 @@ static int ct3_build_cdat_table(CDATSubHeader ***cdat_table, void *priv)
         len += CT3_CDAT_NUM_ENTRIES * ct3d->dc.num_regions;
     }
 
-    table = g_malloc0(len * sizeof(*table));
+    table = g_new0(CDATSubHeader *, len);
 
     /* Now fill them in */
     if (volatile_mr) {
@@ -1502,7 +1502,7 @@ void qmp_cxl_inject_uncorrectable_errors(const char *path,
             continue;
         }
 
-        cxl_err = g_malloc0(sizeof(*cxl_err));
+        cxl_err = g_new0(CXLError, 1);
 
         cxl_err->type = cxl_err_code;
         while (header && header_count < 32) {

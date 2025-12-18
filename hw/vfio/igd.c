@@ -475,7 +475,7 @@ void vfio_probe_igd_bar0_quirk(VFIOPCIDevice *vdev, int nr)
 
     if (vdev->igd_gms) {
         ggc_quirk = vfio_quirk_alloc(1);
-        ggc_mirror = ggc_quirk->data = g_malloc0(sizeof(*ggc_mirror));
+        ggc_mirror = ggc_quirk->data = g_new0(VFIOConfigMirrorQuirk, 1);
         ggc_mirror->mem = ggc_quirk->mem;
         ggc_mirror->vdev = vdev;
         ggc_mirror->bar = nr;
@@ -493,7 +493,7 @@ void vfio_probe_igd_bar0_quirk(VFIOPCIDevice *vdev, int nr)
     }
 
     bdsm_quirk = vfio_quirk_alloc(1);
-    bdsm_mirror = bdsm_quirk->data = g_malloc0(sizeof(*bdsm_mirror));
+    bdsm_mirror = bdsm_quirk->data = g_new0(VFIOConfigMirrorQuirk, 1);
     bdsm_mirror->mem = bdsm_quirk->mem;
     bdsm_mirror->vdev = vdev;
     bdsm_mirror->bar = nr;
@@ -658,7 +658,7 @@ static bool vfio_pci_igd_config_quirk(VFIOPCIDevice *vdev, Error **errp)
      * device BDSM register.
      * For newer device without BDSM register, this fw_cfg item is 0.
      */
-    bdsm_size = g_malloc(sizeof(*bdsm_size));
+    bdsm_size = g_new(uint64_t, 1);
     *bdsm_size = cpu_to_le64(gms_size);
     fw_cfg_add_file(fw_cfg_find(), "etc/igd-bdsm-size",
                     bdsm_size, sizeof(*bdsm_size));

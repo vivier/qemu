@@ -433,8 +433,8 @@ static void vtd_update_iotlb(IntelIOMMUState *s, uint16_t source_id,
                              uint8_t access_flags, uint32_t level,
                              uint32_t pasid, uint8_t pgtt)
 {
-    VTDIOTLBEntry *entry = g_malloc(sizeof(*entry));
-    struct vtd_iotlb_key *key = g_malloc(sizeof(*key));
+    VTDIOTLBEntry *entry = g_new(VTDIOTLBEntry, 1);
+    struct vtd_iotlb_key *key = g_new(struct vtd_iotlb_key, 1);
     uint64_t gfn = vtd_get_iotlb_gfn(addr, level);
 
     trace_vtd_iotlb_page_update(source_id, addr, pte, domain_id);
@@ -4504,7 +4504,7 @@ VTDAddressSpace *vtd_find_add_as(IntelIOMMUState *s, PCIBus *bus,
         }
 
         /* Still nothing, allocate a new address space */
-        new_key = g_malloc(sizeof(*new_key));
+        new_key = g_new(struct vtd_as_key, 1);
 
         new_key->bus = bus;
         new_key->devfn = devfn;
@@ -4662,7 +4662,7 @@ static bool vtd_dev_set_iommu_device(PCIBus *bus, void *opaque, int devfn,
         return false;
     }
 
-    new_key = g_malloc(sizeof(*new_key));
+    new_key = g_new(struct vtd_as_key, 1);
     new_key->bus = bus;
     new_key->devfn = devfn;
 

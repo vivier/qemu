@@ -157,7 +157,7 @@ static void qom_list_types_tramp(ObjectClass *klass, void *data)
     ObjectTypeInfo *info;
     ObjectClass *parent = object_class_get_parent(klass);
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(ObjectTypeInfo, 1);
     info->name = g_strdup(object_class_get_name(klass));
     info->has_abstract = info->abstract = object_class_is_abstract(klass);
     if (parent) {
@@ -270,7 +270,7 @@ ObjectPropertyInfoList *qmp_qom_list_properties(const char *typename,
     while ((prop = object_property_iter_next(&iter))) {
         ObjectPropertyInfo *info;
 
-        info = g_malloc0(sizeof(*info));
+        info = g_new0(ObjectPropertyInfo, 1);
         info->name = g_strdup(prop->name);
         info->type = g_strdup(prop->type);
         info->description = g_strdup(prop->description);

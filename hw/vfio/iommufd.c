@@ -380,7 +380,7 @@ static bool iommufd_cdev_autodomains_get(VFIODevice *vbasedev,
     }
 
 skip_alloc:
-    hwpt = g_malloc0(sizeof(*hwpt));
+    hwpt = g_new0(VFIOIOASHwpt, 1);
     hwpt->hwpt_id = hwpt_id;
     hwpt->hwpt_flags = flags;
     QLIST_INIT(&hwpt->device_list);
@@ -473,7 +473,7 @@ static bool iommufd_cdev_get_info_iova_range(VFIOIOMMUFDContainer *container,
     struct iommu_iova_range *iova_ranges;
     int sz, fd = container->be->fd;
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(struct iommu_ioas_iova_ranges, 1);
     info->size = sizeof(*info);
     info->ioas_id = ioas_id;
 
@@ -808,7 +808,7 @@ static int iommufd_cdev_pci_hot_reset(VFIODevice *vbasedev, bool single)
     }
 
     /* Use zero length array for hot reset with iommufd backend */
-    reset = g_malloc0(sizeof(*reset));
+    reset = g_new0(struct vfio_pci_hot_reset, 1);
     reset->argsz = sizeof(*reset);
 
      /* Bus reset! */

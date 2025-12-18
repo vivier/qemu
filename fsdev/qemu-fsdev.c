@@ -141,7 +141,7 @@ int qemu_fsdev_add(QemuOpts *opts, Error **errp)
         return -1;
     }
 
-    fsle = g_malloc0(sizeof(*fsle));
+    fsle = g_new0(struct FsDriverListEntry, 1);
     fsle->fse.fsdev_id = g_strdup(fsdev_id);
     fsle->fse.ops = FsDrivers[i].ops;
     if (writeout) {

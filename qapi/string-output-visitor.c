@@ -100,7 +100,7 @@ static void string_output_set(StringOutputVisitor *sov, char *string)
 
 static void string_output_append(StringOutputVisitor *sov, int64_t a)
 {
-    Range *r = g_malloc0(sizeof(*r));
+    Range *r = g_new0(Range, 1);
 
     range_set_bounds(r, a, a);
     sov->ranges = range_list_insert(sov->ranges, r);
@@ -109,7 +109,7 @@ static void string_output_append(StringOutputVisitor *sov, int64_t a)
 static void string_output_append_range(StringOutputVisitor *sov,
                                        int64_t s, int64_t e)
 {
-    Range *r = g_malloc0(sizeof(*r));
+    Range *r = g_new0(Range, 1);
 
     range_set_bounds(r, s, e);
     sov->ranges = range_list_insert(sov->ranges, r);
@@ -424,7 +424,7 @@ Visitor *string_output_visitor_new(bool human, char **result)
 {
     StringOutputVisitor *v;
 
-    v = g_malloc0(sizeof(*v));
+    v = g_new0(StringOutputVisitor, 1);
 
     v->string = g_string_new(NULL);
     v->human = human;

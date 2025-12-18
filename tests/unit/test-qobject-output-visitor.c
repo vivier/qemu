@@ -169,7 +169,7 @@ static void test_visitor_out_struct_nested(TestOutputVisitorData *data,
     const char *strings[] = { "forty two", "forty three", "forty four",
                               "forty five" };
 
-    ud2 = g_malloc0(sizeof(*ud2));
+    ud2 = g_new0(UserDefTwo, 1);
     ud2->string0 = g_strdup(strings[0]);
 
     ud2->dict1 = g_malloc0(sizeof(*ud2->dict1));
@@ -232,7 +232,7 @@ static void test_visitor_out_list(TestOutputVisitorData *data,
 
     /* Build the list in reverse order... */
     for (i = 0; i < max_items; i++) {
-        value = g_malloc0(sizeof(*value));
+        value = g_new0(TestStruct, 1);
         value->integer = value_int + (max_items - i - 1);
         value->boolean = value_bool;
         value->string = g_strdup(value_str);
@@ -273,7 +273,7 @@ static void test_visitor_out_list_qapi_free(TestOutputVisitorData *data,
     int i, max_count = 1024;
 
     for (i = 0; i < max_count; i++) {
-        value = g_malloc0(sizeof(*value));
+        value = g_new0(UserDefTwo, 1);
 
         value->string0 = g_strdup(string);
         value->dict1 = g_new0(UserDefTwoDict, 1);

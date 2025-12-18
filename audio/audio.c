@@ -469,7 +469,7 @@ static int audio_attach_capture (HWVoiceOut *hw)
         SWVoiceOut *sw;
         HWVoiceOut *hw_cap = &cap->hw;
 
-        sc = g_malloc0(sizeof(*sc));
+        sc = g_new0(SWVoiceCap, 1);
 
         sc->cap = cap;
         sw = &sc->sw;
@@ -1853,7 +1853,7 @@ CaptureVoiceOut *AUD_add_capture(
         return NULL;
     }
 
-    cb = g_malloc0(sizeof(*cb));
+    cb = g_new0(struct capture_callback, 1);
     cb->ops = *ops;
     cb->opaque = cb_opaque;
 
@@ -1863,7 +1863,7 @@ CaptureVoiceOut *AUD_add_capture(
     } else {
         HWVoiceOut *hw;
 
-        cap = g_malloc0(sizeof(*cap));
+        cap = g_new0(CaptureVoiceOut, 1);
 
         hw = &cap->hw;
         hw->s = s;

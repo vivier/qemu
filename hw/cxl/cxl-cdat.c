@@ -55,7 +55,7 @@ static bool ct3_build_cdat(CDATObject *cdat, Error **errp)
     /* Use default table if fopen == NULL */
     assert(cdat->build_cdat_table);
 
-    cdat_header = g_malloc0(sizeof(*cdat_header));
+    cdat_header = g_new0(CDATTableHeader, 1);
     if (!cdat_header) {
         error_setg(errp, "Failed to allocate CDAT header");
         return false;
@@ -71,7 +71,7 @@ static bool ct3_build_cdat(CDATObject *cdat, Error **errp)
     }
     cdat->to_update = false;
 
-    cdat_st = g_malloc0(sizeof(*cdat_st) * (cdat->built_buf_len + 1));
+    cdat_st = g_new0(CDATEntry, cdat->built_buf_len + 1);
     if (!cdat_st) {
         error_setg(errp, "Failed to allocate CDAT entry array");
         return false;

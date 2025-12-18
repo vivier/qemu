@@ -896,13 +896,13 @@ static void parse_args(int argc, char *argv[])
     if (test_round_mode == 0) {
         /* test all rounding modes; note that counting begins at 1 */
         n_round_modes = NUM_ROUNDINGMODES - 1;
-        round_modes = g_malloc_n(n_round_modes, sizeof(*round_modes));
+        round_modes = g_new(unsigned int, n_round_modes);
         for (i = 0; i < n_round_modes; i++) {
             round_modes[i] = i + 1;
         }
     } else {
         n_round_modes = 1;
-        round_modes = g_malloc(sizeof(*round_modes));
+        round_modes = g_new(unsigned int, 1);
         round_modes[0] = test_round_mode;
     }
 
@@ -910,13 +910,13 @@ static void parse_args(int argc, char *argv[])
     if (optind == argc) {
         /* test all ops; note that counting begins at 1 */
         n_test_ops = NUM_FUNCTIONS - 1;
-        test_ops = g_malloc_n(n_test_ops, sizeof(*test_ops));
+        test_ops = g_new(unsigned int, n_test_ops);
         for (i = 0; i < n_test_ops; i++) {
             test_ops[i] = i + 1;
         }
     } else {
         n_test_ops = argc - optind;
-        test_ops = g_malloc_n(n_test_ops, sizeof(*test_ops));
+        test_ops = g_new(unsigned int, n_test_ops);
         for (i = 0; i < n_test_ops; i++) {
             const char *name = argv[i + optind];
             unsigned int op = test_name_to_op(name);

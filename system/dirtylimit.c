@@ -608,7 +608,7 @@ static struct DirtyLimitInfo *dirtylimit_query_vcpu(int cpu_index)
 {
     DirtyLimitInfo *info = NULL;
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(DirtyLimitInfo, 1);
     info->cpu_index = cpu_index;
     info->limit_rate = dirtylimit_vcpu_get_state(cpu_index)->quota;
     info->current_rate = vcpu_dirty_rate_get(cpu_index);

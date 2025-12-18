@@ -502,7 +502,7 @@ static bool ufs_mcq_create_sq(UfsHc *u, uint8_t qid, uint32_t attr)
         return false;
     }
 
-    sq = g_malloc0(sizeof(*sq));
+    sq = g_new0(UfsSq, 1);
     sq->u = u;
     sq->sqid = qid;
     sq->cq = u->cq[cqid];
@@ -562,7 +562,7 @@ static bool ufs_mcq_create_cq(UfsHc *u, uint8_t qid, uint32_t attr)
         return false;
     }
 
-    cq = g_malloc0(sizeof(*cq));
+    cq = g_new0(UfsCq, 1);
     cq->u = u;
     cq->cqid = qid;
     cq->addr = ((uint64_t)reg->cquba << 32) | reg->cqlba;

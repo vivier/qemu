@@ -538,7 +538,7 @@ int s390_cpu_virt_mem_rw(S390CPU *cpu, vaddr laddr, uint8_t ar, void *hostbuf,
 
     nr_pages = (((laddr & ~TARGET_PAGE_MASK) + len - 1) >> TARGET_PAGE_BITS)
                + 1;
-    pages = g_malloc(nr_pages * sizeof(*pages));
+    pages = g_new(target_ulong, nr_pages);
 
     ret = translate_pages(cpu, laddr, nr_pages, pages, is_write, &tec);
     if (ret == 0 && hostbuf != NULL) {

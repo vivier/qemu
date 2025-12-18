@@ -63,7 +63,7 @@ static CoroutineThreadState *coroutine_get_thread_state(void)
     CoroutineThreadState *s = pthread_getspecific(thread_state_key);
 
     if (!s) {
-        s = g_malloc0(sizeof(*s));
+        s = g_new0(CoroutineThreadState, 1);
         s->current = &s->leader.base;
         pthread_setspecific(thread_state_key, s);
     }
@@ -167,7 +167,7 @@ Coroutine *qemu_coroutine_new(void)
      * sigaltstack way of manipulating stacks.
      */
 
-    co = g_malloc0(sizeof(*co));
+    co = g_new0(CoroutineSigAltStack, 1);
     co->stack_size = COROUTINE_STACK_SIZE;
     co->stack = qemu_alloc_stack(&co->stack_size);
     co->base.entry_arg = &old_env; /* stash away our jmp_buf */

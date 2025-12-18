@@ -794,7 +794,7 @@ static int qmp_query_chardev_foreach(Object *obj, void *data)
 {
     Chardev *chr = CHARDEV(obj);
     ChardevInfoList **list = data;
-    ChardevInfo *value = g_malloc0(sizeof(*value));
+    ChardevInfo *value = g_new0(ChardevInfo, 1);
 
     value->label = g_strdup(chr->label);
     value->filename = g_strdup(chr->filename);

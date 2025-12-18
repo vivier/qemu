@@ -1005,7 +1005,7 @@ void virt_acpi_setup(RISCVVirtState *s)
     AcpiBuildTables tables;
     AcpiBuildState *build_state;
 
-    build_state = g_malloc0(sizeof *build_state);
+    build_state = g_new0(AcpiBuildState, 1);
 
     acpi_build_tables_init(&tables);
     virt_acpi_build(s, &tables);

@@ -692,7 +692,7 @@ static void qobject_input_free(Visitor *v)
 
 static QObjectInputVisitor *qobject_input_visitor_base_new(QObject *obj)
 {
-    QObjectInputVisitor *v = g_malloc0(sizeof(*v));
+    QObjectInputVisitor *v = g_new0(QObjectInputVisitor, 1);
 
     assert(obj);
 

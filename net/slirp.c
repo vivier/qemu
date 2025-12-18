@@ -1217,7 +1217,7 @@ net_init_slirp_configs(const StringList *fwd, int flags)
     while (fwd) {
         struct slirp_config_str *config;
 
-        config = g_malloc0(sizeof(*config));
+        config = g_new0(struct slirp_config_str, 1);
         pstrcpy(config->str, sizeof(config->str), fwd->value->str);
         config->flags = flags;
         config->next = slirp_configs;
@@ -1242,7 +1242,7 @@ static const char **slirp_dnssearch(const StringList *dnsname)
         return NULL;
     }
 
-    ret = g_malloc((num_opts + 1) * sizeof(*ret));
+    ret = g_new(const char *, num_opts + 1);
     c = dnsname;
     while (c) {
         ret[i++] = c->value->str;

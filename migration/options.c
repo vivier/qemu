@@ -670,7 +670,7 @@ MigrationCapabilityStatusList *qmp_query_migrate_capabilities(Error **errp)
     int i;
 
     for (i = 0; i < MIGRATION_CAPABILITY__MAX; i++) {
-        caps = g_malloc0(sizeof(*caps));
+        caps = g_new0(MigrationCapabilityStatus, 1);
         caps->capability = i;
         caps->state = s->capabilities[i];
         QAPI_LIST_APPEND(tail, caps);
@@ -922,7 +922,7 @@ MigrationParameters *qmp_query_migrate_parameters(Error **errp)
     MigrationState *s = migrate_get_current();
 
     /* TODO use QAPI_CLONE() instead of duplicating it inline */
-    params = g_malloc0(sizeof(*params));
+    params = g_new0(MigrationParameters, 1);
     params->has_throttle_trigger_threshold = true;
     params->throttle_trigger_threshold = s->parameters.throttle_trigger_threshold;
     params->has_cpu_throttle_initial = true;

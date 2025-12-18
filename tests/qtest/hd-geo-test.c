@@ -543,7 +543,7 @@ static void read_bootdevices(QFWCFG *fw_cfg, CHSResult expected[])
 
     while (strlen(cur)) {
 
-        r = g_malloc0(sizeof(*r));
+        r = g_new0(CHSResult, 1);
         r->dev_path = g_malloc0(strlen(cur) + 1);
         res = sscanf(cur, "%s %" PRIu32 " %" PRIu32 " %" PRIu32,
                      (char *)r->dev_path,
@@ -596,7 +596,7 @@ typedef struct {
 
 static TestArgs *create_args(void)
 {
-    TestArgs *args = g_malloc0(sizeof(*args));
+    TestArgs *args = g_new0(TestArgs, 1);
     args->argv = g_new0(char *, ARGV_SIZE);
     args->argc = append_arg(args->argc, args->argv,
                             ARGV_SIZE, g_strdup("-nodefaults"));

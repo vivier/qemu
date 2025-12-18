@@ -481,7 +481,7 @@ int qemu_opt_unset(QemuOpts *opts, const char *name)
 
 static QemuOpt *opt_create(QemuOpts *opts, const char *name, char *value)
 {
-    QemuOpt *opt = g_malloc0(sizeof(*opt));
+    QemuOpt *opt = g_new0(QemuOpt, 1);
 
     opt->name = g_strdup(name);
     opt->str = value;
@@ -535,7 +535,7 @@ bool qemu_opt_set_bool(QemuOpts *opts, const char *name, bool val,
         return false;
     }
 
-    opt = g_malloc0(sizeof(*opt));
+    opt = g_new0(QemuOpt, 1);
     opt->name = g_strdup(name);
     opt->opts = opts;
     opt->desc = desc;
@@ -558,7 +558,7 @@ bool qemu_opt_set_number(QemuOpts *opts, const char *name, int64_t val,
         return false;
     }
 
-    opt = g_malloc0(sizeof(*opt));
+    opt = g_new0(QemuOpt, 1);
     opt->name = g_strdup(name);
     opt->opts = opts;
     opt->desc = desc;
@@ -634,7 +634,7 @@ QemuOpts *qemu_opts_create(QemuOptsList *list, const char *id,
             return NULL;
         }
     }
-    opts = g_malloc0(sizeof(*opts));
+    opts = g_new0(QemuOpts, 1);
     opts->id = g_strdup(id);
     opts->list = list;
     loc_save(&opts->loc);

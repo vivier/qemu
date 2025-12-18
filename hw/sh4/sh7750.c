@@ -769,7 +769,7 @@ SH7750State *sh7750_init(SuperHCPU *cpu, MemoryRegion *sysmem)
     sb = SYS_BUS_DEVICE(dev);
     sysbus_realize_and_unref(sb, &error_fatal);
     sysbus_mmio_map(sb, 0, 0xffe00000);
-    alias = g_malloc(sizeof(*alias));
+    alias = g_new(MemoryRegion, 1);
     mr = sysbus_mmio_get_region(sb, 0);
     memory_region_init_alias(alias, OBJECT(dev), "sci-a7", mr,
                              0, memory_region_size(mr));
@@ -787,7 +787,7 @@ SH7750State *sh7750_init(SuperHCPU *cpu, MemoryRegion *sysmem)
     sb = SYS_BUS_DEVICE(dev);
     sysbus_realize_and_unref(sb, &error_fatal);
     sysbus_mmio_map(sb, 0, 0xffe80000);
-    alias = g_malloc(sizeof(*alias));
+    alias = g_new(MemoryRegion, 1);
     mr = sysbus_mmio_get_region(sb, 0);
     memory_region_init_alias(alias, OBJECT(dev), "scif-a7", mr,
                              0, memory_region_size(mr));

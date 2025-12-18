@@ -7453,7 +7453,7 @@ static void x86_cpu_definition_entry(gpointer data, gpointer user_data)
     CpuDefinitionInfoList **cpu_list = user_data;
     CpuDefinitionInfo *info;
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(CpuDefinitionInfo, 1);
     info->name = x86_cpu_class_get_model_name(cc);
     x86_cpu_class_check_missing_features(cc, &info->unavailable_features);
     info->has_unavailable_features = true;

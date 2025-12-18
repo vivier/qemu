@@ -15,7 +15,7 @@ static CommandLineParameterInfoList *query_option_descs(const QemuOptDesc *desc)
     int i;
 
     for (i = 0; desc[i].name != NULL; i++) {
-        info = g_malloc0(sizeof(*info));
+        info = g_new0(CommandLineParameterInfo, 1);
         info->name = g_strdup(desc[i].name);
 
         switch (desc[i].type) {
@@ -100,7 +100,7 @@ static CommandLineParameterInfo *objprop_to_cmdline_prop(ObjectProperty *prop)
 {
     CommandLineParameterInfo *info;
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(CommandLineParameterInfo, 1);
     info->name = g_strdup(prop->name);
 
     if (g_str_equal(prop->type, "bool") || g_str_equal(prop->type, "OnOffAuto")) {
@@ -162,7 +162,7 @@ static CommandLineParameterInfoList *query_all_machine_properties(void)
     g_slist_free(machines);
 
     /* Add entry for the "type" parameter */
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(CommandLineParameterInfo, 1);
     info->name = g_strdup("type");
     info->type = COMMAND_LINE_PARAMETER_TYPE_STRING;
     info->help = g_strdup("machine type");
@@ -180,7 +180,7 @@ CommandLineOptionInfoList *qmp_query_command_line_options(const char *option,
 
     for (i = 0; vm_config_groups[i] != NULL; i++) {
         if (!option || !strcmp(option, vm_config_groups[i]->name)) {
-            info = g_malloc0(sizeof(*info));
+            info = g_new0(CommandLineOptionInfo, 1);
             info->option = g_strdup(vm_config_groups[i]->name);
             if (!strcmp("drive", vm_config_groups[i]->name)) {
                 info->parameters = get_drive_infolist();
@@ -193,7 +193,7 @@ CommandLineOptionInfoList *qmp_query_command_line_options(const char *option,
     }
 
     if (!option || !strcmp(option, "machine")) {
-        info = g_malloc0(sizeof(*info));
+        info = g_new0(CommandLineOptionInfo, 1);
         info->option = g_strdup("machine");
         info->parameters = query_all_machine_properties();
         QAPI_LIST_PREPEND(conf_list, info);

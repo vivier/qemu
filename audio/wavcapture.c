@@ -141,7 +141,7 @@ int wav_start_capture(AudioBackend *state, CaptureState *s, const char *path,
     ops.capture = wav_capture;
     ops.destroy = wav_destroy;
 
-    wav = g_malloc0 (sizeof (*wav));
+    wav = g_new0(WAVState, 1);
 
     shift = bits16 + stereo;
     hdr[34] = bits16 ? 0x10 : 0x08;

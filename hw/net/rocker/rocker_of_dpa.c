@@ -2290,10 +2290,10 @@ static void of_dpa_flow_fill(void *cookie, void *value, void *user_data)
         return;
     }
 
-    nflow = g_malloc0(sizeof(*nflow));
-    nkey = nflow->key = g_malloc0(sizeof(*nkey));
-    nmask = nflow->mask = g_malloc0(sizeof(*nmask));
-    naction = nflow->action = g_malloc0(sizeof(*naction));
+    nflow = g_new0(RockerOfDpaFlow, 1);
+    nkey = nflow->key = g_new0(RockerOfDpaFlowKey, 1);
+    nmask = nflow->mask = g_new0(RockerOfDpaFlowMask, 1);
+    naction = nflow->action = g_new0(RockerOfDpaFlowAction, 1);
 
     nflow->cookie = flow->cookie;
     nflow->hits = flow->stats.hits;
@@ -2453,7 +2453,7 @@ static void of_dpa_group_fill(void *key, void *value, void *user_data)
         return;
     }
 
-    ngroup = g_malloc0(sizeof(*ngroup));
+    ngroup = g_new0(RockerOfDpaGroup, 1);
 
     ngroup->id = group->id;
 

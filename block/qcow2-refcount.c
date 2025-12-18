@@ -775,7 +775,7 @@ static void queue_discard(BlockDriverState *bs,
         }
     }
 
-    d = g_malloc(sizeof(*d));
+    d = g_new(Qcow2DiscardRegion, 1);
     *d = (Qcow2DiscardRegion) {
         .bs     = bs,
         .offset = offset,

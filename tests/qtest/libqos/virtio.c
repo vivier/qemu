@@ -285,7 +285,7 @@ QVRingIndirectDesc *qvring_indirect_desc_setup(QTestState *qs, QVirtioDevice *d,
                                                uint16_t elem)
 {
     int i;
-    QVRingIndirectDesc *indirect = g_malloc(sizeof(*indirect));
+    QVRingIndirectDesc *indirect = g_new(QVRingIndirectDesc, 1);
 
     indirect->index = 0;
     indirect->elem = elem;

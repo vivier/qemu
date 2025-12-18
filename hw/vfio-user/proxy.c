@@ -96,7 +96,7 @@ static VFIOUserMsg *vfio_user_getmsg(VFIOUserProxy *proxy, VFIOUserHdr *hdr,
     if (msg != NULL) {
         QTAILQ_REMOVE(&proxy->free, msg, next);
     } else {
-        msg = g_malloc0(sizeof(*msg));
+        msg = g_new0(VFIOUserMsg, 1);
         qemu_cond_init(&msg->cv);
     }
 
@@ -1359,7 +1359,7 @@ void vfio_user_create_multi(VFIOUserProxy *proxy)
 {
     VFIOUserWRMulti *wm;
 
-    wm = g_malloc0(sizeof(*wm));
+    wm = g_new0(VFIOUserWRMulti, 1);
     vfio_user_request_msg(&wm->hdr, VFIO_USER_REGION_WRITE_MULTI,
                           sizeof(*wm), VFIO_USER_NO_REPLY);
     proxy->wr_multi = wm;

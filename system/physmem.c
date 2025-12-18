@@ -2371,7 +2371,7 @@ RAMBlock *qemu_ram_alloc_from_fd(ram_addr_t size, ram_addr_t max_size,
         return NULL;
     }
 
-    new_block = g_malloc0(sizeof(*new_block));
+    new_block = g_new0(RAMBlock, 1);
     new_block->mr = mr;
     new_block->used_length = size;
     new_block->max_length = max_size;
@@ -2544,7 +2544,7 @@ RAMBlock *qemu_ram_alloc_internal(ram_addr_t size, ram_addr_t max_size,
     size = ROUND_UP(size, align);
     max_size = ROUND_UP(max_size, align);
 
-    new_block = g_malloc0(sizeof(*new_block));
+    new_block = g_new0(RAMBlock, 1);
     new_block->mr = mr;
     new_block->resized = resized;
     new_block->used_length = size;
@@ -3106,12 +3106,12 @@ static void tcg_commit(MemoryListener *listener)
 
 static void memory_map_init(void)
 {
-    system_memory = g_malloc(sizeof(*system_memory));
+    system_memory = g_new(MemoryRegion, 1);
 
     memory_region_init(system_memory, NULL, "system", UINT64_MAX);
     address_space_init(&address_space_memory, system_memory, "memory");
 
-    system_io = g_malloc(sizeof(*system_io));
+    system_io = g_new(MemoryRegion, 1);
     memory_region_init_io(system_io, NULL, &unassigned_io_ops, NULL, "io",
                           65536);
     address_space_init(&address_space_io, system_io, "I/O");
@@ -3584,7 +3584,7 @@ static void address_space_notify_map_clients_locked(AddressSpace *as)
 
 void address_space_register_map_client(AddressSpace *as, QEMUBH *bh)
 {
-    AddressSpaceMapClient *client = g_malloc(sizeof(*client));
+    AddressSpaceMapClient *client = g_new(AddressSpaceMapClient, 1);
 
     QEMU_LOCK_GUARD(&as->map_client_list_lock);
     client->bh = bh;

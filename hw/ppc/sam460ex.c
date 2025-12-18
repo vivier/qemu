@@ -268,7 +268,7 @@ static void sam460ex_init(MachineState *machine)
     }
 
     qemu_register_reset(main_cpu_reset, cpu);
-    boot_info = g_malloc0(sizeof(*boot_info));
+    boot_info = g_new0(struct boot_info, 1);
     env->load_info = boot_info;
 
     ppc_booke_timers_init(cpu, CPU_FREQ, 0);

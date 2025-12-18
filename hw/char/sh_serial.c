@@ -408,7 +408,7 @@ static void sh_serial_reset(DeviceState *dev)
 static void sh_serial_realize(DeviceState *d, Error **errp)
 {
     SHSerialState *s = SH_SERIAL(d);
-    MemoryRegion *iomem = g_malloc(sizeof(*iomem));
+    MemoryRegion *iomem = g_new(MemoryRegion, 1);
 
     assert(d->id);
     memory_region_init_io(iomem, OBJECT(d), &sh_serial_ops, s, d->id, 0x28);

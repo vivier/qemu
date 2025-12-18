@@ -118,7 +118,7 @@ ivshmem_client_handle_server_msg(IvshmemClient *client)
 
     /* new peer */
     if (peer == NULL) {
-        peer = g_malloc0(sizeof(*peer));
+        peer = g_new0(IvshmemClientPeer, 1);
         peer->id = peer_id;
         peer->vectors_count = 0;
         QTAILQ_INSERT_TAIL(&client->peer_list, peer, next);

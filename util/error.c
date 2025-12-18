@@ -61,7 +61,7 @@ static void error_setv(Error **errp,
     }
     assert(*errp == NULL);
 
-    err = g_malloc0(sizeof(*err));
+    err = g_new0(Error, 1);
     err->msg = g_strdup_vprintf(fmt, ap);
     if (suffix) {
         char *msg = err->msg;
@@ -201,7 +201,7 @@ Error *error_copy(const Error *err)
 {
     Error *err_new;
 
-    err_new = g_malloc0(sizeof(*err));
+    err_new = g_new0(Error, 1);
     err_new->msg = g_strdup(err->msg);
     err_new->err_class = err->err_class;
     err_new->src = err->src;

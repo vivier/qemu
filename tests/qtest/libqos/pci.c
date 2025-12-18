@@ -79,7 +79,7 @@ QPCIDevice *qpci_device_find(QPCIBus *bus, int devfn)
 {
     QPCIDevice *dev;
 
-    dev = g_malloc0(sizeof(*dev));
+    dev = g_new0(QPCIDevice, 1);
     qpci_device_set(dev, bus, devfn);
 
     if (qpci_config_readw(dev, PCI_VENDOR_ID) == 0xFFFF) {

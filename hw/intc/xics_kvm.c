@@ -174,7 +174,7 @@ void icp_kvm_realize(DeviceState *dev, Error **errp)
         error_propagate(errp, local_err);
         return;
     }
-    enabled_icp = g_malloc(sizeof(*enabled_icp));
+    enabled_icp = g_new(KVMEnabledICP, 1);
     enabled_icp->vcpu_id = vcpu_id;
     QLIST_INSERT_HEAD(&kvm_enabled_icps, enabled_icp, node);
 }

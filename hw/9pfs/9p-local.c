@@ -1452,7 +1452,7 @@ static int local_ioc_getversion_init(FsContext *ctx, LocalData *data, Error **er
 
 static int local_init(FsContext *ctx, Error **errp)
 {
-    LocalData *data = g_malloc(sizeof(*data));
+    LocalData *data = g_new(LocalData, 1);
 
     data->mountfd = open(ctx->fs_root, O_DIRECTORY | O_RDONLY);
     if (data->mountfd == -1) {

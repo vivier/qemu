@@ -1012,7 +1012,7 @@ DriveInfo *drive_new(QemuOpts *all_opts, BlockInterfaceType block_default_type,
     }
 
     /* Create legacy DriveInfo */
-    dinfo = g_malloc0(sizeof(*dinfo));
+    dinfo = g_new0(DriveInfo, 1);
     dinfo->opts = all_opts;
 
     dinfo->type = type;

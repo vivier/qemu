@@ -264,7 +264,7 @@ bool runstate_needs_reset(void)
 
 StatusInfo *qmp_query_status(Error **errp)
 {
-    StatusInfo *info = g_malloc0(sizeof(*info));
+    StatusInfo *info = g_new0(StatusInfo, 1);
 
     info->running = runstate_is_running();
     info->status = current_run_state;
@@ -320,7 +320,7 @@ qemu_add_vm_change_state_handler_prio_full(VMChangeStateHandler *cb,
     VMChangeStateEntry *e;
     VMChangeStateEntry *other;
 
-    e = g_malloc0(sizeof(*e));
+    e = g_new0(VMChangeStateEntry, 1);
     e->cb = cb;
     e->prepare_cb = prepare_cb;
     e->cb_ret = cb_ret;

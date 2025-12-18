@@ -107,7 +107,7 @@ static IvshmemPeer *ivshmem_flat_add_peer(IvshmemFTState *s, uint16_t peer_id)
 {
     IvshmemPeer *new_peer;
 
-    new_peer = g_malloc0(sizeof(*new_peer));
+    new_peer = g_new0(IvshmemPeer, 1);
     new_peer->id = peer_id;
     new_peer->vector_counter = 0;
 

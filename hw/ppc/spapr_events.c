@@ -542,7 +542,7 @@ static void spapr_powerdown_req(Notifier *n, void *opaque)
     struct epow_extended_log *new_epow;
 
     entry = g_new(SpaprEventLogEntry, 1);
-    new_epow = g_malloc0(sizeof(*new_epow));
+    new_epow = g_new0(struct epow_extended_log, 1);
     entry->extended_log = new_epow;
 
     v6hdr = &new_epow->v6hdr;
@@ -815,7 +815,7 @@ static void spapr_mce_dispatch_elog(SpaprMachineState *spapr, PowerPCCPU *cpu,
     struct mc_extended_log *ext_elog;
     uint32_t summary;
 
-    ext_elog = g_malloc0(sizeof(*ext_elog));
+    ext_elog = g_new0(struct mc_extended_log, 1);
     summary = spapr_mce_get_elog_type(cpu, recovered, ext_elog);
 
     log.summary = cpu_to_be32(summary);

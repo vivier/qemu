@@ -95,7 +95,7 @@ static void create_threads(void)
 
     threads = g_new(QemuThread, n_threads);
     th_info = g_new(struct thread_info, n_threads);
-    counts = g_malloc0_n(range, sizeof(*counts));
+    counts = g_new0(struct count, range);
 
     for (i = 0; i < n_threads; i++) {
         struct thread_info *info = &th_info[i];

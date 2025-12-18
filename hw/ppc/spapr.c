@@ -407,7 +407,7 @@ spapr_get_drconf_cell(uint32_t seq_lmbs, uint64_t base_addr,
 {
     DrconfCellQueue *elem;
 
-    elem = g_malloc0(sizeof(*elem));
+    elem = g_new0(DrconfCellQueue, 1);
     elem->cell.seq_lmbs = cpu_to_be32(seq_lmbs);
     elem->cell.base_addr = cpu_to_be64(base_addr);
     elem->cell.drc_index = cpu_to_be32(drc_index);

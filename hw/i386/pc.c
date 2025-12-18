@@ -886,13 +886,13 @@ void pc_memory_init(PCMachineState *pcms,
      * Split single memory region and use aliases to address portions of it,
      * done for backwards compatibility with older qemus.
      */
-    ram_below_4g = g_malloc(sizeof(*ram_below_4g));
+    ram_below_4g = g_new(MemoryRegion, 1);
     memory_region_init_alias(ram_below_4g, NULL, "ram-below-4g", machine->ram,
                              0, x86ms->below_4g_mem_size);
     memory_region_add_subregion(system_memory, 0, ram_below_4g);
     e820_add_entry(0, x86ms->below_4g_mem_size, E820_RAM);
     if (x86ms->above_4g_mem_size > 0) {
-        ram_above_4g = g_malloc(sizeof(*ram_above_4g));
+        ram_above_4g = g_new(MemoryRegion, 1);
         memory_region_init_alias(ram_above_4g, NULL, "ram-above-4g",
                                  machine->ram,
                                  x86ms->below_4g_mem_size,
@@ -961,7 +961,7 @@ void pc_memory_init(PCMachineState *pcms,
     pc_system_firmware_init(pcms, rom_memory);
 
     if (!is_tdx_vm()) {
-        option_rom_mr = g_malloc(sizeof(*option_rom_mr));
+        option_rom_mr = g_new(MemoryRegion, 1);
         if (machine_require_guest_memfd(machine)) {
             memory_region_init_ram_guest_memfd(option_rom_mr, NULL, "pc.rom",
                                             PC_ROM_SIZE, &error_fatal);
@@ -993,7 +993,7 @@ void pc_memory_init(PCMachineState *pcms,
     }
 
     if (res_mem_end) {
-        uint64_t *val = g_malloc(sizeof(*val));
+        uint64_t *val = g_new(uint64_t, 1);
         *val = cpu_to_le64(ROUND_UP(res_mem_end, 1 * GiB));
         fw_cfg_add_file(fw_cfg, "etc/reserved-memory-end", val, sizeof(*val));
     }

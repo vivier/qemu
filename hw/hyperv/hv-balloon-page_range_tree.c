@@ -37,8 +37,8 @@ static gint page_range_tree_key_compare(gconstpointer leftp,
 static GTreeNode *page_range_tree_insert_new(PageRangeTree tree,
                                              uint64_t start, uint64_t count)
 {
-    uint64_t *key = g_malloc(sizeof(*key));
-    PageRange *range = g_malloc(sizeof(*range));
+    uint64_t *key = g_new(uint64_t, 1);
+    PageRange *range = g_new(PageRange, 1);
 
     assert(count > 0);
 

@@ -609,7 +609,7 @@ static GuestPCIAddress *get_empty_pci_address(void)
 {
     GuestPCIAddress *pci = NULL;
 
-    pci = g_malloc0(sizeof(*pci));
+    pci = g_new0(GuestPCIAddress, 1);
     pci->domain = -1;
     pci->slot = -1;
     pci->function = -1;
@@ -1155,7 +1155,7 @@ static GuestFilesystemInfo *build_guest_fsinfo(char *guid, Error **errp)
         goto free;
     }
 
-    fs = g_malloc(sizeof(*fs));
+    fs = g_new(GuestFilesystemInfo, 1);
     fs->name = g_strdup(guid);
     fs->has_total_bytes = false;
     fs->has_total_bytes_privileged = false;
@@ -1672,7 +1672,7 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
     }
 
     for (addr = adptr_addrs; addr; addr = addr->Next) {
-        info = g_malloc0(sizeof(*info));
+        info = g_new0(GuestNetworkInterface, 1);
 
         QAPI_LIST_APPEND(tail, info);
 
@@ -1698,7 +1698,7 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
                 continue;
             }
 
-            address_item = g_malloc0(sizeof(*address_item));
+            address_item = g_new0(GuestIpAddress, 1);
 
             QAPI_LIST_APPEND(tail_addr, address_item);
 
@@ -1715,7 +1715,7 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
             info->ip_addresses = head_addr;
         }
         if (!info->statistics) {
-            interface_stat = g_malloc0(sizeof(*interface_stat));
+            interface_stat = g_new0(GuestNetworkInterfaceStat, 1);
             if (guest_get_network_stats(addr->AdapterName, interface_stat)
                 == -1) {
                 g_free(interface_stat);
@@ -1851,7 +1851,7 @@ GuestLogicalProcessorList *qmp_guest_get_vcpus(Error **errp)
                 if (!!(cpu_bits & 1)) {
                     GuestLogicalProcessor *vcpu;
 
-                    vcpu = g_malloc0(sizeof *vcpu);
+                    vcpu = g_new0(GuestLogicalProcessor, 1);
                     vcpu->logical_id = current++;
                     vcpu->online = true;
                     vcpu->has_can_offline = true;

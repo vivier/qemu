@@ -124,7 +124,7 @@ static int parse_acl_file(const char *filename, ACLList *acl_list)
         }
 
         if (strcmp(cmd, "deny") == 0) {
-            acl_rule = g_malloc(sizeof(*acl_rule));
+            acl_rule = g_new(ACLRule, 1);
             if (strcmp(arg, "all") == 0) {
                 acl_rule->type = ACL_DENY_ALL;
             } else {
@@ -133,7 +133,7 @@ static int parse_acl_file(const char *filename, ACLList *acl_list)
             }
             QSIMPLEQ_INSERT_TAIL(acl_list, acl_rule, entry);
         } else if (strcmp(cmd, "allow") == 0) {
-            acl_rule = g_malloc(sizeof(*acl_rule));
+            acl_rule = g_new(ACLRule, 1);
             if (strcmp(arg, "all") == 0) {
                 acl_rule->type = ACL_ALLOW_ALL;
             } else {

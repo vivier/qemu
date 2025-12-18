@@ -224,7 +224,7 @@ static void guest_phys_block_add_section(GuestPhysListener *g,
 
     if (predecessor == NULL) {
         /* isolated mapping, allocate it and add it to the list */
-        GuestPhysBlock *block = g_malloc0(sizeof *block);
+        GuestPhysBlock *block = g_new0(GuestPhysBlock, 1);
 
         block->target_start = target_start;
         block->target_end   = target_end;

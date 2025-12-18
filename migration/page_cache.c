@@ -58,7 +58,7 @@ PageCache *cache_init(uint64_t new_size, size_t page_size, Error **errp)
     }
 
     /* We prefer not to abort if there is no memory */
-    cache = g_try_malloc(sizeof(*cache));
+    cache = g_try_new(PageCache, 1);
     if (!cache) {
         error_setg(errp, "Failed to allocate cache");
         return NULL;
@@ -70,8 +70,7 @@ PageCache *cache_init(uint64_t new_size, size_t page_size, Error **errp)
     trace_migration_pagecache_init(cache->max_num_items);
 
     /* We prefer not to abort if there is no memory */
-    cache->page_cache = g_try_malloc((cache->max_num_items) *
-                                     sizeof(*cache->page_cache));
+    cache->page_cache = g_try_new(CacheItem, cache->max_num_items);
     if (!cache->page_cache) {
         error_setg(errp, "Failed to allocate page cache");
         g_free(cache);

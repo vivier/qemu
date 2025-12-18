@@ -1855,7 +1855,7 @@ int net_init_vhost_vdpa(const Netdev *netdev, const char *name,
         goto err;
     }
 
-    ncs = g_malloc0(sizeof(*ncs) * queue_pairs);
+    ncs = g_new0(NetClientState *, queue_pairs);
 
     for (i = 0; i < queue_pairs; i++) {
         VhostVDPAShared *shared = NULL;

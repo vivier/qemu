@@ -1297,7 +1297,7 @@ static void add_device_config(int type, const char *cmdline)
 {
     struct device_config *conf;
 
-    conf = g_malloc0(sizeof(*conf));
+    conf = g_new0(struct device_config, 1);
     conf->type = type;
     conf->cmdline = cmdline;
     loc_save(&conf->loc);
@@ -2234,7 +2234,7 @@ static int global_init_func(void *opaque, QemuOpts *opts, Error **errp)
 {
     GlobalProperty *g;
 
-    g = g_malloc0(sizeof(*g));
+    g = g_new0(GlobalProperty, 1);
     g->driver   = qemu_opt_get(opts, "driver");
     g->property = qemu_opt_get(opts, "property");
     g->value    = qemu_opt_get(opts, "value");

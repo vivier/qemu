@@ -178,7 +178,7 @@ static void vfio_host_win_add(VFIOSpaprContainer *scontainer, hwaddr min_iova,
         }
     }
 
-    hostwin = g_malloc0(sizeof(*hostwin));
+    hostwin = g_new0(VFIOHostDMAWindow, 1);
 
     hostwin->min_iova = min_iova;
     hostwin->max_iova = max_iova;

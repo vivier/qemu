@@ -47,7 +47,7 @@ static int vfio_user_dma_unmap(const VFIOContainer *bcontainer,
     Error *local_err = NULL;
     int ret = 0;
 
-    VFIOUserDMAUnmap *msgp = g_malloc(sizeof(*msgp));
+    VFIOUserDMAUnmap *msgp = g_new(VFIOUserDMAUnmap, 1);
 
     vfio_user_request_msg(&msgp->hdr, VFIO_USER_DMA_UNMAP, sizeof(*msgp), 0);
     msgp->argsz = sizeof(struct vfio_iommu_type1_dma_unmap);
@@ -91,7 +91,7 @@ static int vfio_user_dma_map(const VFIOContainer *bcontainer, hwaddr iova,
     int ret = 0;
 
     VFIOUserFDs *fds = NULL;
-    VFIOUserDMAMap *msgp = g_malloc0(sizeof(*msgp));
+    VFIOUserDMAMap *msgp = g_new0(VFIOUserDMAMap, 1);
 
     vfio_user_request_msg(&msgp->hdr, VFIO_USER_DMA_MAP, sizeof(*msgp), 0);
     msgp->argsz = sizeof(struct vfio_iommu_type1_dma_map);

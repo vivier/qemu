@@ -4925,7 +4925,7 @@ static uint16_t nvme_create_sq(NvmeCtrl *n, NvmeRequest *req)
         trace_pci_nvme_err_invalid_create_sq_qflags(NVME_SQ_FLAGS_PC(qflags));
         return NVME_INVALID_FIELD | NVME_DNR;
     }
-    sq = g_malloc0(sizeof(*sq));
+    sq = g_new0(NvmeSQueue, 1);
     nvme_init_sq(sq, n, prp1, sqid, cqid, qsize + 1);
     return NVME_SUCCESS;
 }
@@ -5633,7 +5633,7 @@ static uint16_t nvme_create_cq(NvmeCtrl *n, NvmeRequest *req)
         return NVME_INVALID_FIELD | NVME_DNR;
     }
 
-    cq = g_malloc0(sizeof(*cq));
+    cq = g_new0(NvmeCQueue, 1);
     nvme_init_cq(cq, n, prp1, cqid, vector, qsize + 1,
                  NVME_CQ_FLAGS_IEN(qflags));
 

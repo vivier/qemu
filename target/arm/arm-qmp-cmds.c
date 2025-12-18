@@ -230,7 +230,7 @@ static void arm_cpu_add_definition(gpointer data, gpointer user_data)
     const char *typename;
 
     typename = object_class_get_name(oc);
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(CpuDefinitionInfo, 1);
     info->name = cpu_model_from_type(typename);
     info->q_typename = g_strdup(typename);
 

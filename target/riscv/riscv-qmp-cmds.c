@@ -44,7 +44,7 @@ static void riscv_cpu_add_definition(gpointer data, gpointer user_data)
 {
     ObjectClass *oc = data;
     CpuDefinitionInfoList **cpu_list = user_data;
-    CpuDefinitionInfo *info = g_malloc0(sizeof(*info));
+    CpuDefinitionInfo *info = g_new0(CpuDefinitionInfo, 1);
     const char *typename = object_class_get_name(oc);
     ObjectClass *dyn_class;
 

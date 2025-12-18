@@ -265,7 +265,7 @@ static void s390_topology_fill_list_sorted(S390TopologyList *topology_list)
                 entry = tmp;
                 break;
             } else if (s390_topology_id_lt(&id, &tmp->id)) {
-                entry = g_malloc0(sizeof(*entry));
+                entry = g_new0(S390TopologyEntry, 1);
                 entry->id = id;
                 QTAILQ_INSERT_BEFORE(tmp, entry, next);
                 break;

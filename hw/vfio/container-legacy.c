@@ -776,7 +776,7 @@ static VFIOGroup *vfio_group_get(int groupid, AddressSpace *as, Error **errp)
         }
     }
 
-    group = g_malloc0(sizeof(*group));
+    group = g_new0(VFIOGroup, 1);
 
     snprintf(path, sizeof(path), "/dev/vfio/%d", groupid);
     group->fd = cpr_open_fd(path, O_RDWR, "vfio_group", groupid, errp);

@@ -207,7 +207,7 @@ QVirtQueue *qvirtio_pci_virtqueue_setup_common(QVirtioDevice *d,
     QVirtQueuePCI *vqpci;
     QVirtioPCIDevice *qvpcidev = container_of(d, QVirtioPCIDevice, vdev);
 
-    vqpci = g_malloc0(sizeof(*vqpci));
+    vqpci = g_new0(QVirtQueuePCI, 1);
     feat = d->bus->get_guest_features(d);
 
     d->bus->queue_select(d, index);

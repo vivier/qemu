@@ -320,7 +320,7 @@ void perf_report_code(uint64_t guest_pc, TranslationBlock *tb,
         return;
     }
 
-    q = g_try_malloc0_n(tb->icount, sizeof(*q));
+    q = g_try_new0(struct debuginfo_query, tb->icount);
     if (!q) {
         return;
     }

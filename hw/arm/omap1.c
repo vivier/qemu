@@ -1453,7 +1453,7 @@ static void omap_dpll_reset(struct dpll_ctl_s *s)
 static struct dpll_ctl_s  *omap_dpll_init(MemoryRegion *memory,
                            hwaddr base, omap_clk clk)
 {
-    struct dpll_ctl_s *s = g_malloc0(sizeof(*s));
+    struct dpll_ctl_s *s = g_new0(struct dpll_ctl_s, 1);
     memory_region_init_io(&s->iomem, NULL, &omap_dpll_ops, s, "omap-dpll", 0x100);
 
     s->dpll = clk;
@@ -2412,7 +2412,7 @@ static struct omap_pwl_s *omap_pwl_init(MemoryRegion *system_memory,
                                         hwaddr base,
                                         omap_clk clk)
 {
-    struct omap_pwl_s *s = g_malloc0(sizeof(*s));
+    struct omap_pwl_s *s = g_new0(struct omap_pwl_s, 1);
 
     omap_pwl_reset(s);
 
@@ -2520,7 +2520,7 @@ static struct omap_pwt_s *omap_pwt_init(MemoryRegion *system_memory,
                                         hwaddr base,
                                         omap_clk clk)
 {
-    struct omap_pwt_s *s = g_malloc0(sizeof(*s));
+    struct omap_pwt_s *s = g_new0(struct omap_pwt_s, 1);
     s->clk = clk;
     omap_pwt_reset(s);
 

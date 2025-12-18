@@ -96,7 +96,7 @@ static XenBlockRequest *xen_block_start_request(XenBlockDataPlane *dataplane)
             goto out;
         }
         /* allocate new struct */
-        request = g_malloc0(sizeof(*request));
+        request = g_new0(XenBlockRequest, 1);
         request->dataplane = dataplane;
         /*
          * We cannot need more pages per requests than this, and since we

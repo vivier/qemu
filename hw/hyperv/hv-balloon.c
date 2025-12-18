@@ -1123,7 +1123,7 @@ HvBalloonInfo *qmp_query_hv_balloon_status_report(Error **errp)
         return NULL;
     }
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(HvBalloonInfo, 1);
     info->committed = balloon->status_report.committed;
     info->available = balloon->status_report.available;
     return info;

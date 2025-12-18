@@ -562,7 +562,7 @@ void hmp_migrate_set_capability(Monitor *mon, const QDict *qdict)
         goto end;
     }
 
-    value = g_malloc0(sizeof(*value));
+    value = g_new0(MigrationCapabilityStatus, 1);
     value->capability = val;
     value->state = state;
     QAPI_LIST_PREPEND(caps, value);
@@ -842,7 +842,7 @@ void hmp_migrate(Monitor *mon, const QDict *qdict)
             return;
         }
 
-        status = g_malloc0(sizeof(*status));
+        status = g_new0(HMPMigrationStatus, 1);
         status->mon = mon;
         status->timer = timer_new_ms(QEMU_CLOCK_REALTIME, hmp_migrate_status_cb,
                                           status);

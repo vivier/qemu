@@ -465,7 +465,7 @@ LinuxAioState *laio_init(Error **errp)
     int rc;
     LinuxAioState *s;
 
-    s = g_malloc0(sizeof(*s));
+    s = g_new0(LinuxAioState, 1);
     rc = event_notifier_init(&s->e, false);
     if (rc < 0) {
         error_setg_errno(errp, -rc, "failed to initialize event notifier");

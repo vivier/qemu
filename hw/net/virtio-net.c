@@ -515,7 +515,7 @@ static RxFilterInfo *virtio_net_query_rxfilter(NetClientState *nc)
     strList *str_list;
     int i;
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(RxFilterInfo, 1);
     info->name = g_strdup(nc->name);
     info->promiscuous = n->promisc;
 
@@ -2618,7 +2618,7 @@ static VirtioNetRscChain *virtio_net_rsc_lookup_chain(VirtIONet *n,
         }
     }
 
-    chain = g_malloc(sizeof(*chain));
+    chain = g_new(VirtioNetRscChain, 1);
     chain->n = n;
     chain->proto = proto;
     if (proto == (uint16_t)ETH_P_IP) {

@@ -370,7 +370,7 @@ void hmp_sendkey(Monitor *mon, const QDict *qdict)
             keyname_len = 4;
         }
 
-        v = g_malloc0(sizeof(*v));
+        v = g_new0(KeyValue, 1);
 
         if (strstart(keys, "0x", NULL)) {
             const char *endp;

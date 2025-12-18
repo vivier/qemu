@@ -161,7 +161,7 @@ static void xtfpga_net_init(MemoryRegion *address_space,
     memory_region_add_subregion(address_space, descriptors,
             sysbus_mmio_get_region(s, 1));
 
-    ram = g_malloc(sizeof(*ram));
+    ram = g_new(MemoryRegion, 1);
     memory_region_init_ram_nomigrate(ram, OBJECT(s), "open_eth.ram", 16 * KiB,
                            &error_fatal);
     vmstate_register_ram_global(ram);
@@ -292,12 +292,12 @@ static void xtfpga_init(const XtfpgaBoardDesc *board, MachineState *machine)
                                      system_memory);
     }
 
-    system_io = g_malloc(sizeof(*system_io));
+    system_io = g_new(MemoryRegion, 1);
     memory_region_init_io(system_io, NULL, &xtfpga_io_ops, NULL, "xtfpga.io",
                           system_io_size);
     memory_region_add_subregion(system_memory, board->io[0], system_io);
     if (board->io[1]) {
-        MemoryRegion *io = g_malloc(sizeof(*io));
+        MemoryRegion *io = g_new(MemoryRegion, 1);
 
         memory_region_init_alias(io, NULL, "xtfpga.io.cached",
                                  system_io, 0, system_io_size);
@@ -451,7 +451,7 @@ static void xtfpga_init(const XtfpgaBoardDesc *board, MachineState *machine)
     } else {
         if (flash) {
             MemoryRegion *flash_mr = pflash_cfi01_get_memory(flash);
-            MemoryRegion *flash_io = g_malloc(sizeof(*flash_io));
+            MemoryRegion *flash_io = g_new(MemoryRegion, 1);
             uint32_t size = env->config->sysrom.location[0].size;
 
             if (board->flash->size - board->flash->boot_base < size) {

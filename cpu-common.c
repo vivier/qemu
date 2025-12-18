@@ -398,7 +398,7 @@ int cpu_breakpoint_insert(CPUState *cpu, vaddr pc, int flags,
         pc = cpu->cc->gdb_adjust_breakpoint(cpu, pc);
     }
 
-    bp = g_malloc(sizeof(*bp));
+    bp = g_new(CPUBreakpoint, 1);
 
     bp->pc = pc;
     bp->flags = flags;

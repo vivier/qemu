@@ -58,7 +58,7 @@ static int qemu_signalfd_compat(const sigset_t *mask)
     QemuThread thread;
     int fds[2];
 
-    info = g_malloc(sizeof(*info));
+    info = g_new(struct sigfd_compat_info, 1);
 
     if (!g_unix_open_pipe(fds, FD_CLOEXEC, NULL)) {
         g_free(info);

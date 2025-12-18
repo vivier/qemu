@@ -269,7 +269,7 @@ static void vhost_vdpa_iommu_region_add(MemoryListener *listener,
 
     iommu_mr = IOMMU_MEMORY_REGION(section->mr);
 
-    iommu = g_malloc0(sizeof(*iommu));
+    iommu = g_new0(struct vdpa_iommu, 1);
     end = int128_add(int128_make64(section->offset_within_region),
                      section->size);
     end = int128_sub(end, int128_one());

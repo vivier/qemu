@@ -53,7 +53,7 @@ bool fp_port_get_link_up(FpPort *port)
 
 RockerPort *fp_port_get_info(FpPort *port)
 {
-    RockerPort *value = g_malloc0(sizeof(*value));
+    RockerPort *value = g_new0(RockerPort, 1);
 
     value->name = g_strdup(port->name);
     value->enabled = port->enabled;

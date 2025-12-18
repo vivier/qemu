@@ -1395,7 +1395,7 @@ SevLaunchMeasureInfo *qmp_query_sev_launch_measure(Error **errp)
         return NULL;
     }
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(SevLaunchMeasureInfo, 1);
     info->data = data;
 
     return info;

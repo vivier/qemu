@@ -245,7 +245,7 @@ static int vfio_user_device_io_set_irqs(VFIODevice *vbasedev,
      */
     nfds = (irq->argsz - sizeof(*irq)) / sizeof(int);
     irq->argsz = sizeof(*irq);
-    msgp = g_malloc0(sizeof(*msgp));
+    msgp = g_new0(VFIOUserIRQSet, 1);
     /*
      * Send in chunks if over max_send_fds
      */

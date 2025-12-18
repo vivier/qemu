@@ -55,7 +55,7 @@ static void kvm_cpu_enable(CPUState *cs)
     KVMEnabledCPU *enabled_cpu;
     unsigned long vcpu_id = kvm_arch_vcpu_id(cs);
 
-    enabled_cpu = g_malloc(sizeof(*enabled_cpu));
+    enabled_cpu = g_new(KVMEnabledCPU, 1);
     enabled_cpu->vcpu_id = vcpu_id;
     QLIST_INSERT_HEAD(&kvm_enabled_cpus, enabled_cpu, node);
 }

@@ -36,7 +36,7 @@
  */
 AcceleratorInfo *qmp_query_accelerators(Error **errp)
 {
-    AcceleratorInfo *info = g_malloc0(sizeof(*info));
+    AcceleratorInfo *info = g_new0(AcceleratorInfo, 1);
     AccelClass *current_class = ACCEL_GET_CLASS(current_accel());
     int i;
 
@@ -67,7 +67,7 @@ CpuInfoFastList *qmp_query_cpus_fast(Error **errp)
     CPUState *cpu;
 
     CPU_FOREACH(cpu) {
-        CpuInfoFast *value = g_malloc0(sizeof(*value));
+        CpuInfoFast *value = g_new0(CpuInfoFast, 1);
 
         value->cpu_index = cpu->cpu_index;
         value->qom_path = object_get_canonical_path(OBJECT(cpu));
@@ -76,7 +76,7 @@ CpuInfoFastList *qmp_query_cpus_fast(Error **errp)
 
         if (mc->cpu_index_to_instance_props) {
             CpuInstanceProperties *props;
-            props = g_malloc0(sizeof(*props));
+            props = g_new0(CpuInstanceProperties, 1);
             *props = mc->cpu_index_to_instance_props(ms, cpu->cpu_index);
             value->props = props;
         }
@@ -104,7 +104,7 @@ MachineInfoList *qmp_query_machines(bool has_compat_props, bool compat_props,
         const char *default_cpu_type = machine_class_default_cpu_type(mc);
         MachineInfo *info;
 
-        info = g_malloc0(sizeof(*info));
+        info = g_new0(MachineInfo, 1);
         if (mc->is_default) {
             info->has_is_default = true;
             info->is_default = true;
@@ -138,7 +138,7 @@ MachineInfoList *qmp_query_machines(bool has_compat_props, bool compat_props,
                                                             i);
                 CompatProperty *prop;
 
-                prop = g_malloc0(sizeof(*prop));
+                prop = g_new0(CompatProperty, 1);
                 prop->qom_type = g_strdup(mt_prop->driver);
                 prop->property = g_strdup(mt_prop->property);
                 prop->value = g_strdup(mt_prop->value);
@@ -156,7 +156,7 @@ MachineInfoList *qmp_query_machines(bool has_compat_props, bool compat_props,
 
 CurrentMachineParams *qmp_query_current_machine(Error **errp)
 {
-    CurrentMachineParams *params = g_malloc0(sizeof(*params));
+    CurrentMachineParams *params = g_new0(CurrentMachineParams, 1);
     params->wakeup_suspend_support = qemu_wakeup_suspend_enabled();
 
     return params;
@@ -164,7 +164,7 @@ CurrentMachineParams *qmp_query_current_machine(Error **errp)
 
 QemuTargetInfo *qmp_query_target(Error **errp)
 {
-    QemuTargetInfo *info = g_malloc0(sizeof(*info));
+    QemuTargetInfo *info = g_new0(QemuTargetInfo, 1);
 
     info->arch = target_arch();
 
@@ -203,7 +203,7 @@ static int query_memdev(Object *obj, void *opaque)
     Visitor *v;
 
     if (object_dynamic_cast(obj, TYPE_MEMORY_BACKEND)) {
-        m = g_malloc0(sizeof(*m));
+        m = g_new0(Memdev, 1);
 
         m->id = g_strdup(object_get_canonical_path_component(obj));
 
@@ -284,7 +284,7 @@ HumanReadableText *qmp_x_query_numa(Error **errp)
 
 KvmInfo *qmp_query_kvm(Error **errp)
 {
-    KvmInfo *info = g_malloc0(sizeof(*info));
+    KvmInfo *info = g_new0(KvmInfo, 1);
 
     info->enabled = kvm_enabled();
     info->present = accel_find("kvm");
@@ -294,7 +294,7 @@ KvmInfo *qmp_query_kvm(Error **errp)
 
 UuidInfo *qmp_query_uuid(Error **errp)
 {
-    UuidInfo *info = g_malloc0(sizeof(*info));
+    UuidInfo *info = g_new0(UuidInfo, 1);
 
     info->UUID = qemu_uuid_unparse_strdup(&qemu_uuid);
     return info;
@@ -431,7 +431,7 @@ GuidInfo *qmp_query_vm_generation_id(Error **errp)
     }
     vms = VMGENID(obj);
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(GuidInfo, 1);
     info->guid = qemu_uuid_unparse_strdup(&vms->guid);
     return info;
 }

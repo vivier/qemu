@@ -81,7 +81,7 @@ void hmp_wavcapture(Monitor *mon, const QDict *qdict)
         return;
     }
 
-    s = g_malloc0 (sizeof (*s));
+    s = g_new0(CaptureState, 1);
 
     if (wav_start_capture(as, s, path, freq, bits, nchannels)) {
         monitor_printf(mon, "Failed to add wave capture\n");

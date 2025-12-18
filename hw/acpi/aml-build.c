@@ -76,7 +76,7 @@ void crs_range_insert(GPtrArray *ranges, uint64_t base, uint64_t limit)
 {
     CrsRangeEntry *entry;
 
-    entry = g_malloc(sizeof(*entry));
+    entry = g_new(CrsRangeEntry, 1);
     entry->base = base;
     entry->limit = limit;
 

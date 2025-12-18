@@ -311,14 +311,14 @@ FdsetInfoList *qmp_query_fdsets(Error **errp)
 
     QEMU_LOCK_GUARD(&mon_fdsets_lock);
     QLIST_FOREACH(mon_fdset, &mon_fdsets, next) {
-        FdsetInfo *fdset_info = g_malloc0(sizeof(*fdset_info));
+        FdsetInfo *fdset_info = g_new0(FdsetInfo, 1);
 
         fdset_info->fdset_id = mon_fdset->id;
 
         QLIST_FOREACH(mon_fdset_fd, &mon_fdset->fds, next) {
             FdsetFdInfo *fdsetfd_info;
 
-            fdsetfd_info = g_malloc0(sizeof(*fdsetfd_info));
+            fdsetfd_info = g_new0(FdsetFdInfo, 1);
             fdsetfd_info->fd = mon_fdset_fd->fd;
             fdsetfd_info->opaque = g_strdup(mon_fdset_fd->opaque);
 
@@ -380,7 +380,7 @@ AddfdInfo *monitor_fdset_add_fd(int fd, bool has_fdset_id, int64_t fdset_id,
             }
         }
 
-        mon_fdset = g_malloc0(sizeof(*mon_fdset));
+        mon_fdset = g_new0(MonFdset, 1);
         if (has_fdset_id) {
             mon_fdset->id = fdset_id;
         } else {
@@ -397,12 +397,12 @@ AddfdInfo *monitor_fdset_add_fd(int fd, bool has_fdset_id, int64_t fdset_id,
         }
     }
 
-    mon_fdset_fd = g_malloc0(sizeof(*mon_fdset_fd));
+    mon_fdset_fd = g_new0(MonFdsetFd, 1);
     mon_fdset_fd->fd = fd;
     mon_fdset_fd->opaque = g_strdup(opaque);
     QLIST_INSERT_HEAD(&mon_fdset->fds, mon_fdset_fd, next);
 
-    fdinfo = g_malloc0(sizeof(*fdinfo));
+    fdinfo = g_new0(AddfdInfo, 1);
     fdinfo->fdset_id = mon_fdset->id;
     fdinfo->fd = mon_fdset_fd->fd;
 
@@ -462,7 +462,7 @@ int monitor_fdset_dup_fd_add(int64_t fdset_id, int flags, Error **errp)
             return -1;
         }
 
-        mon_fdset_fd_dup = g_malloc0(sizeof(*mon_fdset_fd_dup));
+        mon_fdset_fd_dup = g_new0(MonFdsetFd, 1);
         mon_fdset_fd_dup->fd = dup_fd;
         QLIST_INSERT_HEAD(&mon_fdset->dup_fds, mon_fdset_fd_dup, next);
         return dup_fd;

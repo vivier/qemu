@@ -81,7 +81,7 @@ static void bus_remove_child(BusState *bus, DeviceState *child)
 static void bus_add_child(BusState *bus, DeviceState *child)
 {
     char name[32];
-    BusChild *kid = g_malloc0(sizeof(*kid));
+    BusChild *kid = g_new0(BusChild, 1);
 
     bus->num_children++;
     kid->index = bus->max_index++;

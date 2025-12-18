@@ -560,7 +560,7 @@ static SpaprNVDIMMDeviceFlushState *spapr_nvdimm_init_new_flush_state(
 {
     SpaprNVDIMMDeviceFlushState *state;
 
-    state = g_malloc0(sizeof(*state));
+    state = g_new0(SpaprNVDIMMDeviceFlushState, 1);
 
     spapr_nvdimm->nvdimm_flush_token++;
     /* Token zero is presumed as no job pending. Assert on overflow to zero */

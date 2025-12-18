@@ -1438,7 +1438,7 @@ static void load_elf_image(const char *image_name, const ImageSource *src,
 
     if (elf_is_fdpic(ehdr)) {
         struct elf32_fdpic_loadseg *loadsegs = info->loadsegs =
-            g_malloc(sizeof(*loadsegs) * info->nsegs);
+            g_new(struct elf32_fdpic_loadseg, info->nsegs);
 
         for (i = 0; i < ehdr->e_phnum; ++i) {
             switch (phdr[i].p_type) {

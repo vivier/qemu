@@ -184,7 +184,7 @@ static void visit_primitive_list(Visitor *v, void **native, Error **errp)
 
 static TestStruct *struct_create(void)
 {
-    TestStruct *ts = g_malloc0(sizeof(*ts));
+    TestStruct *ts = g_new0(TestStruct, 1);
     ts->integer = -42;
     ts->boolean = true;
     ts->string = strdup("test string");
@@ -213,7 +213,7 @@ static void visit_struct(Visitor *v, void **native, Error **errp)
 
 static UserDefTwo *nested_struct_create(void)
 {
-    UserDefTwo *udnp = g_malloc0(sizeof(*udnp));
+    UserDefTwo *udnp = g_new0(UserDefTwo, 1);
     udnp->string0 = strdup("test_string0");
     udnp->dict1 = g_malloc0(sizeof(*udnp->dict1));
     udnp->dict1->string1 = strdup("test_string1");
@@ -295,7 +295,7 @@ static void test_primitives(gconstpointer opaque)
     TestArgs *args = (TestArgs *) opaque;
     const SerializeOps *ops = args->ops;
     PrimitiveType *pt = args->test_data;
-    PrimitiveType *pt_copy = g_malloc0(sizeof(*pt_copy));
+    PrimitiveType *pt_copy = g_new0(PrimitiveType, 1);
     void *serialize_data;
 
     pt_copy->type = pt->type;
@@ -925,7 +925,7 @@ typedef struct QmpSerializeData {
 static void qmp_serialize(void *native_in, void **datap,
                           VisitorFunc visit, Error **errp)
 {
-    QmpSerializeData *d = g_malloc0(sizeof(*d));
+    QmpSerializeData *d = g_new0(QmpSerializeData, 1);
 
     d->qov = qobject_output_visitor_new(&d->obj);
     visit(d->qov, &native_in, errp);
@@ -969,7 +969,7 @@ typedef struct StringSerializeData {
 static void string_serialize(void *native_in, void **datap,
                              VisitorFunc visit, Error **errp)
 {
-    StringSerializeData *d = g_malloc0(sizeof(*d));
+    StringSerializeData *d = g_new0(StringSerializeData, 1);
 
     d->sov = string_output_visitor_new(false, &d->string);
     visit(d->sov, &native_in, errp);
@@ -1034,7 +1034,7 @@ static void add_visitor_type(const SerializeOps *ops)
         while (pt_values[i].type != PTYPE_EOL) {
             sprintf(testname, "%s/primitives/%s", testname_prefix,
                     pt_values[i].description);
-            args = g_malloc0(sizeof(*args));
+            args = g_new0(TestArgs, 1);
             args->ops = ops;
             args->test_data = &pt_values[i];
             g_test_add_data_func(testname, args, test_primitives);
@@ -1044,13 +1044,13 @@ static void add_visitor_type(const SerializeOps *ops)
 
     if (ops->caps & VCAP_STRUCTURES) {
         sprintf(testname, "%s/struct", testname_prefix);
-        args = g_malloc0(sizeof(*args));
+        args = g_new0(TestArgs, 1);
         args->ops = ops;
         args->test_data = NULL;
         g_test_add_data_func(testname, args, test_struct);
 
         sprintf(testname, "%s/nested_struct", testname_prefix);
-        args = g_malloc0(sizeof(*args));
+        args = g_new0(TestArgs, 1);
         args->ops = ops;
         args->test_data = NULL;
         g_test_add_data_func(testname, args, test_nested_struct);
@@ -1058,7 +1058,7 @@ static void add_visitor_type(const SerializeOps *ops)
 
     if (ops->caps & VCAP_LISTS) {
         sprintf(testname, "%s/nested_struct_list", testname_prefix);
-        args = g_malloc0(sizeof(*args));
+        args = g_new0(TestArgs, 1);
         args->ops = ops;
         args->test_data = NULL;
         g_test_add_data_func(testname, args, test_nested_struct_list);
@@ -1069,7 +1069,7 @@ static void add_visitor_type(const SerializeOps *ops)
         while (pt_values[i].type != PTYPE_EOL) {
             sprintf(testname, "%s/primitive_list/%s", testname_prefix,
                     pt_values[i].description);
-            args = g_malloc0(sizeof(*args));
+            args = g_new0(TestArgs, 1);
             args->ops = ops;
             args->test_data = &pt_values[i];
             g_test_add_data_func(testname, args, test_primitive_lists);

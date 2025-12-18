@@ -272,7 +272,7 @@ static void mm_fw_cfg_read(QFWCFG *fw_cfg, void *data, size_t len)
 
 QFWCFG *mm_fw_cfg_init(QTestState *qts, uint64_t base)
 {
-    QFWCFG *fw_cfg = g_malloc0(sizeof(*fw_cfg));
+    QFWCFG *fw_cfg = g_new0(QFWCFG, 1);
 
     fw_cfg->base = base;
     fw_cfg->qts = qts;
@@ -304,7 +304,7 @@ static void io_fw_cfg_read(QFWCFG *fw_cfg, void *data, size_t len)
 
 QFWCFG *io_fw_cfg_init(QTestState *qts, uint16_t base)
 {
-    QFWCFG *fw_cfg = g_malloc0(sizeof(*fw_cfg));
+    QFWCFG *fw_cfg = g_new0(QFWCFG, 1);
 
     fw_cfg->base = base;
     fw_cfg->qts = qts;

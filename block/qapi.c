@@ -61,7 +61,7 @@ BlockDeviceInfo *bdrv_block_device_info(BlockBackend *blk,
 
     bdrv_refresh_filename(bs);
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(BlockDeviceInfo, 1);
     info->file                   = g_strdup(bs->filename);
     info->ro                     = bdrv_is_read_only(bs);
     info->drv                    = g_strdup(bs->drv->format_name);
@@ -458,7 +458,7 @@ fail:
 static void GRAPH_RDLOCK
 bdrv_query_info(BlockBackend *blk, BlockInfo **p_info, Error **errp)
 {
-    BlockInfo *info = g_malloc0(sizeof(*info));
+    BlockInfo *info = g_new0(BlockInfo, 1);
     BlockDriverState *bs = blk_bs(blk);
     char *qdev;
 
@@ -580,7 +580,7 @@ static void bdrv_query_blk_stats(BlockDeviceStats *ds, BlockBackend *blk)
     ds->account_failed = stats->account_failed;
 
     while ((ts = block_acct_interval_next(stats, ts))) {
-        BlockDeviceTimedStats *dev_stats = g_malloc0(sizeof(*dev_stats));
+        BlockDeviceTimedStats *dev_stats = g_new0(BlockDeviceTimedStats, 1);
 
         TimedAverage *rd = &ts->latency[BLOCK_ACCT_READ];
         TimedAverage *wr = &ts->latency[BLOCK_ACCT_WRITE];
@@ -633,7 +633,7 @@ bdrv_query_bds_stats(BlockDriverState *bs, bool blk_level)
     BlockDriverState *filter_or_cow_bs;
     BlockStats *s = NULL;
 
-    s = g_malloc0(sizeof(*s));
+    s = g_new0(BlockStats, 1);
     s->stats = g_malloc0(sizeof(*s->stats));
 
     if (!bs) {
@@ -713,7 +713,7 @@ BlockInfoList *qmp_query_block(Error **errp)
             continue;
         }
 
-        info = g_malloc0(sizeof(*info));
+        info = g_new0(BlockInfoList, 1);
         bdrv_query_info(blk, &info->value, &local_err);
         if (local_err) {
             error_propagate(errp, local_err);

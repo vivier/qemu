@@ -114,7 +114,7 @@ static void query_commands_cb(const QmpCommand *cmd, void *opaque)
         return;
     }
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(CommandInfo, 1);
     info->name = g_strdup(cmd->name);
     QAPI_LIST_PREPEND(*list, info);
 }

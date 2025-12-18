@@ -1434,7 +1434,7 @@ static void fill_destination_migration_info(MigrationInfo *info)
 
 MigrationInfo *qmp_query_migrate(Error **errp)
 {
-    MigrationInfo *info = g_malloc0(sizeof(*info));
+    MigrationInfo *info = g_new0(MigrationInfo, 1);
 
     fill_destination_migration_info(info);
     fill_source_migration_info(info);

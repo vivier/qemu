@@ -58,7 +58,7 @@ void apic_set_max_apic_id(uint32_t max_apic_id)
     /* round up the max apic id to next multiple of words */
     max_apics = (max_apic_id + word_size - 1) & ~(word_size - 1);
 
-    local_apics = g_malloc0(sizeof(*local_apics) * max_apics);
+    local_apics = g_new0(APICCommonState *, max_apics);
     max_apic_words = max_apics >> 5;
 }
 

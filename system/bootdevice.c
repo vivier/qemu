@@ -330,7 +330,7 @@ void device_add_bootindex_property(Object *obj, int32_t *bootindex,
                                    const char *name, const char *suffix,
                                    DeviceState *dev)
 {
-    BootIndexProperty *prop = g_malloc0(sizeof(*prop));
+    BootIndexProperty *prop = g_new0(BootIndexProperty, 1);
 
     prop->bootindex = bootindex;
     prop->suffix = suffix;

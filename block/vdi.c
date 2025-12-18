@@ -706,7 +706,7 @@ nonallocating_write:
         uint32_t n_sectors;
 
         g_free(block);
-        header = g_malloc(sizeof(*header));
+        header = g_new(VdiHeader, 1);
 
         logout("now writing modified header\n");
         assert(VDI_IS_ALLOCATED(bmap_first));

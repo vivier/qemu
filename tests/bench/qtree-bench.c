@@ -78,7 +78,7 @@ static void init_empty_tree_and_keys(enum impl_type impl,
                                      void **ret_tree, size_t **ret_keys,
                                      size_t n_elems)
 {
-    size_t *keys = g_malloc_n(n_elems, sizeof(*keys));
+    size_t *keys = g_new(size_t, n_elems);
     for (size_t i = 0; i < n_elems; i++) {
         keys[i] = i;
     }

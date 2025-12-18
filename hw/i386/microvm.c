@@ -168,7 +168,7 @@ static void microvm_devices_init(MicrovmMachineState *mms)
 
     /* Core components */
     ioapics = microvm_ioapics(mms);
-    gsi_state = g_malloc0(sizeof(*gsi_state));
+    gsi_state = g_new0(GSIState, 1);
     x86ms->gsi = qemu_allocate_irqs(gsi_handler, gsi_state,
                                     IOAPIC_NUM_PINS * ioapics);
 
@@ -301,7 +301,7 @@ static void microvm_memory_init(MicrovmMachineState *mms)
         x86ms->below_4g_mem_size = machine->ram_size;
     }
 
-    ram_below_4g = g_malloc(sizeof(*ram_below_4g));
+    ram_below_4g = g_new(MemoryRegion, 1);
     memory_region_init_alias(ram_below_4g, NULL, "ram-below-4g", machine->ram,
                              0, x86ms->below_4g_mem_size);
     memory_region_add_subregion(system_memory, 0, ram_below_4g);
@@ -309,7 +309,7 @@ static void microvm_memory_init(MicrovmMachineState *mms)
     e820_add_entry(0, x86ms->below_4g_mem_size, E820_RAM);
 
     if (x86ms->above_4g_mem_size > 0) {
-        ram_above_4g = g_malloc(sizeof(*ram_above_4g));
+        ram_above_4g = g_new(MemoryRegion, 1);
         memory_region_init_alias(ram_above_4g, NULL, "ram-above-4g",
                                  machine->ram,
                                  x86ms->below_4g_mem_size,

@@ -106,7 +106,7 @@ OurRangeMemslots *hvb_our_range_memslots_new(uint64_t addr,
 {
     OurRangeMemslots *our_range;
 
-    our_range = g_malloc(sizeof(*our_range));
+    our_range = g_new(OurRangeMemslots, 1);
     our_range_init(&our_range->range,
                    addr / HV_BALLOON_PAGE_SIZE,
                    memory_region_size(parent_mr) / HV_BALLOON_PAGE_SIZE);

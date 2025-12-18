@@ -531,7 +531,7 @@ void usb_desc_set_string(USBDevice *dev, uint8_t index, const char *str)
         }
     }
     if (s == NULL) {
-        s = g_malloc0(sizeof(*s));
+        s = g_new0(USBDescString, 1);
         s->index = index;
         QLIST_INSERT_HEAD(&dev->strings, s, next);
     }

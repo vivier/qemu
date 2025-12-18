@@ -102,7 +102,7 @@ static TypeImpl *type_table_lookup(const char *name)
 
 static TypeImpl *type_new(const TypeInfo *info)
 {
-    TypeImpl *ti = g_malloc0(sizeof(*ti));
+    TypeImpl *ti = g_new0(TypeImpl, 1);
     int i;
 
     g_assert(info->name != NULL);
@@ -1270,7 +1270,7 @@ object_property_try_add(Object *obj, const char *name, const char *type,
         return NULL;
     }
 
-    prop = g_malloc0(sizeof(*prop));
+    prop = g_new0(ObjectProperty, 1);
 
     prop->name = g_strdup(name);
     prop->type = g_strdup(type);
@@ -1308,7 +1308,7 @@ object_class_property_add(ObjectClass *klass,
 
     assert(!object_class_property_find(klass, name));
 
-    prop = g_malloc0(sizeof(*prop));
+    prop = g_new0(ObjectProperty, 1);
 
     prop->name = g_strdup(name);
     prop->type = g_strdup(type);
@@ -2005,7 +2005,7 @@ object_add_link_prop(Object *obj, const char *name,
                                    Object *, Error **),
                      ObjectPropertyLinkFlags flags)
 {
-    LinkProperty *prop = g_malloc(sizeof(*prop));
+    LinkProperty *prop = g_new(LinkProperty, 1);
     g_autofree char *full_type = NULL;
     ObjectProperty *op;
 
@@ -2311,7 +2311,7 @@ object_property_add_str(Object *obj, const char *name,
                         char *(*get)(Object *, Error **),
                         void (*set)(Object *, const char *, Error **))
 {
-    StringProperty *prop = g_malloc0(sizeof(*prop));
+    StringProperty *prop = g_new0(StringProperty, 1);
 
     prop->get = get;
     prop->set = set;
@@ -2329,7 +2329,7 @@ object_class_property_add_str(ObjectClass *klass, const char *name,
                                    void (*set)(Object *, const char *,
                                                Error **))
 {
-    StringProperty *prop = g_malloc0(sizeof(*prop));
+    StringProperty *prop = g_new0(StringProperty, 1);
 
     prop->get = get;
     prop->set = set;
@@ -2381,7 +2381,7 @@ object_property_add_bool(Object *obj, const char *name,
                          bool (*get)(Object *, Error **),
                          void (*set)(Object *, bool, Error **))
 {
-    BoolProperty *prop = g_malloc0(sizeof(*prop));
+    BoolProperty *prop = g_new0(BoolProperty, 1);
 
     prop->get = get;
     prop->set = set;
@@ -2398,7 +2398,7 @@ object_class_property_add_bool(ObjectClass *klass, const char *name,
                                     bool (*get)(Object *, Error **),
                                     void (*set)(Object *, bool, Error **))
 {
-    BoolProperty *prop = g_malloc0(sizeof(*prop));
+    BoolProperty *prop = g_new0(BoolProperty, 1);
 
     prop->get = get;
     prop->set = set;
@@ -2445,7 +2445,7 @@ object_property_add_enum(Object *obj, const char *name,
                          int (*get)(Object *, Error **),
                          void (*set)(Object *, int, Error **))
 {
-    EnumProperty *prop = g_malloc(sizeof(*prop));
+    EnumProperty *prop = g_new(EnumProperty, 1);
 
     prop->lookup = lookup;
     prop->get = get;
@@ -2465,7 +2465,7 @@ object_class_property_add_enum(ObjectClass *klass, const char *name,
                                     int (*get)(Object *, Error **),
                                     void (*set)(Object *, int, Error **))
 {
-    EnumProperty *prop = g_malloc(sizeof(*prop));
+    EnumProperty *prop = g_new(EnumProperty, 1);
 
     prop->lookup = lookup;
     prop->get = get;
@@ -2525,7 +2525,7 @@ ObjectProperty *
 object_property_add_tm(Object *obj, const char *name,
                        void (*get)(Object *, struct tm *, Error **))
 {
-    TMProperty *prop = g_malloc0(sizeof(*prop));
+    TMProperty *prop = g_new0(TMProperty, 1);
 
     prop->get = get;
 
@@ -2539,7 +2539,7 @@ ObjectProperty *
 object_class_property_add_tm(ObjectClass *klass, const char *name,
                              void (*get)(Object *, struct tm *, Error **))
 {
-    TMProperty *prop = g_malloc0(sizeof(*prop));
+    TMProperty *prop = g_new0(TMProperty, 1);
 
     prop->get = get;
 
@@ -2853,7 +2853,7 @@ object_property_add_alias(Object *obj, const char *name,
         prop_type = g_strdup(target_prop->type);
     }
 
-    prop = g_malloc(sizeof(*prop));
+    prop = g_new(AliasProperty, 1);
     prop->target_obj = target_obj;
     prop->target_name = g_strdup(target_name);
 

@@ -239,7 +239,7 @@ static VncServerInfo *vnc_server_info_get(VncDisplay *vd)
         return NULL;
     }
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(VncServerInfo, 1);
     vnc_init_basic_info_from_server_addr(qio_net_listener_sioc(vd->listener, 0),
                                          qapi_VncServerInfo_base(info), &err);
     info->auth = g_strdup(vnc_auth_name(vd));
@@ -273,7 +273,7 @@ static void vnc_client_cache_addr(VncState *client)
 {
     Error *err = NULL;
 
-    client->info = g_malloc0(sizeof(*client->info));
+    client->info = g_new0(VncClientInfo, 1);
     vnc_init_basic_info_from_remote_addr(client->sioc,
                                          qapi_VncClientInfo_base(client->info),
                                          &err);
@@ -320,7 +320,7 @@ static VncClientInfo *qmp_query_vnc_client(const VncState *client)
     VncClientInfo *info;
     Error *err = NULL;
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(VncClientInfo, 1);
 
     vnc_init_basic_info_from_remote_addr(client->sioc,
                                          qapi_VncClientInfo_base(info),
@@ -373,7 +373,7 @@ static VncClientInfoList *qmp_query_client_list(VncDisplay *vd)
 
 VncInfo *qmp_query_vnc(Error **errp)
 {
-    VncInfo *info = g_malloc0(sizeof(*info));
+    VncInfo *info = g_new0(VncInfo, 1);
     VncDisplay *vd = vnc_display_find(NULL);
     SocketAddress *addr = NULL;
 
@@ -3448,7 +3448,7 @@ void vnc_display_init(const char *id, Error **errp)
     if (vnc_display_find(id) != NULL) {
         return;
     }
-    vd = g_malloc0(sizeof(*vd));
+    vd = g_new0(VncDisplay, 1);
 
     vd->id = strdup(id);
     QTAILQ_INSERT_TAIL(&vnc_displays, vd, next);

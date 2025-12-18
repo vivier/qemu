@@ -229,7 +229,7 @@ static void *sh_timer_init(uint32_t freq, int feat, qemu_irq irq)
 {
     SHTimerState *s;
 
-    s = g_malloc0(sizeof(*s));
+    s = g_new0(SHTimerState, 1);
     s->freq = freq;
     s->feat = feat;
     s->tcor = 0xffffffff;
@@ -351,7 +351,7 @@ void tmu012_init(MemoryRegion *sysmem, hwaddr base, int feat, uint32_t freq,
     tmu012_state *s;
     int timer_feat = (feat & TMU012_FEAT_EXTCLK) ? TIMER_FEAT_EXTCLK : 0;
 
-    s = g_malloc0(sizeof(*s));
+    s = g_new0(tmu012_state, 1);
     s->feat = feat;
     s->timer[0] = sh_timer_init(freq, timer_feat, ch0_irq);
     s->timer[1] = sh_timer_init(freq, timer_feat, ch1_irq);

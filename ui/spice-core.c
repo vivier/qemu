@@ -60,7 +60,7 @@ static SpiceTimer *timer_add(SpiceTimerFunc func, void *opaque)
 {
     SpiceTimer *timer;
 
-    timer = g_malloc0(sizeof(*timer));
+    timer = g_new0(SpiceTimer, 1);
     timer->timer = timer_new_ms(QEMU_CLOCK_REALTIME, func, opaque);
     return timer;
 }
@@ -137,7 +137,7 @@ static SpiceWatch *watch_add(int fd, int event_mask, SpiceWatchFunc func, void *
     }
 #endif
 
-    watch = g_malloc0(sizeof(*watch));
+    watch = g_new0(SpiceWatch, 1);
     watch->fd     = fd;
     watch->func   = func;
     watch->opaque = opaque;
@@ -167,7 +167,7 @@ static void channel_list_add(SpiceChannelEventInfo *info)
 {
     ChannelList *item;
 
-    item = g_malloc0(sizeof(*item));
+    item = g_new0(ChannelList, 1);
     item->info = info;
     QTAILQ_INSERT_TAIL(&channel_list, item, link);
 }
@@ -210,8 +210,8 @@ static void add_channel_info(SpiceChannel *sc, SpiceChannelEventInfo *info)
 
 static void channel_event(int event, SpiceChannelEventInfo *info)
 {
-    SpiceServerInfo *server = g_malloc0(sizeof(*server));
-    SpiceChannel *client = g_malloc0(sizeof(*client));
+    SpiceServerInfo *server = g_new0(SpiceServerInfo, 1);
+    SpiceChannel *client = g_new0(SpiceChannel, 1);
 
     /*
      * Spice server might have called us from spice worker thread
@@ -389,7 +389,7 @@ static SpiceChannelList *qmp_query_spice_channels(void)
 
         assert(item->info->flags & SPICE_CHANNEL_EVENT_FLAG_ADDR_EXT);
 
-        chan = g_malloc0(sizeof(*chan));
+        chan = g_new0(SpiceChannel, 1);
 
         paddr = (struct sockaddr *)&item->info->paddr_ext;
         plen = item->info->plen_ext;
@@ -534,7 +534,7 @@ static SpiceInfo *qmp_query_spice_real(Error **errp)
     unsigned int minor;
     unsigned int micro;
 
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(SpiceInfo, 1);
 
     if (!spice_server || !opts) {
         info->enabled = false;

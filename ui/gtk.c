@@ -2513,7 +2513,7 @@ static void gtk_display_init(DisplayState *ds, DisplayOptions *opts)
         exit(1);
     }
     assert(opts->type == DISPLAY_TYPE_GTK);
-    s = g_malloc0(sizeof(*s));
+    s = g_new0(GtkDisplayState, 1);
     s->opts = opts;
 
     theme = gtk_icon_theme_get_default();

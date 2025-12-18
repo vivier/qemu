@@ -865,8 +865,8 @@ static void address_space_update_ioeventfds(AddressSpace *as)
                 ++ioeventfd_nb;
                 if (ioeventfd_nb > ioeventfd_max) {
                     ioeventfd_max = MAX(ioeventfd_max * 2, 4);
-                    ioeventfds = g_realloc(ioeventfds,
-                            ioeventfd_max * sizeof(*ioeventfds));
+                    ioeventfds = g_renew(MemoryRegionIoeventfd, ioeventfds,
+                                         ioeventfd_max);
                 }
                 ioeventfds[ioeventfd_nb-1] = fr->mr->ioeventfds[i];
                 ioeventfds[ioeventfd_nb-1].addr = tmp;
@@ -2524,7 +2524,7 @@ void memory_region_add_coalescing(MemoryRegion *mr,
                                   hwaddr offset,
                                   uint64_t size)
 {
-    CoalescedMemoryRange *cmr = g_malloc(sizeof(*cmr));
+    CoalescedMemoryRange *cmr = g_new(CoalescedMemoryRange, 1);
 
     cmr->addr = addrrange_make(int128_make64(offset), int128_make64(size));
     QTAILQ_INSERT_TAIL(&mr->coalesced, cmr, link);

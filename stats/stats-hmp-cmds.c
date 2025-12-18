@@ -136,7 +136,7 @@ static void print_stats_results(Monitor *mon, StatsTarget target,
 static StatsFilter *stats_filter(StatsTarget target, const char *names,
                                  int cpu_index, StatsProvider provider)
 {
-    StatsFilter *filter = g_malloc0(sizeof(*filter));
+    StatsFilter *filter = g_new0(StatsFilter, 1);
     StatsProvider provider_idx;
     StatsRequestList *request_list = NULL;
 

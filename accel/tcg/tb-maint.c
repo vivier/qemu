@@ -494,7 +494,7 @@ void tb_unlock_pages(TranslationBlock *tb)
 static inline struct page_entry *
 page_entry_new(PageDesc *pd, tb_page_addr_t index)
 {
-    struct page_entry *pe = g_malloc(sizeof(*pe));
+    struct page_entry *pe = g_new(struct page_entry, 1);
 
     pe->index = index;
     pe->pd = pd;
@@ -608,7 +608,7 @@ static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
 static struct page_collection *page_collection_lock(tb_page_addr_t start,
                                                     tb_page_addr_t last)
 {
-    struct page_collection *set = g_malloc(sizeof(*set));
+    struct page_collection *set = g_new(struct page_collection, 1);
     tb_page_addr_t index;
     PageDesc *pd;
 

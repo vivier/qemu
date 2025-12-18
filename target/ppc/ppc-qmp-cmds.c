@@ -193,7 +193,7 @@ static void ppc_cpu_defs_entry(gpointer data, gpointer user_data)
     CpuDefinitionInfo *info;
 
     typename = object_class_get_name(oc);
-    info = g_malloc0(sizeof(*info));
+    info = g_new0(CpuDefinitionInfo, 1);
     info->name = cpu_model_from_type(typename);
 
     QAPI_LIST_PREPEND(*first, info);
@@ -219,7 +219,7 @@ CpuDefinitionInfoList *qmp_query_cpu_definitions(Error **errp)
             continue;
         }
 
-        info = g_malloc0(sizeof(*info));
+        info = g_new0(CpuDefinitionInfo, 1);
         info->name = g_strdup(alias->alias);
         info->q_typename = g_strdup(object_class_get_name(oc));
 

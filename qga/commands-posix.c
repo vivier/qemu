@@ -1066,7 +1066,7 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
         info = guest_find_interface(head, ifa->ifa_name);
 
         if (!info) {
-            info = g_malloc0(sizeof(*info));
+            info = g_new0(GuestNetworkInterface, 1);
             info->name = g_strdup(ifa->ifa_name);
 
             QAPI_LIST_APPEND(tail, info);
@@ -1094,7 +1094,7 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
                 goto error;
             }
 
-            address_item = g_malloc0(sizeof(*address_item));
+            address_item = g_new0(GuestIpAddress, 1);
             address_item->ip_address = g_strdup(addr4);
             address_item->ip_address_type = GUEST_IP_ADDRESS_TYPE_IPV4;
 
@@ -1113,7 +1113,7 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
                 goto error;
             }
 
-            address_item = g_malloc0(sizeof(*address_item));
+            address_item = g_new0(GuestIpAddress, 1);
             address_item->ip_address = g_strdup(addr6);
             address_item->ip_address_type = GUEST_IP_ADDRESS_TYPE_IPV6;
 
@@ -1142,7 +1142,7 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
         info->has_ip_addresses = true;
 
         if (!info->statistics) {
-            interface_stat = g_malloc0(sizeof(*interface_stat));
+            interface_stat = g_new0(GuestNetworkInterfaceStat, 1);
             if (guest_get_network_stats(info->name, interface_stat) == -1) {
                 g_free(interface_stat);
             } else {

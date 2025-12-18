@@ -19,7 +19,7 @@ void qmp_register_command(QmpCommandList *cmds, const char *name,
                           QmpCommandFunc *fn, QmpCommandOptions options,
                           uint64_t features)
 {
-    QmpCommand *cmd = g_malloc0(sizeof(*cmd));
+    QmpCommand *cmd = g_new0(QmpCommand, 1);
 
     /* QCO_COROUTINE and QCO_ALLOW_OOB are incompatible for now */
     assert(!((options & QCO_COROUTINE) && (options & QCO_ALLOW_OOB)));

@@ -51,7 +51,7 @@ struct NetRxPkt {
 
 void net_rx_pkt_init(struct NetRxPkt **pkt)
 {
-    struct NetRxPkt *p = g_malloc0(sizeof *p);
+    struct NetRxPkt *p = g_new0(struct NetRxPkt, 1);
     p->vec = NULL;
     p->vec_len_total = 0;
     *pkt = p;
@@ -78,7 +78,7 @@ net_rx_pkt_iovec_realloc(struct NetRxPkt *pkt,
 {
     if (pkt->vec_len_total < new_iov_len) {
         g_free(pkt->vec);
-        pkt->vec = g_malloc(sizeof(*pkt->vec) * new_iov_len);
+        pkt->vec = g_new(struct iovec, new_iov_len);
         pkt->vec_len_total = new_iov_len;
     }
 }

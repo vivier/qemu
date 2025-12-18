@@ -153,7 +153,7 @@ Visitor *qapi_clone_visitor_new(void)
 {
     QapiCloneVisitor *v;
 
-    v = g_malloc0(sizeof(*v));
+    v = g_new0(QapiCloneVisitor, 1);
 
     v->visitor.type = VISITOR_CLONE;
     v->visitor.start_struct = qapi_clone_start_struct;

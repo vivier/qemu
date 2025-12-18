@@ -37,7 +37,7 @@ int cpu_watchpoint_insert(CPUState *cpu, vaddr addr, vaddr len,
                      VADDR_PRIx ", len=%" VADDR_PRIu, addr, len);
         return -EINVAL;
     }
-    wp = g_malloc(sizeof(*wp));
+    wp = g_new(CPUWatchpoint, 1);
 
     wp->vaddr = addr;
     wp->len = len;

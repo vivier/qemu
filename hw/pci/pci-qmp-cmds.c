@@ -43,7 +43,7 @@ static PciMemoryRegionList *qmp_query_pci_regions(const PCIDevice *dev)
             continue;
         }
 
-        region = g_malloc0(sizeof(*region));
+        region = g_new0(PciMemoryRegion, 1);
 
         if (r->type & PCI_BASE_ADDRESS_SPACE_IO) {
             region->type = g_strdup("io");
@@ -176,7 +176,7 @@ static PciInfo *qmp_query_pci_bus(PCIBus *bus, int bus_num)
 
     bus = pci_find_bus_nr(bus, bus_num);
     if (bus) {
-        info = g_malloc0(sizeof(*info));
+        info = g_new0(PciInfo, 1);
         info->bus = bus_num;
         info->devices = qmp_query_pci_devices(bus, bus_num);
     }

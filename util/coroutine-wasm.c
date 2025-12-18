@@ -59,7 +59,7 @@ Coroutine *qemu_coroutine_new(void)
 {
     CoroutineEmscripten *co;
 
-    co = g_malloc0(sizeof(*co));
+    co = g_new0(CoroutineEmscripten, 1);
 
     co->stack_size = COROUTINE_STACK_SIZE;
     co->stack = qemu_alloc_stack(&co->stack_size);
@@ -101,7 +101,7 @@ Coroutine *qemu_coroutine_self(void)
     if (!self) {
         CoroutineEmscripten *leaderp = get_leader();
         if (!leaderp) {
-            leaderp = g_malloc0(sizeof(*leaderp));
+            leaderp = g_new0(CoroutineEmscripten, 1);
             leaderp->asyncify_stack = g_malloc0(leader_asyncify_stack_size);
             leaderp->asyncify_stack_size = leader_asyncify_stack_size;
             emscripten_fiber_init_from_current_context(

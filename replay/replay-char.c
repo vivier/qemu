@@ -43,8 +43,7 @@ void replay_register_char_driver(Chardev *chr)
     if (replay_mode == REPLAY_MODE_NONE) {
         return;
     }
-    char_drivers = g_realloc(char_drivers,
-                             sizeof(*char_drivers) * (drivers_count + 1));
+    char_drivers = g_renew(Chardev *, char_drivers, drivers_count + 1);
     char_drivers[drivers_count++] = chr;
 }
 

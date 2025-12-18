@@ -63,7 +63,7 @@ struct NetTxPkt {
 
 void net_tx_pkt_init(struct NetTxPkt **pkt, uint32_t max_frags)
 {
-    struct NetTxPkt *p = g_malloc0(sizeof *p);
+    struct NetTxPkt *p = g_new0(struct NetTxPkt, 1);
 
     p->vec = g_new(struct iovec, max_frags + NET_TX_PKT_PL_START_FRAG);
 

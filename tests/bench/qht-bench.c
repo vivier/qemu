@@ -247,7 +247,7 @@ th_create_n(QemuThread **threads, struct thread_info **infos, const char *name,
     QemuThread *th;
     int i;
 
-    th = g_malloc(sizeof(*th) * n);
+    th = g_new(QemuThread, n);
     *threads = th;
 
     info = qemu_memalign(64, sizeof(*info) * n);
@@ -320,7 +320,7 @@ static void htable_init(void)
     size_t i;
 
     /* avoid allocating memory later by allocating all the keys now */
-    keys = g_malloc(sizeof(*keys) * n);
+    keys = g_new(long, n);
     for (i = 0; i < n; i++) {
         long val = populate_offset + i;
 

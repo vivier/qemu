@@ -1288,7 +1288,7 @@ void tcg_register_thread(void)
 #else
 void tcg_register_thread(void)
 {
-    TCGContext *s = g_malloc(sizeof(*s));
+    TCGContext *s = g_new(TCGContext, 1);
     unsigned int i, n;
 
     *s = tcg_init_ctx;

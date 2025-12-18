@@ -34,7 +34,7 @@ QString *qstring_from_substr(const char *str, size_t start, size_t end)
     QString *qstring;
 
     assert(start <= end);
-    qstring = g_malloc(sizeof(*qstring));
+    qstring = g_new(QString, 1);
     qobject_init(QOBJECT(qstring), QTYPE_QSTRING);
     qstring->string = g_strndup(str + start, end - start);
     return qstring;
@@ -60,7 +60,7 @@ QString *qstring_from_gstring(GString *gstr)
 {
     QString *qstring;
 
-    qstring = g_malloc(sizeof(*qstring));
+    qstring = g_new(QString, 1);
     qobject_init(QOBJECT(qstring), QTYPE_QSTRING);
     qstring->string = g_string_free(gstr, false);
     return qstring;

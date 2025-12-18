@@ -330,7 +330,7 @@ static VirtIOIOMMUEndpoint *virtio_iommu_get_endpoint(VirtIOIOMMU *s,
     if (!mr) {
         return NULL;
     }
-    ep = g_malloc0(sizeof(*ep));
+    ep = g_new0(VirtIOIOMMUEndpoint, 1);
     ep->id = ep_id;
     ep->iommu_mr = mr;
     trace_virtio_iommu_get_endpoint(ep_id);
@@ -363,7 +363,7 @@ static VirtIOIOMMUDomain *virtio_iommu_get_domain(VirtIOIOMMU *s,
         }
         return domain;
     }
-    domain = g_malloc0(sizeof(*domain));
+    domain = g_new0(VirtIOIOMMUDomain, 1);
     domain->id = domain_id;
     domain->mappings = g_tree_new_full((GCompareDataFunc)interval_cmp,
                                    NULL, (GDestroyNotify)g_free,
@@ -669,7 +669,7 @@ static bool virtio_iommu_set_iommu_device(PCIBus *bus, void *opaque, int devfn,
         }
     }
 
-    new_key = g_malloc(sizeof(*new_key));
+    new_key = g_new(struct hiod_key, 1);
     new_key->bus = bus;
     new_key->devfn = devfn;
 
@@ -817,7 +817,7 @@ static int virtio_iommu_map(VirtIOIOMMU *s,
         return VIRTIO_IOMMU_S_INVAL;
     }
 
-    interval = g_malloc0(sizeof(*interval));
+    interval = g_new0(VirtIOIOMMUInterval, 1);
 
     interval->low = virt_start;
     interval->high = virt_end;
@@ -830,7 +830,7 @@ static int virtio_iommu_map(VirtIOIOMMU *s,
 
     trace_virtio_iommu_map(domain_id, virt_start, virt_end, phys_start, flags);
 
-    mapping = g_malloc0(sizeof(*mapping));
+    mapping = g_new0(VirtIOIOMMUMapping, 1);
     mapping->phys_addr = phys_start;
     mapping->flags = flags;
 

@@ -24,7 +24,7 @@ void rng_backend_request_entropy(RngBackend *s, size_t size,
     RngRequest *req;
 
     if (k->request_entropy) {
-        req = g_malloc(sizeof(*req));
+        req = g_new(RngRequest, 1);
 
         req->offset = 0;
         req->size = size;

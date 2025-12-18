@@ -157,7 +157,7 @@ ivshmem_server_handle_new_conn(IvshmemServer *server)
     }
 
     /* allocate new structure for this peer */
-    peer = g_malloc0(sizeof(*peer));
+    peer = g_new0(IvshmemServerPeer, 1);
     peer->sock_fd = newfd;
 
     /* get an unused peer id */

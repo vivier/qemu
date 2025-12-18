@@ -240,7 +240,7 @@ void parse_numa_hmat_lb(NumaState *numa_state, NumaHmatLBOptions *node,
     }
 
     if (!hmat_lb) {
-        hmat_lb = g_malloc0(sizeof(*hmat_lb));
+        hmat_lb = g_new0(HMAT_LB_Info, 1);
         numa_state->hmat_lb[node->hierarchy][node->data_type] = hmat_lb;
         hmat_lb->list = g_array_new(false, true, sizeof(HMAT_LB_Data));
     }
@@ -454,7 +454,7 @@ void parse_numa_hmat_cache(MachineState *ms, NumaHmatCacheOptions *node,
         return;
     }
 
-    hmat_cache = g_malloc0(sizeof(*hmat_cache));
+    hmat_cache = g_new0(NumaHmatCacheOptions, 1);
     memcpy(hmat_cache, node, sizeof(*hmat_cache));
     ms->numa_state->hmat_cache[node->node_id][node->level] = hmat_cache;
 }
