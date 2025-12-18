@@ -563,7 +563,7 @@ static bool handle_extend_pcr(VirtIONSM *vnsm, struct iovec *request,
     struct PCRInfo *pcr;
     enum NSMResponseTypes type;
     bool r = false;
-    g_autofree NSMExtendPCRReq *nsm_req = g_malloc(sizeof(NSMExtendPCRReq));
+    g_autofree NSMExtendPCRReq *nsm_req = g_new(NSMExtendPCRReq, 1);
 
     type = get_nsm_extend_pcr_req(request->iov_base, request->iov_len,
                                   nsm_req);
@@ -1361,7 +1361,7 @@ static bool handle_attestation(VirtIONSM *vnsm, struct iovec *request,
     bool r = false;
     size_t buf_len = 16384;
     g_autofree uint8_t *buf = g_malloc(buf_len);
-    g_autofree NSMAttestationReq *nsm_req = g_malloc(sizeof(NSMAttestationReq));
+    g_autofree NSMAttestationReq *nsm_req = g_new(NSMAttestationReq, 1);
 
     nsm_req->public_key.is_null = true;
     nsm_req->user_data.is_null = true;

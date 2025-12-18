@@ -269,7 +269,7 @@ typedef struct _GIOChannel GIOChannel;
 GIOChannel *g_io_channel_unix_new(int fd)
 {
     /* cannot use incomplete type, the actual struct is roughly this size.  */
-    GIOChannel *c = g_malloc0(20 * sizeof(void *));
+    GIOChannel *c = g_new0(void *, 20);
     __coverity_escape__(fd);
     return c;
 }

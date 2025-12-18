@@ -640,7 +640,7 @@ static void virtio_blk_handle_zone_report(VirtIOBlockReq *req,
                                         offset >> BDRV_SECTOR_BITS, nr_zones);
 
     zone_size = sizeof(BlockZoneDescriptor) * nr_zones;
-    data = g_malloc(sizeof(ZoneCmdData));
+    data = g_new(ZoneCmdData, 1);
     data->req = req;
     data->in_iov = in_iov;
     data->in_num = in_num;
@@ -764,7 +764,7 @@ static int virtio_blk_handle_zone_append(VirtIOBlockReq *req,
         goto out;
     }
 
-    data = g_malloc(sizeof(ZoneCmdData));
+    data = g_new(ZoneCmdData, 1);
     data->req = req;
     data->in_iov = in_iov;
     data->in_num = in_num;

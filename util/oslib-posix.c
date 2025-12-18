@@ -480,7 +480,7 @@ static int touch_all_pages(char *area, size_t hpagesize, size_t numpages,
                            bool use_madv_populate_write)
 {
     static gsize initialized = 0;
-    MemsetContext *context = g_malloc0(sizeof(MemsetContext));
+    MemsetContext *context = g_new0(MemsetContext, 1);
     size_t numpages_per_thread, leftover;
     void *(*touch_fn)(void *);
     int ret, i = 0;

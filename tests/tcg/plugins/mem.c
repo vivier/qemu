@@ -313,7 +313,7 @@ static void vcpu_tb_trans(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
         }
         if (do_print_accesses) {
             /* we leak this pointer, to avoid locking to keep track of it */
-            InsnInfo *insn_info = g_malloc(sizeof(InsnInfo));
+            InsnInfo *insn_info = g_new(InsnInfo, 1);
             const char *sym = qemu_plugin_insn_symbol(insn);
             insn_info->sym = sym ? sym : "";
             insn_info->vaddr = qemu_plugin_insn_vaddr(insn);

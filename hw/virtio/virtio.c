@@ -4329,7 +4329,7 @@ static strList *qmp_decode_vring_desc_flags(uint16_t flags)
         if ((map[i].flag & flags) == 0) {
             continue;
         }
-        node = g_malloc0(sizeof(strList));
+        node = g_new0(strList, 1);
         node->value = g_strdup(map[i].value);
         node->next = list;
         list = node;

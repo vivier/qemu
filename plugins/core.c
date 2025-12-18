@@ -820,7 +820,7 @@ int plugin_num_vcpus(void)
 struct qemu_plugin_scoreboard *plugin_scoreboard_new(size_t element_size)
 {
     struct qemu_plugin_scoreboard *score =
-        g_malloc0(sizeof(struct qemu_plugin_scoreboard));
+        g_new0(struct qemu_plugin_scoreboard, 1);
     score->data = g_array_new(FALSE, TRUE, element_size);
     g_array_set_size(score->data, plugin.scoreboard_alloc_size);
 

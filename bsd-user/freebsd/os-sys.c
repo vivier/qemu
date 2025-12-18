@@ -545,7 +545,7 @@ abi_long do_freebsd_sysctl(CPUArchState *env, abi_ulong namep, int32_t namelen,
     void *hnamep, *holdp = NULL, *hnewp = NULL;
     size_t holdlen;
     abi_ulong oldlen = 0;
-    int32_t *snamep = g_malloc(sizeof(int32_t) * namelen), *p, *q, i;
+    int32_t *snamep = g_new(int32_t, namelen), *p, *q, i;
 
     /* oldlenp is read/write, pre-check here for write */
     if (oldlenp) {

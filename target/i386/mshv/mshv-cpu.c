@@ -449,7 +449,7 @@ static void add_cpuid_entry(GList *cpuid_entries,
 {
     struct hv_cpuid_entry *entry;
 
-    entry = g_malloc0(sizeof(struct hv_cpuid_entry));
+    entry = g_new0(struct hv_cpuid_entry, 1);
     entry->function = function;
     entry->index = index;
     entry->eax = eax;
@@ -1006,7 +1006,7 @@ static int put_msrs(const CPUState *cpu)
     int ret = 0;
     X86CPU *x86cpu = X86_CPU(cpu);
     CPUX86State *env = &x86cpu->env;
-    MshvMsrEntries *msrs = g_malloc0(sizeof(MshvMsrEntries));
+    MshvMsrEntries *msrs = g_new0(MshvMsrEntries, 1);
 
     struct MsrPair pairs[] = {
         { MSR_IA32_SYSENTER_CS,    env->sysenter_cs },

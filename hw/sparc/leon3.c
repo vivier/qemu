@@ -273,7 +273,7 @@ static void leon3_generic_hw_init(MachineState *machine)
     AHBPnp *ahb_pnp;
     APBPnp *apb_pnp;
 
-    reset_info = g_malloc0(sizeof(ResetData));
+    reset_info = g_new0(ResetData, 1);
 
     for (i = 0; i < machine->smp.cpus; i++) {
         /* Init CPU */
