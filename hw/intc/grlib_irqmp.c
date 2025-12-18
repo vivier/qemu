@@ -371,7 +371,7 @@ static void grlib_irqmp_realize(DeviceState *dev, Error **errp)
     memory_region_init_io(&irqmp->iomem, OBJECT(dev), &grlib_irqmp_ops, irqmp,
                           "irqmp", IRQMP_REG_SIZE);
 
-    irqmp->state = g_malloc0(sizeof *irqmp->state);
+    irqmp->state = g_new0(IRQMPState, 1);
 
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &irqmp->iomem);
 }

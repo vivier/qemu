@@ -234,7 +234,7 @@ CpuModelExpansionInfo *qmp_query_cpu_model_expansion(CpuModelExpansionType type,
 
     /* convert it back to a static representation */
     expansion_info = g_new0(CpuModelExpansionInfo, 1);
-    expansion_info->model = g_malloc0(sizeof(*expansion_info->model));
+    expansion_info->model = g_new0(S390CPUModel, 1);
     cpu_info_from_model(expansion_info->model, &s390_model, delta_changes);
 
     /* populate list of deprecated features */
@@ -402,7 +402,7 @@ CpuModelBaselineInfo *qmp_query_cpu_model_baseline(CpuModelInfo *infoa,
                S390_FEAT_MAX);
 
     baseline_info = g_new0(CpuModelBaselineInfo, 1);
-    baseline_info->model = g_malloc0(sizeof(*baseline_info->model));
+    baseline_info->model = g_new0(S390CPUModel, 1);
     cpu_info_from_model(baseline_info->model, &model, true);
     return baseline_info;
 }

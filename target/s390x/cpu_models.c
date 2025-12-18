@@ -803,7 +803,7 @@ static void s390_cpu_model_initfn(Object *obj)
     S390CPU *cpu = S390_CPU(obj);
     S390CPUClass *xcc = S390_CPU_GET_CLASS(cpu);
 
-    cpu->model = g_malloc0(sizeof(*cpu->model));
+    cpu->model = g_new0(S390CPUModel, 1);
     /* copy the model, so we can modify it */
     cpu->model->def = xcc->cpu_def;
     if (xcc->is_static) {
@@ -840,7 +840,7 @@ static void s390_qemu_cpu_model_initfn(Object *obj)
 {
     S390CPU *cpu = S390_CPU(obj);
 
-    cpu->model = g_malloc0(sizeof(*cpu->model));
+    cpu->model = g_new0(S390CPUModel, 1);
     /* copy the CPU model so we can modify it */
     memcpy(cpu->model, &s390_qemu_cpu_model, sizeof(*cpu->model));
 }

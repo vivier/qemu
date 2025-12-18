@@ -1487,7 +1487,7 @@ int multifd_recv_setup(Error **errp)
             p->packet_len = sizeof(MultiFDPacket_t)
                 + sizeof(uint64_t) * page_count;
             p->packet = g_malloc0(p->packet_len);
-            p->packet_dev_state = g_malloc0(sizeof(*p->packet_dev_state));
+            p->packet_dev_state = g_new0(MultiFDPacketDeviceState_t, 1);
         }
         p->name = g_strdup_printf(MIGRATION_THREAD_DST_MULTIFD, i);
         p->normal = g_new0(ram_addr_t, page_count);
